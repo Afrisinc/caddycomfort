@@ -1,15 +1,26 @@
 # Docker Deployment
 
-Two containers on one private docker network. Only the frontend is published on
-the VPS host; the API is reachable **only** from inside that network.
+Two containers. Only the frontend is published on the host and only the
+frontend joins the shared `afrisinc_net`; the API sits alone on a private
+network where nothing else — not the host, not the internet, not the sibling
+services on the VPS — can reach it.
 
 ```
-internet ──▶ :443 reverse proxy ──▶ 127.0.0.1:3000  frontend (Next.js)
-                                            │
-                                            │  http://backend:5000  (private network)
-                                            ▼
-                                       backend (Express API)  ← no host port
+internet ──▶ :443 host reverse proxy ──▶ 127.0.0.1:3000  caddycomfort-frontend
+                                                  │            │
+                        afrisinc_net (shared) ────┘            │ caddycomfort_internal
+                        siblings reach the frontend            │ (private to this stack)
+                        but NOT the API                        ▼
+                                                     caddycomfort-backend
+                                                     no host port, not on afrisinc_net
 ```
+
+Follows the same conventions as `homextech`: `container_name`, `init: true`,
+`env_file: .env`, `TZ=UTC`, json-file log rotation, memory/cpu limits, image
+healthchecks, and loopback-only port publishing.
+
+`FRONTEND_PORT` must not collide with another service on the box — `homextech`
+already holds `5000`, so this defaults to `3000`.
 
 ## How the browser reaches an unpublished API
 
@@ -23,6 +34,8 @@ Two consequences worth remembering:
   `rewrites()` during `next build` and freezes the destination into
   `routes-manifest.json`. Setting it only at runtime silently does nothing —
   the proxy keeps pointing at `localhost:5000` and every `/api` call 500s.
+  Its value must match the API's `container_name`, since that is what docker
+  DNS resolves. Rename the container and you must rebuild the frontend image.
 - **`SERVE_FRONTEND=false` on the backend.** `backend/src/server.ts` boots an
   embedded Next.js server when `NODE_ENV=production`, which is right for the
   single-container Render deploy but wrong here — there is no sibling
@@ -39,29 +52,37 @@ mkdir -p "$VPS_APP_PATH/caddycomfort/production"
 cd "$VPS_APP_PATH/caddycomfort/production"
 # copy docker-compose.yml and .env.example from the repo
 cp .env.example .env
-$EDITOR .env          # real DATABASE_URL, JWT secrets, PUBLIC_APP_URL, Cloudinary
+$EDITOR .env          # real DATABASE_URL, JWT secrets, PUBLIC_APP_URL, CORS_ORIGIN, Cloudinary
 
-export GHCR_OWNER=<org>            # only needed for manual runs
+# afrisinc_net is declared external — compose will NOT create it
+docker network inspect afrisinc_net >/dev/null 2>&1 || docker network create afrisinc_net
+
+export GHCR_OWNER=afrisinc         # only needed for manual runs
 docker compose --profile migrate run --rm migrate   # prisma migrate deploy
 docker compose up -d
 ```
 
-Check what is actually exposed — `backend` must show a bare `5000/tcp` with no
-host binding:
+Then point the host reverse proxy at `127.0.0.1:3000`.
+
+### Verifying the isolation
+
+`caddycomfort-backend` must show a bare `5000/tcp` with no host binding, and
+must not appear on the shared network:
 
 ```bash
 docker compose ps
+docker inspect caddycomfort-backend --format '{{json .NetworkSettings.Ports}}'
+#   -> {"5000/tcp":null}
+
+docker network inspect afrisinc_net --format '{{range .Containers}}{{.Name}} {{end}}'
+#   -> caddycomfort-frontend      (the API must NOT be listed)
+
 curl -s http://127.0.0.1:3000/api/health   # proxied through the frontend
 ```
 
-### Exposure
-
-`FRONTEND_BIND` defaults to `127.0.0.1`, which keeps the frontend on loopback
-for a reverse proxy (Caddy/nginx/Traefik) to terminate TLS in front of. Set
-`FRONTEND_BIND=0.0.0.0` only if you want it straight on the public interface.
-
-Nothing in the compose file publishes the backend, so a host firewall is not
-what is protecting it — the absence of a `ports:` mapping is.
+Nothing here relies on a host firewall: the API has no `ports:` mapping, and
+because it is absent from `afrisinc_net` its container name does not even
+resolve for sibling services.
 
 ## CI/CD
 
@@ -84,9 +105,19 @@ Repository secrets — the same names the other services use:
 | `VPS_APP_PATH` | Base path; the app sits at `<path>/caddycomfort/production` |
 | `PUBLIC_APP_URL` | Public site origin, baked into the frontend build |
 
-Two images instead of one is the only real departure from `content-service`,
-plus a `docker compose --profile migrate run --rm migrate` line before `up -d`
-so prisma migrations land before the new code serves traffic.
+Departures from `content-service`, all deliberate:
+
+- **Two images** instead of one, since the frontend and API are separate
+  containers.
+- **A network guard** — `afrisinc_net` is external, so compose aborts with
+  `network afrisinc_net declared as external, but could not be found` rather
+  than creating it. The script creates it if absent.
+- **A migrate step** before `up -d`, so prisma migrations land before the new
+  code serves traffic.
+- **A health gate** after `up -d`. The job polls `/api/health` through the
+  published frontend port for up to two minutes; on failure it dumps
+  `docker compose ps` plus the last 120 log lines and exits non-zero, so a
+  broken rollout shows up as a red build instead of a green one.
 
 The deploy exports `IMAGE_TAG` pinned to the short SHA, so a rollback is
 `IMAGE_TAG=<older-sha> docker compose up -d` from the app directory.

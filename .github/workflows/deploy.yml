@@ -23,7 +23,7 @@ jobs:
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
           echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
-          echo "production_tag=production" >> $GITHUB_OUTPUT
+          echo "branch_tag=main" >> $GITHUB_OUTPUT
 
       # Step 3: Login to GitHub Container Registry
       - name: Log in to GHCR
@@ -38,24 +38,24 @@ jobs:
         run: |
           docker build \
             -t ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-backend:${{ steps.meta.outputs.short_sha }} \
-            -t ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-backend:${{ steps.meta.outputs.production_tag }} ./backend
+            -t ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-backend:${{ steps.meta.outputs.branch_tag }} ./backend
 
       - name: Build frontend image
         run: |
           docker build \
             --build-arg NEXT_PUBLIC_API_URL=/api \
             --build-arg NEXT_PUBLIC_APP_URL=${{ secrets.PUBLIC_APP_URL }} \
-            --build-arg BACKEND_INTERNAL_URL=http://backend:5000 \
+            --build-arg BACKEND_INTERNAL_URL=http://caddycomfort-backend:5000 \
             -t ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-frontend:${{ steps.meta.outputs.short_sha }} \
-            -t ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-frontend:${{ steps.meta.outputs.production_tag }} ./frontend
+            -t ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-frontend:${{ steps.meta.outputs.branch_tag }} ./frontend
 
       # Step 5: Push Docker images
       - name: Push Docker images
         run: |
           docker push ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-backend:${{ steps.meta.outputs.short_sha }}
-          docker push ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-backend:${{ steps.meta.outputs.production_tag }}
+          docker push ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-backend:${{ steps.meta.outputs.branch_tag }}
           docker push ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-frontend:${{ steps.meta.outputs.short_sha }}
-          docker push ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-frontend:${{ steps.meta.outputs.production_tag }}
+          docker push ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-frontend:${{ steps.meta.outputs.branch_tag }}
 
       # Step 6: SSH deploy to VPS
       - name: Deploy to VPS
@@ -81,10 +81,31 @@ jobs:
             export GHCR_OWNER="${{ secrets.GHCR_OWNER }}"
             export IMAGE_TAG="${{ steps.meta.outputs.short_sha }}"
 
+            # afrisinc_net is declared external; compose errors out instead of
+            # creating it, so make sure it is there before pulling.
+            docker network inspect afrisinc_net >/dev/null 2>&1 \
+              || docker network create afrisinc_net
+
             docker compose pull
 
             # Apply pending prisma migrations before the new code serves traffic
             docker compose --profile migrate run --rm migrate
 
-            docker compose up -d
-            docker image prune -af
+            docker compose up -d --remove-orphans
+
+            # Fail the deploy if the stack does not actually come up healthy
+            PORT=$(grep -E '^FRONTEND_PORT=' .env | cut -d= -f2 || true)
+            PORT=${PORT:-3000}
+            for i in $(seq 1 24); do
+              if curl -fsS "http://127.0.0.1:${PORT}/api/health" >/dev/null 2>&1; then
+                echo "✅ frontend up and proxying to the API"
+                docker image prune -af
+                exit 0
+              fi
+              sleep 5
+            done
+
+            echo "❌ stack did not become healthy within 2 minutes"
+            docker compose ps
+            docker compose logs --tail=120
+            exit 1

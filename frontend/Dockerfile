@@ -23,7 +23,7 @@ ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 # Next evaluates rewrites() during `next build` and freezes the destination
 # into routes-manifest.json, so this has to be a build arg — setting it at
 # runtime has no effect.
-ARG BACKEND_INTERNAL_URL=http://backend:5000
+ARG BACKEND_INTERNAL_URL=http://caddycomfort-backend:5000
 ENV BACKEND_INTERNAL_URL=$BACKEND_INTERNAL_URL
 
 ENV NEXT_TELEMETRY_DISABLED=1

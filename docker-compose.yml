@@ -1,85 +1,98 @@
 name: caddycomfort
 
 services:
-  # Internal only. No `ports:` mapping, so nothing on the VPS host or the
-  # public internet can reach it — only services on `caddycomfort-net` can.
-  backend:
-    image: ghcr.io/${GHCR_OWNER:-local}/caddycomfort-backend:${IMAGE_TAG:-production}
+  # Internal only. No `ports:` mapping and NOT on afrisinc_net, so it is
+  # unreachable from the host, from the internet, and from the other services
+  # sharing afrisinc_net. Only the frontend container can talk to it.
+  caddycomfort-backend:
+    image: ghcr.io/${GHCR_OWNER:-afrisinc}/caddycomfort-backend:${IMAGE_TAG:-main}
+    container_name: caddycomfort-backend
     build:
       context: ./backend
     restart: unless-stopped
+    init: true
     expose:
       - "5000"
+    env_file: .env
     environment:
-      NODE_ENV: production
-      PORT: "5000"
-      SERVE_FRONTEND: "false"
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
-      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET:?REFRESH_TOKEN_SECRET is required}
-      REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-30d}
-      # Requests arrive proxied from the frontend container, same origin as far
-      # as the browser is concerned, so CORS only needs the public site origin.
-      CORS_ORIGIN: ${PUBLIC_APP_URL:-http://localhost:3000}
-      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
-      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
-      MAX_FILE_SIZE: ${MAX_FILE_SIZE:-5242880}
-      UPLOAD_PATH: ${UPLOAD_PATH:-./uploads}
-      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
-      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
-      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
-      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
-      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
-      SMTP_HOST: ${SMTP_HOST:-}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USER: ${SMTP_USER:-}
-      SMTP_PASS: ${SMTP_PASS:-}
-      EMAIL_FROM: ${EMAIL_FROM:-}
-    networks:
-      - caddycomfort-net
+      - TZ=UTC
+      - NODE_ENV=production
+      - PORT=5000
+      # This image is the API only; the frontend container serves Next.js.
+      - SERVE_FRONTEND=false
+    # healthcheck inherited from the image
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    deploy:
+      resources:
+        limits: { memory: 512M, cpus: "1.0" }
 
-  # The only service published on the host. Bind to 127.0.0.1 and terminate
-  # TLS with a reverse proxy in front, or set FRONTEND_BIND=0.0.0.0 to expose
-  # it directly.
-  frontend:
-    image: ghcr.io/${GHCR_OWNER:-local}/caddycomfort-frontend:${IMAGE_TAG:-production}
+    networks:
+      - caddycomfort_internal
+
+  # The only published service. Joins afrisinc_net so the host reverse proxy
+  # and sibling services can reach it, and caddycomfort_internal to reach the API.
+  caddycomfort-frontend:
+    image: ghcr.io/${GHCR_OWNER:-afrisinc}/caddycomfort-frontend:${IMAGE_TAG:-main}
+    container_name: caddycomfort-frontend
     build:
       context: ./frontend
       args:
-        # Relative path -> the browser calls the frontend, which rewrites
-        # /api/* to the backend over the internal network.
+        # Relative path -> the browser calls this container, which rewrites
+        # /api/* to the API over caddycomfort_internal.
         NEXT_PUBLIC_API_URL: /api
         NEXT_PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:3000}
-        # Baked into the rewrite at build time; resolved by docker DNS at run.
-        BACKEND_INTERNAL_URL: http://backend:5000
+        # Baked into the rewrite at build time; must match the API's
+        # container_name, which is how docker DNS resolves it.
+        BACKEND_INTERNAL_URL: http://caddycomfort-backend:5000
     restart: unless-stopped
+    init: true
     ports:
-      - "${FRONTEND_BIND:-127.0.0.1}:${FRONTEND_PORT:-3000}:3000"
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:3000"
+    env_file: .env
     environment:
-      NODE_ENV: production
-      PORT: "3000"
-      HOSTNAME: 0.0.0.0
+      - TZ=UTC
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
     depends_on:
-      backend:
+      caddycomfort-backend:
         condition: service_healthy
+    # healthcheck inherited from the image
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    deploy:
+      resources:
+        limits: { memory: 768M, cpus: "1.0" }
+
     networks:
-      - caddycomfort-net
+      - caddycomfort_internal
+      - afrisinc_net
 
   # One-shot: docker compose --profile migrate run --rm migrate
   migrate:
-    image: ghcr.io/${GHCR_OWNER:-local}/caddycomfort-backend:${IMAGE_TAG:-production}
+    image: ghcr.io/${GHCR_OWNER:-afrisinc}/caddycomfort-backend:${IMAGE_TAG:-main}
     build:
       context: ./backend
     profiles: ["migrate"]
     restart: "no"
+    init: true
+    env_file: .env
     environment:
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      - TZ=UTC
     command: ["npx", "prisma", "migrate", "deploy"]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
     networks:
-      - caddycomfort-net
+      - caddycomfort_internal
 
 networks:
-  caddycomfort-net:
+  # Private to this stack — created by compose, carries frontend <-> API only.
+  caddycomfort_internal:
     driver: bridge
+  # Shared VPS network, created outside this stack.
+  afrisinc_net:
+    external: true
