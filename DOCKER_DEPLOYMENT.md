@@ -6,7 +6,7 @@ network where nothing else — not the host, not the internet, not the sibling
 services on the VPS — can reach it.
 
 ```
-internet ──▶ :443 host reverse proxy ──▶ 127.0.0.1:3000  caddycomfort-frontend
+internet ──▶ :443 host reverse proxy ──▶ 127.0.0.1:5001  caddycomfort-frontend
                                                   │            │
                         afrisinc_net (shared) ────┘            │ caddycomfort_internal
                         siblings reach the frontend            │ (private to this stack)
@@ -20,12 +20,12 @@ Follows the same conventions as `homextech`: `container_name`, `init: true`,
 healthchecks, and loopback-only port publishing.
 
 `FRONTEND_PORT` must not collide with another service on the box — `homextech`
-already holds `5000`, so this defaults to `3000`.
+already holds `5000`, so this defaults to `5001`.
 
 ## How the browser reaches an unpublished API
 
 `NEXT_PUBLIC_API_URL` is baked as `/api`, so the browser calls the frontend on
-its own origin. `next.config.ts` rewrites `/api/*` to `http://backend:5000/api/*`
+its own origin. `next.config.ts` rewrites `/api/*` to `http://caddycomfort-backend:5000/api/*`
 over the docker network.
 
 Two consequences worth remembering:
@@ -40,6 +40,36 @@ Two consequences worth remembering:
   embedded Next.js server when `NODE_ENV=production`, which is right for the
   single-container Render deploy but wrong here — there is no sibling
   `frontend/` directory in the API image. The backend Dockerfile sets this.
+
+## Supabase must go through the pooler
+
+`db.<ref>.supabase.co` is **IPv6-only**. Docker containers have no IPv6 by
+default, so a direct-host connection string fails with
+`P1001: Can't reach database server` even though the credentials are perfect.
+Use the Supavisor pooler, which has IPv4 records:
+
+```
+postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
+```
+
+Two things bite here:
+
+- the username is `postgres.<ref>`, not plain `postgres`
+- the region must be right, or the pooler answers
+  `FATAL: (ENOTFOUND) tenant/user postgres.<ref> not found` — the same error
+  you get for a project that no longer exists
+
+To find the region when the dashboard is not handy, probe the poolers:
+
+```bash
+for H in aws-0-eu-west-1 aws-0-eu-west-2 aws-0-eu-central-1 aws-0-us-east-1; do
+  PGPASSWORD=<password> psql -h $H.pooler.supabase.com -p 5432 \
+    -U postgres.<ref> -d postgres -tAc 'select 1' 2>&1 | tail -1
+done
+```
+
+Port 5432 on the pooler is session mode, which `prisma migrate deploy` needs.
+Port 6543 is transaction mode and would also require `?pgbouncer=true`.
 
 ## First deploy on the VPS
 
@@ -62,7 +92,7 @@ docker compose --profile migrate run --rm migrate   # prisma migrate deploy
 docker compose up -d
 ```
 
-Then point the host reverse proxy at `127.0.0.1:3000`.
+Then point the host reverse proxy at `127.0.0.1:5001`.
 
 ### Verifying the isolation
 
@@ -77,7 +107,7 @@ docker inspect caddycomfort-backend --format '{{json .NetworkSettings.Ports}}'
 docker network inspect afrisinc_net --format '{{range .Containers}}{{.Name}} {{end}}'
 #   -> caddycomfort-frontend      (the API must NOT be listed)
 
-curl -s http://127.0.0.1:3000/api/health   # proxied through the frontend
+curl -s http://127.0.0.1:5001/api/health   # proxied through the frontend
 ```
 
 Nothing here relies on a host firewall: the API has no `ports:` mapping, and
@@ -88,7 +118,7 @@ resolve for sibling services.
 
 `.github/workflows/deploy.yml` follows the same shape as the other services
 (`content-service`, `afrisinc-web`): build → push to GHCR under two tags
-(`<short-sha>` and `production`) → SSH in, `docker compose pull`, `up -d`,
+(`<short-sha>` and `main`) → SSH in, `docker compose pull`, `up -d`,
 `docker image prune -af`.
 
 Repository secrets — the same names the other services use:
@@ -129,5 +159,5 @@ cp .env.example .env
 docker compose up --build
 ```
 
-`http://localhost:3000`. The backend stays unreachable from the host by design;
-to inspect it use `docker compose exec backend sh`.
+`http://localhost:5001`. The backend stays unreachable from the host by design;
+to inspect it use `docker compose exec caddycomfort-backend sh`.

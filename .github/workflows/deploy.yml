@@ -95,7 +95,7 @@ jobs:
 
             # Fail the deploy if the stack does not actually come up healthy
             PORT=$(grep -E '^FRONTEND_PORT=' .env | cut -d= -f2 || true)
-            PORT=${PORT:-3000}
+            PORT=${PORT:-5001}
             for i in $(seq 1 24); do
               if curl -fsS "http://127.0.0.1:${PORT}/api/health" >/dev/null 2>&1; then
                 echo "✅ frontend up and proxying to the API"
