@@ -131,7 +131,7 @@ export default function FAQPage() {
             </div>
             <h1 className="text-5xl font-serif mb-4">Frequently Asked Questions</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Find answers to common questions about shopping with Clementine Classic Shop
+              Find answers to common questions about shopping with CaddyComfort
             </p>
           </div>
         </div>

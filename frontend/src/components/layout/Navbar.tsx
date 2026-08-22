@@ -38,7 +38,7 @@ export function Navbar() {
           <Link href="/" className="flex-shrink-0 relative h-10 w-40 md:h-12 md:w-48 hover:opacity-80 transition-opacity">
             <Image
               src="/images/logo/logo.png"
-              alt="Clementine Classic Shop"
+              alt="CaddyComfort"
               fill
               className="object-contain object-left"
               priority
@@ -144,7 +144,7 @@ export function Navbar() {
                     <Link href="/" className="inline-block relative h-10 w-40 hover:opacity-80 transition-opacity">
                       <Image
                         src="/images/logo/logo.png"
-                        alt="Clementine Classic Shop"
+                        alt="CaddyComfort"
                         fill
                         className="object-contain object-left"
                         sizes="160px"

@@ -25,7 +25,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-2xl font-serif text-foreground mb-4">Agreement to Terms</h2>
               <p>
-                By accessing and using Clementine Classic Shop (&quot;the Website&quot;), you accept and agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our website.
+                By accessing and using CaddyComfort (&quot;the Website&quot;), you accept and agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our website.
               </p>
             </section>
 
@@ -87,7 +87,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-2xl font-serif text-foreground mb-4">Intellectual Property</h2>
               <p>
-                All content on this website, including text, graphics, logos, images, and software, is the property of Clementine Classic Shop or its licensors and is protected by copyright and trademark laws. You may not use, reproduce, or distribute any content without our written permission.
+                All content on this website, including text, graphics, logos, images, and software, is the property of CaddyComfort or its licensors and is protected by copyright and trademark laws. You may not use, reproduce, or distribute any content without our written permission.
               </p>
             </section>
 
@@ -105,7 +105,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-2xl font-serif text-foreground mb-4">Limitation of Liability</h2>
               <p>
-                To the fullest extent permitted by law, Clementine Classic Shop shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of our website or products. Our total liability shall not exceed the amount you paid for the product in question.
+                To the fullest extent permitted by law, CaddyComfort shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of our website or products. Our total liability shall not exceed the amount you paid for the product in question.
               </p>
             </section>
 
@@ -119,7 +119,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-2xl font-serif text-foreground mb-4">Indemnification</h2>
               <p>
-                You agree to indemnify and hold harmless Clementine Classic Shop from any claims, losses, damages, or expenses (including legal fees) arising from your use of the website or violation of these terms.
+                You agree to indemnify and hold harmless CaddyComfort from any claims, losses, damages, or expenses (including legal fees) arising from your use of the website or violation of these terms.
               </p>
             </section>
 

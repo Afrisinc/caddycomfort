@@ -21,8 +21,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Clementine Classic Shop | Luxury Fashion",
-  description: "Discover timeless elegance and contemporary style at Clementine Classic Shop",
+  title: "CaddyComfort | Luxury Fashion",
+  description: "Discover timeless elegance and contemporary style at CaddyComfort",
 };
 
 export default function RootLayout({

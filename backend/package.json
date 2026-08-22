@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "Backend API for Clementine Classic Shop",
+  "description": "Backend API for CaddyComfort",
   "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon src/server.ts",

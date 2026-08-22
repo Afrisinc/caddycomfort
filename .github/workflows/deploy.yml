@@ -1,4 +1,4 @@
-name: Deploy Clementine Shop — Production
+name: Deploy CaddyComfort — Production
 
 on:
   push:
@@ -37,8 +37,8 @@ jobs:
       - name: Build backend image
         run: |
           docker build \
-            -t ghcr.io/${{ secrets.GHCR_OWNER }}/clementine-backend:${{ steps.meta.outputs.short_sha }} \
-            -t ghcr.io/${{ secrets.GHCR_OWNER }}/clementine-backend:${{ steps.meta.outputs.production_tag }} ./backend
+            -t ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-backend:${{ steps.meta.outputs.short_sha }} \
+            -t ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-backend:${{ steps.meta.outputs.production_tag }} ./backend
 
       - name: Build frontend image
         run: |
@@ -46,16 +46,16 @@ jobs:
             --build-arg NEXT_PUBLIC_API_URL=/api \
             --build-arg NEXT_PUBLIC_APP_URL=${{ secrets.PUBLIC_APP_URL }} \
             --build-arg BACKEND_INTERNAL_URL=http://backend:5000 \
-            -t ghcr.io/${{ secrets.GHCR_OWNER }}/clementine-frontend:${{ steps.meta.outputs.short_sha }} \
-            -t ghcr.io/${{ secrets.GHCR_OWNER }}/clementine-frontend:${{ steps.meta.outputs.production_tag }} ./frontend
+            -t ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-frontend:${{ steps.meta.outputs.short_sha }} \
+            -t ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-frontend:${{ steps.meta.outputs.production_tag }} ./frontend
 
       # Step 5: Push Docker images
       - name: Push Docker images
         run: |
-          docker push ghcr.io/${{ secrets.GHCR_OWNER }}/clementine-backend:${{ steps.meta.outputs.short_sha }}
-          docker push ghcr.io/${{ secrets.GHCR_OWNER }}/clementine-backend:${{ steps.meta.outputs.production_tag }}
-          docker push ghcr.io/${{ secrets.GHCR_OWNER }}/clementine-frontend:${{ steps.meta.outputs.short_sha }}
-          docker push ghcr.io/${{ secrets.GHCR_OWNER }}/clementine-frontend:${{ steps.meta.outputs.production_tag }}
+          docker push ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-backend:${{ steps.meta.outputs.short_sha }}
+          docker push ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-backend:${{ steps.meta.outputs.production_tag }}
+          docker push ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-frontend:${{ steps.meta.outputs.short_sha }}
+          docker push ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-frontend:${{ steps.meta.outputs.production_tag }}
 
       # Step 6: SSH deploy to VPS
       - name: Deploy to VPS
@@ -72,7 +72,7 @@ jobs:
           envs: DEPLOY_GHCR_USERNAME,DEPLOY_GHCR_TOKEN
           script: |
             set -e
-            APP_PATH="${{ secrets.VPS_APP_PATH }}/clementine-shop/production"
+            APP_PATH="${{ secrets.VPS_APP_PATH }}/caddycomfort/production"
             cd $APP_PATH
 
             echo "$DEPLOY_GHCR_TOKEN" | docker login ghcr.io -u "$DEPLOY_GHCR_USERNAME" --password-stdin

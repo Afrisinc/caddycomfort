@@ -1,10 +1,10 @@
-name: clementine
+name: caddycomfort
 
 services:
   # Internal only. No `ports:` mapping, so nothing on the VPS host or the
-  # public internet can reach it — only services on `clementine-net` can.
+  # public internet can reach it — only services on `caddycomfort-net` can.
   backend:
-    image: ghcr.io/${GHCR_OWNER:-local}/clementine-backend:${IMAGE_TAG:-production}
+    image: ghcr.io/${GHCR_OWNER:-local}/caddycomfort-backend:${IMAGE_TAG:-production}
     build:
       context: ./backend
     restart: unless-stopped
@@ -38,13 +38,13 @@ services:
       SMTP_PASS: ${SMTP_PASS:-}
       EMAIL_FROM: ${EMAIL_FROM:-}
     networks:
-      - clementine-net
+      - caddycomfort-net
 
   # The only service published on the host. Bind to 127.0.0.1 and terminate
   # TLS with a reverse proxy in front, or set FRONTEND_BIND=0.0.0.0 to expose
   # it directly.
   frontend:
-    image: ghcr.io/${GHCR_OWNER:-local}/clementine-frontend:${IMAGE_TAG:-production}
+    image: ghcr.io/${GHCR_OWNER:-local}/caddycomfort-frontend:${IMAGE_TAG:-production}
     build:
       context: ./frontend
       args:
@@ -65,11 +65,11 @@ services:
       backend:
         condition: service_healthy
     networks:
-      - clementine-net
+      - caddycomfort-net
 
   # One-shot: docker compose --profile migrate run --rm migrate
   migrate:
-    image: ghcr.io/${GHCR_OWNER:-local}/clementine-backend:${IMAGE_TAG:-production}
+    image: ghcr.io/${GHCR_OWNER:-local}/caddycomfort-backend:${IMAGE_TAG:-production}
     build:
       context: ./backend
     profiles: ["migrate"]
@@ -78,8 +78,8 @@ services:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
     command: ["npx", "prisma", "migrate", "deploy"]
     networks:
-      - clementine-net
+      - caddycomfort-net
 
 networks:
-  clementine-net:
+  caddycomfort-net:
     driver: bridge

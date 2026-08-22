@@ -15,7 +15,7 @@ export default function ComponentShowcase() {
         {/* Hero Section */}
         <section className="text-center space-y-6 py-20">
           <h1 className="text-gradient-rose">
-            Clementine Classic
+            CaddyComfort
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Timeless elegance meets contemporary style

@@ -15,7 +15,7 @@ export function Footer() {
             <Link href="/" className="inline-block relative h-10 w-40 md:h-12 md:w-48 hover:opacity-80 transition-opacity">
               <Image
                 src="/images/logo/logo.png"
-                alt="Clementine Classic Shop"
+                alt="CaddyComfort"
                 fill
                 className="object-contain object-left"
                 sizes="(max-width: 768px) 160px, 192px"
@@ -127,7 +127,7 @@ export function Footer() {
         {/* Bottom */}
         <div className="pt-8 border-t flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           <p className="text-sm text-muted-foreground">
-            © 2025 Clementine Classic Shop. All rights reserved.
+            © 2025 CaddyComfort. All rights reserved.
           </p>
           <div className="flex space-x-6">
             <Link

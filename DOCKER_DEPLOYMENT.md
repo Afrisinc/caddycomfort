@@ -35,8 +35,8 @@ box under `$VPS_APP_PATH/<service>/<env>` and are **not** copied by CI. The
 workflow only pushes images and restarts.
 
 ```bash
-mkdir -p "$VPS_APP_PATH/clementine-shop/production"
-cd "$VPS_APP_PATH/clementine-shop/production"
+mkdir -p "$VPS_APP_PATH/caddycomfort/production"
+cd "$VPS_APP_PATH/caddycomfort/production"
 # copy docker-compose.yml and .env.example from the repo
 cp .env.example .env
 $EDITOR .env          # real DATABASE_URL, JWT secrets, PUBLIC_APP_URL, Cloudinary
@@ -81,7 +81,7 @@ Repository secrets — the same names the other services use:
 | `VPS_HOST` | VPS hostname or IP |
 | `VPS_USER` | SSH user (must be in the `docker` group) |
 | `VPS_SSH_KEY` | Private key for that user |
-| `VPS_APP_PATH` | Base path; the app sits at `<path>/clementine-shop/production` |
+| `VPS_APP_PATH` | Base path; the app sits at `<path>/caddycomfort/production` |
 | `PUBLIC_APP_URL` | Public site origin, baked into the frontend build |
 
 Two images instead of one is the only real departure from `content-service`,

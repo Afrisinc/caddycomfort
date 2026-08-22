@@ -25,7 +25,7 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-2xl font-serif text-foreground mb-4">Introduction</h2>
               <p>
-                Welcome to Clementine Classic Shop. We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you about how we look after your personal data when you visit our website and tell you about your privacy rights.
+                Welcome to CaddyComfort. We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you about how we look after your personal data when you visit our website and tell you about your privacy rights.
               </p>
             </section>
 

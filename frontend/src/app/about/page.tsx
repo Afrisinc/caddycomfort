@@ -14,7 +14,7 @@ export default function AboutPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="text-5xl md:text-6xl font-serif mb-6">Our Story</h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Crafting timeless elegance since 2020, Clementine Classic Shop brings you curated luxury fashion that celebrates individuality and sophistication.
+              Crafting timeless elegance since 2020, CaddyComfort brings you curated luxury fashion that celebrates individuality and sophistication.
             </p>
           </div>
         </div>
@@ -33,7 +33,7 @@ export default function AboutPage() {
             <div>
               <h2 className="text-4xl font-serif mb-6">Our Mission</h2>
               <p className="text-muted-foreground text-lg leading-relaxed mb-4">
-                At Clementine Classic Shop, we believe that fashion is more than just clothing—it&apos;s an expression of who you are. Our mission is to provide discerning customers with access to the finest luxury fashion pieces that blend timeless elegance with contemporary style.
+                At CaddyComfort, we believe that fashion is more than just clothing—it&apos;s an expression of who you are. Our mission is to provide discerning customers with access to the finest luxury fashion pieces that blend timeless elegance with contemporary style.
               </p>
               <p className="text-muted-foreground text-lg leading-relaxed">
                 Every item in our collection is carefully selected for its quality, craftsmanship, and ability to transcend trends. We&apos;re committed to sustainability, ethical sourcing, and creating a shopping experience that&apos;s as exceptional as the pieces we offer.

@@ -68,7 +68,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.7,
         reviewCount: 89,
         category: 'Handbag',
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'Crafted from premium genuine leather, this elegant handbag combines sophisticated design with practical functionality. Features a spacious interior with multiple compartments, adjustable shoulder strap, and elegant gold-tone hardware. Perfect for both day and evening wear.',
         features: [
           '100% Genuine Leather',
@@ -98,7 +98,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.6,
         reviewCount: 124,
         category: 'Handbag',
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'A spacious and stylish tote bag perfect for everyday use. Made from high-quality faux leather with reinforced handles, this bag offers ample space for all your essentials while maintaining a chic, modern aesthetic.',
         features: [
           'Premium Faux Leather',
@@ -129,7 +129,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.8,
         reviewCount: 156,
         category: "Women's Dress",
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'A stunning evening gown designed for special occasions. Featuring elegant draping, luxurious fabric, and a flattering silhouette that enhances your natural curves. Perfect for weddings, galas, and formal events.',
         features: [
           'Premium Quality Fabric',
@@ -161,7 +161,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.5,
         reviewCount: 203,
         category: "Women's Dress",
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'A timeless A-line dress that never goes out of style. Versatile enough for office wear or casual outings, this dress features a comfortable fit, classic design, and high-quality fabric that moves beautifully.',
         features: [
           'Classic A-line silhouette',
@@ -193,7 +193,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.6,
         reviewCount: 187,
         category: "Women's Shoes",
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'Step into elegance with these premium leather heels. Crafted from genuine leather with a comfortable heel height and cushioned insole, these shoes combine style and comfort perfectly. Perfect for both work and special occasions.',
         features: [
           '100% Genuine Leather',
@@ -224,7 +224,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.7,
         reviewCount: 142,
         category: "Women's Shoes",
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'Make a statement with these stunning designer high heels. Featuring a bold design, premium materials, and exceptional craftsmanship. These heels are designed to turn heads while providing all-day comfort.',
         features: [
           'Premium materials',
@@ -255,7 +255,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.9,
         reviewCount: 98,
         category: 'Wigs',
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'Experience the ultimate in wig luxury with our premium human hair collection. Made from 100% human hair, this wig offers natural movement, versatility, and can be styled, colored, and heat-treated just like your own hair.',
         features: [
           '100% Human Hair',
@@ -285,7 +285,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.4,
         reviewCount: 167,
         category: 'Wigs',
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'A high-quality synthetic wig that offers excellent value without compromising on style. Pre-styled and ready to wear, this wig maintains its shape beautifully and requires minimal maintenance.',
         features: [
           'Premium synthetic fibers',
@@ -315,7 +315,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.5,
         reviewCount: 112,
         category: 'Handbag',
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'A stylish and practical crossbody bag perfect for hands-free convenience. Features a comfortable adjustable strap, secure closure, and compact design that holds all your essentials.',
         features: [
           'Adjustable crossbody strap',
@@ -345,7 +345,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.6,
         reviewCount: 95,
         category: 'Handbag',
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'A versatile shoulder bag that seamlessly transitions from day to night. Made from premium materials with elegant detailing and practical organization features.',
         features: [
           'Premium materials',
@@ -375,7 +375,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.4,
         reviewCount: 78,
         category: 'Handbag',
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'An elegant clutch bag perfect for evening events and special occasions. Compact yet spacious enough for essentials, with sophisticated styling and premium finish.',
         features: [
           'Compact design',
@@ -406,7 +406,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.8,
         reviewCount: 134,
         category: "Women's Dress",
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'A stunning cocktail dress designed to make you stand out at any event. Featuring elegant details, flattering fit, and luxurious fabric that moves beautifully.',
         features: [
           'Luxurious fabric',
@@ -436,7 +436,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.7,
         reviewCount: 178,
         category: "Women's Dress",
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'Flow effortlessly in this elegant maxi dress. Perfect for summer events, beach weddings, or casual outings. Features a comfortable fit and beautiful drape.',
         features: [
           'Flowing maxi length',
@@ -466,7 +466,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.6,
         reviewCount: 145,
         category: "Women's Dress",
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'A versatile midi dress that works for both casual and semi-formal occasions. Modern design with classic appeal, perfect for any wardrobe.',
         features: [
           'Versatile midi length',
@@ -497,7 +497,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.5,
         reviewCount: 163,
         category: "Women's Shoes",
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'Classic stiletto heels that never go out of style. These elegant shoes feature a pointed toe, high heel, and premium materials for a sophisticated look.',
         features: [
           'Classic stiletto design',
@@ -527,7 +527,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.7,
         reviewCount: 129,
         category: "Women's Shoes",
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'Make a bold statement with these luxury platform heels. Featuring a chunky platform sole and high heel for added height and dramatic impact.',
         features: [
           'Platform sole',
@@ -557,7 +557,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.6,
         reviewCount: 198,
         category: "Women's Shoes",
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'Stylish ankle boots perfect for cooler seasons. These chic boots combine fashion-forward design with comfort and durability.',
         features: [
           'Ankle height',
@@ -588,7 +588,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.8,
         reviewCount: 112,
         category: "Women's Dress",
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'An exquisite ball gown perfect for formal events and galas. Featuring luxurious fabric, elegant design, and impeccable tailoring for a truly regal appearance.',
         features: [
           'Luxurious fabric',
@@ -614,7 +614,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.5,
         reviewCount: 189,
         category: "Women's Dress",
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'A comfortable and stylish casual dress perfect for everyday wear. Easy to care for and versatile enough to dress up or down for any occasion.',
         features: [
           'Comfortable fit',
@@ -640,7 +640,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.6,
         reviewCount: 203,
         category: "Women's Shoes",
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'Classic designer pumps that never go out of style. These timeless shoes offer comfort and sophistication for any professional or formal setting.',
         features: [
           'Classic design',
@@ -666,7 +666,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         rating: 4.5,
         reviewCount: 156,
         category: "Women's Shoes",
-        brand: 'Clementine Classic',
+        brand: 'CaddyComfort',
         description: 'Comfortable yet stylish wedge heels that provide height without compromising on comfort. Perfect for long events where you want to look great and feel comfortable.',
         features: [
           'Wedge design',
@@ -695,7 +695,7 @@ export default function ProductPage({ params }: ProductPageProps) {
       rating: 4.5,
       reviewCount: 100,
       category: "Women's Collection",
-      brand: 'Clementine Classic',
+      brand: 'CaddyComfort',
       description: 'A premium quality product crafted with attention to detail and superior materials.',
       features: ['Premium quality', 'Durable', 'Stylish design'],
       images: ['/new-images/dress/dress-1.jpg'],

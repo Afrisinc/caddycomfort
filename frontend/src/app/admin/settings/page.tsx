@@ -77,7 +77,7 @@ function Settings() {
                   <CardContent className="space-y-4">
                     <div>
                       <Label htmlFor="storeName">Store Name</Label>
-                      <Input id="storeName" defaultValue="Clementine Classic Shop" />
+                      <Input id="storeName" defaultValue="CaddyComfort" />
                     </div>
                     <div>
                       <Label htmlFor="storeDescription">Description</Label>

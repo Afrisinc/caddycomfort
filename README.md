@@ -1,4 +1,4 @@
-# Clementine Classic Shop
+# CaddyComfort
 
 E-commerce fashion platform built with Next.js and Node.js.
 
@@ -19,7 +19,7 @@ E-commerce fashion platform built with Next.js and Node.js.
 ## Project Structure
 
 ```
-clementine-classic-shop/
+caddycomfort/
 ├── frontend/          # Next.js frontend application
 │   ├── src/
 │   │   ├── app/      # App router pages
@@ -111,4 +111,4 @@ NODE_ENV=development
 
 ---
 
-Built with ❤️ for Clementine Classic Shop
+Built with ❤️ for CaddyComfort

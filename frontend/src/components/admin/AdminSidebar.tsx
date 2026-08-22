@@ -133,7 +133,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
             </div>
             <div>
               <h2 className="font-bold text-lg">Admin Panel</h2>
-              <p className="text-xs text-muted-foreground">Clementine Shop</p>
+              <p className="text-xs text-muted-foreground">CaddyComfort</p>
             </div>
           </Link>
         </div>
