@@ -1,0 +1,85 @@
+name: clementine
+
+services:
+  # Internal only. No `ports:` mapping, so nothing on the VPS host or the
+  # public internet can reach it — only services on `clementine-net` can.
+  backend:
+    image: ghcr.io/${GHCR_OWNER:-local}/clementine-backend:${IMAGE_TAG:-production}
+    build:
+      context: ./backend
+    restart: unless-stopped
+    expose:
+      - "5000"
+    environment:
+      NODE_ENV: production
+      PORT: "5000"
+      SERVE_FRONTEND: "false"
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET:?REFRESH_TOKEN_SECRET is required}
+      REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-30d}
+      # Requests arrive proxied from the frontend container, same origin as far
+      # as the browser is concerned, so CORS only needs the public site origin.
+      CORS_ORIGIN: ${PUBLIC_APP_URL:-http://localhost:3000}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
+      MAX_FILE_SIZE: ${MAX_FILE_SIZE:-5242880}
+      UPLOAD_PATH: ${UPLOAD_PATH:-./uploads}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+    networks:
+      - clementine-net
+
+  # The only service published on the host. Bind to 127.0.0.1 and terminate
+  # TLS with a reverse proxy in front, or set FRONTEND_BIND=0.0.0.0 to expose
+  # it directly.
+  frontend:
+    image: ghcr.io/${GHCR_OWNER:-local}/clementine-frontend:${IMAGE_TAG:-production}
+    build:
+      context: ./frontend
+      args:
+        # Relative path -> the browser calls the frontend, which rewrites
+        # /api/* to the backend over the internal network.
+        NEXT_PUBLIC_API_URL: /api
+        NEXT_PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:3000}
+        # Baked into the rewrite at build time; resolved by docker DNS at run.
+        BACKEND_INTERNAL_URL: http://backend:5000
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_BIND:-127.0.0.1}:${FRONTEND_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - clementine-net
+
+  # One-shot: docker compose --profile migrate run --rm migrate
+  migrate:
+    image: ghcr.io/${GHCR_OWNER:-local}/clementine-backend:${IMAGE_TAG:-production}
+    build:
+      context: ./backend
+    profiles: ["migrate"]
+    restart: "no"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+    command: ["npx", "prisma", "migrate", "deploy"]
+    networks:
+      - clementine-net
+
+networks:
+  clementine-net:
+    driver: bridge

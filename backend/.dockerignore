@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+.env.*
+*.md
+test-auth.ts
+nodemon.json
+*.postman_collection.json
+.git
