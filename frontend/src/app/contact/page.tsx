@@ -25,8 +25,8 @@ export default function ContactPage() {
   };
 
   const contactInfo = [
-    { icon: Mail, label: 'Email', value: 'hello@clementineshop.rw' },
-    { icon: Phone, label: 'Phone', value: '+250 788 888 888' },
+    { icon: Mail, label: 'Email', value: 'caddyumutoniwase@gmail.com' },
+    { icon: Phone, label: 'Phone', value: '+250 786 763 654' },
     { icon: MapPin, label: 'Address', value: 'KN 4 Ave, Kigali, Rwanda' },
     { icon: Clock, label: 'Hours', value: 'Mon-Sat: 9AM-8PM' },
   ];
