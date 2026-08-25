@@ -5,20 +5,31 @@ import { authApi } from '@/lib/api';
 export interface User {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  phone?: string;
+  firstName: string | null;
+  lastName: string | null;
+  phone?: string | null;
   role?: string;
+  isVerified?: boolean;
 }
 
 interface AuthStore {
   user: User | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (userData: Omit<User, 'id' | 'role'> & { password: string }) => Promise<void>;
+  register: (userData: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+  }) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (userData: Partial<User>) => void;
   checkAuth: () => Promise<boolean>;
+  verifyEmail: (email: string, code: string) => Promise<void>;
+  resendVerification: (email: string) => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (token: string, newPassword: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -93,6 +104,25 @@ export const useAuthStore = create<AuthStore>()(
         set((state) => ({
           user: state.user ? { ...state.user, ...userData } : null,
         }));
+      },
+
+      verifyEmail: async (email, code) => {
+        const user = await authApi.verifyEmail(email, code);
+        set((state) => ({
+          user: state.user ? { ...state.user, isVerified: user.isVerified } : null,
+        }));
+      },
+
+      resendVerification: async (email) => {
+        await authApi.resendVerification(email);
+      },
+
+      forgotPassword: async (email) => {
+        await authApi.forgotPassword(email);
+      },
+
+      resetPassword: async (token, newPassword) => {
+        await authApi.resetPassword(token, newPassword);
       },
 
       checkAuth: async () => {

@@ -82,4 +82,50 @@ export const authApi = {
       return false;
     }
   },
+
+  /**
+   * Verify email with the code sent at registration
+   */
+  verifyEmail: async (email: string, code: string): Promise<User> => {
+    try {
+      const response = await apiClient.post('/auth/verify-email', { email, code });
+      const data = handleApiResponse<{ user: User }>(response);
+      return data.data!.user;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * Resend the account verification code
+   */
+  resendVerification: async (email: string): Promise<void> => {
+    try {
+      await apiClient.post('/auth/resend-verification', { email });
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * Request a password reset email
+   */
+  forgotPassword: async (email: string): Promise<void> => {
+    try {
+      await apiClient.post('/auth/forgot-password', { email });
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * Reset password using the token sent by email
+   */
+  resetPassword: async (token: string, newPassword: string): Promise<void> => {
+    try {
+      await apiClient.post('/auth/reset-password', { token, newPassword });
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
 };

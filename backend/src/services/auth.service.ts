@@ -1,8 +1,19 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { PrismaClient, User, UserRole } from '@prisma/client';
+import {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+  sendPasswordResetConfirmationEmail,
+  sendPasswordChangedEmail,
+  sendWelcomeEmail,
+} from '../utils/notify/auth.notify';
 
 const prisma = new PrismaClient();
+
+const VERIFICATION_CODE_TTL_MS = 15 * 60 * 1000;
+const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
 
 interface TokenPayload {
   userId: string;
@@ -14,6 +25,23 @@ interface AuthTokens {
   accessToken: string;
   refreshToken: string;
 }
+
+type PublicUser = Omit<
+  User,
+  'password' | 'verificationCode' | 'verificationCodeExpiry' | 'passwordResetToken' | 'passwordResetExpiry'
+>;
+
+const toPublicUser = (user: User): PublicUser => {
+  const {
+    password: _password,
+    verificationCode: _verificationCode,
+    verificationCodeExpiry: _verificationCodeExpiry,
+    passwordResetToken: _passwordResetToken,
+    passwordResetExpiry: _passwordResetExpiry,
+    ...publicUser
+  } = user;
+  return publicUser;
+};
 
 export class AuthService {
   private static readonly ACCESS_TOKEN_SECRET: string = process.env.JWT_SECRET || 'your-secret-key';
@@ -190,7 +218,7 @@ export class AuthService {
     lastName?: string;
     phone?: string;
     role?: UserRole;
-  }): Promise<{ user: Omit<User, 'password'>; tokens: AuthTokens }> {
+  }): Promise<{ user: PublicUser; tokens: AuthTokens }> {
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email: data.email },
@@ -203,6 +231,8 @@ export class AuthService {
     // Hash password
     const hashedPassword = await this.hashPassword(data.password);
 
+    const verificationCode = this.generateVerificationCode();
+
     // Create user
     const user = await prisma.user.create({
       data: {
@@ -212,16 +242,150 @@ export class AuthService {
         lastName: data.lastName,
         phone: data.phone,
         role: data.role || UserRole.CUSTOMER,
+        verificationCode,
+        verificationCodeExpiry: new Date(Date.now() + VERIFICATION_CODE_TTL_MS),
       },
     });
 
     // Generate tokens
     const tokens = await this.generateTokens(user);
 
+    await sendVerificationEmail(user, verificationCode);
+
     // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
+    const userWithoutPassword = toPublicUser(user);
 
     return { user: userWithoutPassword, tokens };
+  }
+
+  /**
+   * Generate a 6-digit numeric verification code
+   */
+  static generateVerificationCode(): string {
+    return crypto.randomInt(100000, 1000000).toString();
+  }
+
+  /**
+   * Verify a user's email using the code sent to their inbox
+   */
+  static async verifyEmail(email: string, code: string): Promise<PublicUser> {
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (user.isVerified) {
+      const userWithoutPassword = toPublicUser(user);
+      return userWithoutPassword;
+    }
+
+    if (!user.verificationCode || !user.verificationCodeExpiry) {
+      throw new Error('No verification code found, please request a new one');
+    }
+
+    if (user.verificationCode !== code) {
+      throw new Error('Invalid verification code');
+    }
+
+    if (new Date() > user.verificationCodeExpiry) {
+      throw new Error('Verification code has expired');
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isVerified: true,
+        verificationCode: null,
+        verificationCodeExpiry: null,
+      },
+    });
+
+    await sendWelcomeEmail(updatedUser);
+
+    const userWithoutPassword = toPublicUser(updatedUser);
+    return userWithoutPassword;
+  }
+
+  /**
+   * Resend the account verification code
+   */
+  static async resendVerificationCode(email: string): Promise<void> {
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (user.isVerified) {
+      throw new Error('Account is already verified');
+    }
+
+    const verificationCode = this.generateVerificationCode();
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verificationCode,
+        verificationCodeExpiry: new Date(Date.now() + VERIFICATION_CODE_TTL_MS),
+      },
+    });
+
+    await sendVerificationEmail(updatedUser, verificationCode);
+  }
+
+  /**
+   * Start the forgot-password flow by emailing a reset token
+   */
+  static async forgotPassword(email: string): Promise<void> {
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      return;
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordResetToken: resetToken,
+        passwordResetExpiry: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
+      },
+    });
+
+    await sendPasswordResetEmail(updatedUser, resetToken);
+  }
+
+  /**
+   * Complete the forgot-password flow using the emailed token
+   */
+  static async resetPassword(token: string, newPassword: string): Promise<void> {
+    const user = await prisma.user.findUnique({ where: { passwordResetToken: token } });
+
+    if (!user?.passwordResetExpiry) {
+      throw new Error('Invalid or expired reset token');
+    }
+
+    if (new Date() > user.passwordResetExpiry) {
+      throw new Error('Invalid or expired reset token');
+    }
+
+    const hashedPassword = await this.hashPassword(newPassword);
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        passwordResetToken: null,
+        passwordResetExpiry: null,
+      },
+    });
+
+    // Force re-login on all devices
+    await this.revokeAllUserTokens(user.id);
+
+    await sendPasswordResetConfirmationEmail(updatedUser);
   }
 
   /**
@@ -230,7 +394,7 @@ export class AuthService {
   static async login(
     email: string,
     password: string
-  ): Promise<{ user: Omit<User, 'password'>; tokens: AuthTokens }> {
+  ): Promise<{ user: PublicUser; tokens: AuthTokens }> {
     // Find user
     const user = await prisma.user.findUnique({
       where: { email },
@@ -251,7 +415,7 @@ export class AuthService {
     const tokens = await this.generateTokens(user);
 
     // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
+    const userWithoutPassword = toPublicUser(user);
 
     return { user: userWithoutPassword, tokens };
   }
@@ -259,7 +423,7 @@ export class AuthService {
   /**
    * Get user by ID
    */
-  static async getUserById(userId: string): Promise<Omit<User, 'password'> | null> {
+  static async getUserById(userId: string): Promise<PublicUser | null> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
@@ -268,7 +432,7 @@ export class AuthService {
       return null;
     }
 
-    const { password: _, ...userWithoutPassword } = user;
+    const userWithoutPassword = toPublicUser(user);
     return userWithoutPassword;
   }
 
@@ -283,13 +447,13 @@ export class AuthService {
       phone?: string;
       avatar?: string;
     }
-  ): Promise<Omit<User, 'password'>> {
+  ): Promise<PublicUser> {
     const user = await prisma.user.update({
       where: { id: userId },
       data,
     });
 
-    const { password: _, ...userWithoutPassword } = user;
+    const userWithoutPassword = toPublicUser(user);
     return userWithoutPassword;
   }
 
@@ -320,12 +484,14 @@ export class AuthService {
     const hashedPassword = await this.hashPassword(newPassword);
 
     // Update password
-    await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: { password: hashedPassword },
     });
 
     // Revoke all refresh tokens (force re-login on all devices)
     await this.revokeAllUserTokens(userId);
+
+    await sendPasswordChangedEmail(updatedUser);
   }
 }

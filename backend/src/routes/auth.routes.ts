@@ -20,6 +20,18 @@ router.post('/refresh', authController.refresh);
 // Logout user (revoke refresh token)
 router.post('/logout', authController.logout);
 
+// Verify account email using the code sent at registration
+router.post('/verify-email', authController.verifyEmail);
+
+// Resend account verification code
+router.post('/resend-verification', authController.resendVerification);
+
+// Request a password reset email
+router.post('/forgot-password', authController.forgotPassword);
+
+// Reset password using the token sent by email
+router.post('/reset-password', authController.resetPassword);
+
 /**
  * Protected routes (authentication required)
  */

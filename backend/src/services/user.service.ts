@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { sendPasswordChangedEmail } from '../utils/notify/auth.notify';
 
 const prisma = new PrismaClient();
 
@@ -106,7 +107,7 @@ export class UserService {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     // Update password
-    await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: { password: hashedPassword },
     });
@@ -116,6 +117,8 @@ export class UserService {
       where: { userId },
       data: { isRevoked: true },
     });
+
+    await sendPasswordChangedEmail(updatedUser);
   }
 
   /**

@@ -368,6 +368,190 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
 };
 
 /**
+ * Verify a user's email with the code sent to their inbox
+ * POST /api/auth/verify-email
+ */
+export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+      res.status(400).json({
+        success: false,
+        message: 'Email and verification code are required',
+      });
+      return;
+    }
+
+    const user = await AuthService.verifyEmail(email.toLowerCase(), code);
+
+    res.status(200).json({
+      success: true,
+      message: 'Email verified successfully',
+      data: { user },
+    });
+  } catch (error) {
+    console.error('Verify email error:', error);
+
+    if (error instanceof Error) {
+      if (error.message === 'User not found') {
+        res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
+      if (
+        error.message === 'Invalid verification code' ||
+        error.message === 'Verification code has expired' ||
+        error.message === 'No verification code found, please request a new one'
+      ) {
+        res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to verify email',
+    });
+  }
+};
+
+/**
+ * Resend the account verification code
+ * POST /api/auth/resend-verification
+ */
+export const resendVerification = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      res.status(400).json({
+        success: false,
+        message: 'Email is required',
+      });
+      return;
+    }
+
+    await AuthService.resendVerificationCode(email.toLowerCase());
+
+    res.status(200).json({
+      success: true,
+      message: 'Verification code sent successfully',
+    });
+  } catch (error) {
+    console.error('Resend verification error:', error);
+
+    if (error instanceof Error) {
+      if (error.message === 'User not found') {
+        res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+
+      if (error.message === 'Account is already verified') {
+        res.status(409).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to resend verification code',
+    });
+  }
+};
+
+/**
+ * Request a password reset email
+ * POST /api/auth/forgot-password
+ */
+export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      res.status(400).json({
+        success: false,
+        message: 'Email is required',
+      });
+      return;
+    }
+
+    await AuthService.forgotPassword(email.toLowerCase());
+
+    res.status(200).json({
+      success: true,
+      message: 'If an account with that email exists, a password reset link has been sent',
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process password reset request',
+    });
+  }
+};
+
+/**
+ * Reset password using the token sent by email
+ * POST /api/auth/reset-password
+ */
+export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      res.status(400).json({
+        success: false,
+        message: 'Token and new password are required',
+      });
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      res.status(400).json({
+        success: false,
+        message: 'New password must be at least 8 characters long',
+      });
+      return;
+    }
+
+    await AuthService.resetPassword(token, newPassword);
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successfully. Please login with your new password.',
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+
+    if (error instanceof Error && error.message === 'Invalid or expired reset token') {
+      res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+      return;
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reset password',
+    });
+  }
+};
+
+/**
  * Verify token (for testing purposes)
  * GET /api/auth/verify
  */

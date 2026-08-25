@@ -14,7 +14,8 @@ exports.logger = (0, pino_1.default)({
             options: {
                 colorize: true,
                 ignore: 'pid,hostname',
-                translateTime: 'SYS:standard',
+                translateTime: 'HH:MM:ss',
+                messageFormat: '{msg}',
             },
         }
         : undefined,

@@ -39,7 +39,9 @@ export default function LoginPage() {
   useEffect(() => {
     if (isAuthenticated) {
       const user = useAuthStore.getState().user;
-      if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
+      if (user?.isVerified === false) {
+        router.push(`/verify-email?email=${encodeURIComponent(user.email)}`);
+      } else if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
         router.push('/admin');
       } else {
         router.push('/account');
@@ -54,10 +56,12 @@ export default function LoginPage() {
     try {
       await login(loginData.email, loginData.password);
       toast.success('Welcome back!');
-      
-      // Redirect based on user role
+
+      // Redirect based on verification status and user role
       const user = useAuthStore.getState().user;
-      if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
+      if (user?.isVerified === false) {
+        router.push(`/verify-email?email=${encodeURIComponent(user.email)}`);
+      } else if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
         router.push('/admin');
       } else {
         router.push('/account');
@@ -88,15 +92,8 @@ export default function LoginPage() {
     try {
       const { confirmPassword, ...userData } = registerData;
       await register(userData);
-      toast.success('Account created successfully!');
-      
-      // Redirect based on user role (registration always creates CUSTOMER by default)
-      const user = useAuthStore.getState().user;
-      if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
-        router.push('/admin');
-      } else {
-        router.push('/account');
-      }
+      toast.success('Account created! Check your email for a verification code.');
+      router.push(`/verify-email?email=${encodeURIComponent(registerData.email)}`);
     } catch (error: any) {
       const message = error.response?.data?.message || error.message || 'Registration failed. Please try again.';
       toast.error(message);
@@ -168,7 +165,7 @@ export default function LoginPage() {
                       <input type="checkbox" className="rounded" />
                       <span>Remember me</span>
                     </label>
-                    <Link href="#" className="text-accent-rose hover:underline">
+                    <Link href="/forgot-password" className="text-accent-rose hover:underline">
                       Forgot password?
                     </Link>
                   </div>
