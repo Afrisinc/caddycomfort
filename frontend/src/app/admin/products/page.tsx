@@ -75,7 +75,8 @@ function ProductsManagement() {
       const response = await productsApi.getAll(filters, { page: 1, limit: 100 });
       
       // Handle nested response structure: { data: { products: [...], pagination: {...} } }
-      const productsData = (response as any).products || response.data?.products || response.data || [];
+      const resAny = response as any;
+      const productsData = resAny.products || resAny.data?.products || resAny.data || (Array.isArray(response) ? response : []);
       setProducts(Array.isArray(productsData) ? productsData : []);
     } catch (error: any) {
       toast.error(error.message || 'Failed to load products');
@@ -139,7 +140,7 @@ function ProductsManagement() {
   return (
     <div className="min-h-screen bg-muted/30">
       <AdminHeader title="Product Management" description="Manage your product catalog and inventory">
-        <Link href='products/new'>
+        <Link href="/admin/products/new">
             <Button className="bg-accent-rose hover:bg-accent-rose-dark">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Product
@@ -245,72 +246,79 @@ function ProductsManagement() {
                       </td>
                     </tr>
                   ) : (
-                    filteredProducts.map((product) => {
-                      const category = categories.find(c => c.id === product.categoryId);
-                      return (
-                        <tr key={product.id} className="border-b hover:bg-muted/30 transition-colors">
-                          <td className="p-4">
-                            <div className="flex items-center gap-3">
-                              <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-muted">
-                                {product.images && product.images.length > 0 ? (
-                                  <Image
-                                    src={product.images[0]}
-                                    alt={product.name}
-                                    fill
-                                    className="object-cover"
-                                  />
-                                ) : (
-                                  <Package className="w-6 h-6 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
-                                )}
-                              </div>
-                              <div>
-                                <p className="font-medium">{product.name}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="p-4 text-sm text-muted-foreground">{product.sku || 'N/A'}</td>
-                          <td className="p-4 text-sm">{category?.name || 'Uncategorized'}</td>
-                          <td className="p-4 text-right font-medium">
-                            Rwf {product.price.toLocaleString()}
-                          </td>
-                          <td className="p-4 text-center">
-                            <span className={`font-medium ${product.stockQuantity <= 5 && product.stockQuantity > 0 ? 'text-orange-600' : product.stockQuantity === 0 ? 'text-red-600' : ''}`}>
-                              {product.stockQuantity}
-                            </span>
-                          </td>
-                          <td className="p-4 text-center text-sm">-</td>
-                          <td className="p-4 text-center">
-                            {getStatusBadge(product.stockQuantity)}
-                          </td>
-                          <td className="p-4">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  View
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  className="text-red-600"
-                                  onClick={() => handleDeleteClick(product)}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      );
-                    })
+                      filteredProducts.map((product) => {
+                        const category = categories.find(c => c.id === product.categoryId);
+                        const productUrl = `/admin/products/${product.slug || product.id}`;
+
+                        return (
+                          <tr key={product.id} className="border-b hover:bg-muted/30 transition-colors">
+                            <td className="p-4">
+                              <Link href={productUrl} className="flex items-center gap-3 group">
+                                <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-muted border border-border/50 group-hover:border-accent-rose/50 transition-colors">
+                                  {product.images && product.images.length > 0 ? (
+                                    <Image
+                                      src={product.images[0]}
+                                      alt={product.name}
+                                      fill
+                                      className="object-cover group-hover:scale-105 transition-transform"
+                                    />
+                                  ) : (
+                                    <Package className="w-6 h-6 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="font-medium group-hover:text-accent-rose transition-colors">{product.name}</p>
+                                  <p className="text-xs text-muted-foreground sm:hidden">{product.sku || 'No SKU'}</p>
+                                </div>
+                              </Link>
+                            </td>
+                            <td className="p-4 text-sm text-muted-foreground">{product.sku || 'N/A'}</td>
+                            <td className="p-4 text-sm">{category?.name || 'Uncategorized'}</td>
+                            <td className="p-4 text-right font-medium">
+                              Rwf {product.price.toLocaleString()}
+                            </td>
+                            <td className="p-4 text-center">
+                              <span className={`font-medium ${product.stockQuantity <= 5 && product.stockQuantity > 0 ? 'text-orange-600' : product.stockQuantity === 0 ? 'text-red-600' : ''}`}>
+                                {product.stockQuantity}
+                              </span>
+                            </td>
+                            <td className="p-4 text-center text-sm">-</td>
+                            <td className="p-4 text-center">
+                              {getStatusBadge(product.stockQuantity)}
+                            </td>
+                            <td className="p-4 text-center">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem asChild>
+                                    <Link href={productUrl} className="cursor-pointer">
+                                      <Eye className="h-4 w-4 mr-2" />
+                                      View Details
+                                    </Link>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem asChild>
+                                    <Link href={`${productUrl}/edit`} className="cursor-pointer">
+                                      <Edit className="h-4 w-4 mr-2" />
+                                      Edit
+                                    </Link>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    className="text-red-600 cursor-pointer"
+                                    onClick={() => handleDeleteClick(product)}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </td>
+                          </tr>
+                        );
+                      })
                   )}
                 </tbody>
               </table>

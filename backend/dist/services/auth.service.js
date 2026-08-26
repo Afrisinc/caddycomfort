@@ -5,13 +5,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
-const crypto_1 = __importDefault(require("crypto"));
+const node_crypto_1 = __importDefault(require("node:crypto"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const client_1 = require("@prisma/client");
 const auth_notify_1 = require("../utils/notify/auth.notify");
 const prisma = new client_1.PrismaClient();
 const VERIFICATION_CODE_TTL_MS = 15 * 60 * 1000;
 const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
+const toPublicUser = (user) => {
+    const { password: _password, verificationCode: _verificationCode, verificationCodeExpiry: _verificationCodeExpiry, passwordResetToken: _passwordResetToken, passwordResetExpiry: _passwordResetExpiry, ...publicUser } = user;
+    return publicUser;
+};
 class AuthService {
     /**
      * Hash password using bcrypt
@@ -185,14 +189,14 @@ class AuthService {
         const tokens = await this.generateTokens(user);
         await (0, auth_notify_1.sendVerificationEmail)(user, verificationCode);
         // Remove password from response
-        const { password: _, ...userWithoutPassword } = user;
+        const userWithoutPassword = toPublicUser(user);
         return { user: userWithoutPassword, tokens };
     }
     /**
      * Generate a 6-digit numeric verification code
      */
     static generateVerificationCode() {
-        return crypto_1.default.randomInt(100000, 1000000).toString();
+        return node_crypto_1.default.randomInt(100000, 1000000).toString();
     }
     /**
      * Verify a user's email using the code sent to their inbox
@@ -203,7 +207,7 @@ class AuthService {
             throw new Error('User not found');
         }
         if (user.isVerified) {
-            const { password: _, ...userWithoutPassword } = user;
+            const userWithoutPassword = toPublicUser(user);
             return userWithoutPassword;
         }
         if (!user.verificationCode || !user.verificationCodeExpiry) {
@@ -224,7 +228,7 @@ class AuthService {
             },
         });
         await (0, auth_notify_1.sendWelcomeEmail)(updatedUser);
-        const { password: _, ...userWithoutPassword } = updatedUser;
+        const userWithoutPassword = toPublicUser(updatedUser);
         return userWithoutPassword;
     }
     /**
@@ -256,7 +260,7 @@ class AuthService {
         if (!user) {
             return;
         }
-        const resetToken = crypto_1.default.randomBytes(32).toString('hex');
+        const resetToken = node_crypto_1.default.randomBytes(32).toString('hex');
         const updatedUser = await prisma.user.update({
             where: { id: user.id },
             data: {
@@ -271,7 +275,7 @@ class AuthService {
      */
     static async resetPassword(token, newPassword) {
         const user = await prisma.user.findUnique({ where: { passwordResetToken: token } });
-        if (!user || !user.passwordResetExpiry) {
+        if (!user?.passwordResetExpiry) {
             throw new Error('Invalid or expired reset token');
         }
         if (new Date() > user.passwordResetExpiry) {
@@ -309,7 +313,7 @@ class AuthService {
         // Generate tokens
         const tokens = await this.generateTokens(user);
         // Remove password from response
-        const { password: _, ...userWithoutPassword } = user;
+        const userWithoutPassword = toPublicUser(user);
         return { user: userWithoutPassword, tokens };
     }
     /**
@@ -322,7 +326,7 @@ class AuthService {
         if (!user) {
             return null;
         }
-        const { password: _, ...userWithoutPassword } = user;
+        const userWithoutPassword = toPublicUser(user);
         return userWithoutPassword;
     }
     /**
@@ -333,7 +337,7 @@ class AuthService {
             where: { id: userId },
             data,
         });
-        const { password: _, ...userWithoutPassword } = user;
+        const userWithoutPassword = toPublicUser(user);
         return userWithoutPassword;
     }
     /**

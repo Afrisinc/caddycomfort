@@ -53,7 +53,8 @@ export const productsApi = {
   getById: async (id: string): Promise<Product> => {
     try {
       const response = await apiClient.get(`/products/${id}`);
-      return handleApiResponse<Product>(response).data!;
+      const resData = handleApiResponse<any>(response).data;
+      return (resData?.product || resData) as Product;
     } catch (error) {
       throw handleApiError(error);
     }
@@ -65,7 +66,8 @@ export const productsApi = {
   getBySlug: async (slug: string): Promise<Product> => {
     try {
       const response = await apiClient.get(`/products/slug/${slug}`);
-      return handleApiResponse<Product>(response).data!;
+      const resData = handleApiResponse<any>(response).data;
+      return (resData?.product || resData) as Product;
     } catch (error) {
       throw handleApiError(error);
     }
@@ -77,7 +79,8 @@ export const productsApi = {
   getFeatured: async (limit = 8): Promise<Product[]> => {
     try {
       const response = await apiClient.get(`/products/featured?limit=${limit}`);
-      return handleApiResponse<Product[]>(response).data!;
+      const resData = handleApiResponse<any>(response).data;
+      return (resData?.products || resData) as Product[];
     } catch (error) {
       throw handleApiError(error);
     }
@@ -89,7 +92,8 @@ export const productsApi = {
   getRelated: async (productId: string, limit = 4): Promise<Product[]> => {
     try {
       const response = await apiClient.get(`/products/${productId}/related?limit=${limit}`);
-      return handleApiResponse<Product[]>(response).data!;
+      const resData = handleApiResponse<any>(response).data;
+      return (resData?.products || resData) as Product[];
     } catch (error) {
       throw handleApiError(error);
     }
@@ -101,7 +105,8 @@ export const productsApi = {
   search: async (query: string, limit = 10): Promise<Product[]> => {
     try {
       const response = await apiClient.get(`/products/search?q=${encodeURIComponent(query)}&limit=${limit}`);
-      return handleApiResponse<Product[]>(response).data!;
+      const resData = handleApiResponse<any>(response).data;
+      return (resData?.products || resData) as Product[];
     } catch (error) {
       throw handleApiError(error);
     }
@@ -115,6 +120,8 @@ export const productsApi = {
     slug?: string;
     description: string;
     price: number;
+    salePrice?: number;
+    comparePrice?: number;
     compareAtPrice?: number;
     sku: string;
     categoryId: string;
@@ -126,8 +133,13 @@ export const productsApi = {
     stockQuantity?: number;
   }): Promise<Product> => {
     try {
-      const response = await apiClient.post('/products', data);
-      return handleApiResponse<Product>(response).data!;
+      const payload = {
+        ...data,
+        comparePrice: data.comparePrice !== undefined ? data.comparePrice : data.compareAtPrice,
+      };
+      const response = await apiClient.post('/products', payload);
+      const resData = handleApiResponse<any>(response).data;
+      return (resData?.product || resData) as Product;
     } catch (error) {
       throw handleApiError(error);
     }
@@ -141,6 +153,8 @@ export const productsApi = {
     slug?: string;
     description?: string;
     price?: number;
+    salePrice?: number;
+    comparePrice?: number;
     compareAtPrice?: number;
     sku?: string;
     categoryId?: string;
@@ -152,8 +166,13 @@ export const productsApi = {
     isActive?: boolean;
   }): Promise<Product> => {
     try {
-      const response = await apiClient.put(`/products/${id}`, data);
-      return handleApiResponse<Product>(response).data!;
+      const payload = {
+        ...data,
+        comparePrice: data.comparePrice !== undefined ? data.comparePrice : data.compareAtPrice,
+      };
+      const response = await apiClient.put(`/products/${id}`, payload);
+      const resData = handleApiResponse<any>(response).data;
+      return (resData?.product || resData) as Product;
     } catch (error) {
       throw handleApiError(error);
     }
@@ -176,12 +195,19 @@ export const productsApi = {
    */
   updateStock: async (id: string, data: {
     quantity: number;
-    operation: 'add' | 'subtract' | 'set';
+    operation?: 'add' | 'subtract' | 'set';
+    type?: 'ADD' | 'SUBTRACT' | 'SET';
     reason?: string;
   }): Promise<Product> => {
     try {
-      const response = await apiClient.patch(`/products/${id}/stock`, data);
-      return handleApiResponse<Product>(response).data!;
+      const payloadType = data.type || (data.operation ? (data.operation.toUpperCase() as 'ADD' | 'SUBTRACT' | 'SET') : 'SET');
+      const response = await apiClient.patch(`/products/${id}/stock`, {
+        quantity: data.quantity,
+        type: payloadType,
+        reason: data.reason,
+      });
+      const resData = handleApiResponse<any>(response).data;
+      return (resData?.product || resData) as Product;
     } catch (error) {
       throw handleApiError(error);
     }
@@ -223,7 +249,14 @@ export const productsApi = {
   }> => {
     try {
       const response = await apiClient.get('/products/admin/stats');
-      return handleApiResponse(response).data!;
+      const resData = handleApiResponse<any>(response).data;
+      return (resData?.stats || resData) as {
+        totalProducts: number;
+        activeProducts: number;
+        lowStockProducts: number;
+        outOfStockProducts: number;
+        totalValue: number;
+      };
     } catch (error) {
       throw handleApiError(error);
     }
