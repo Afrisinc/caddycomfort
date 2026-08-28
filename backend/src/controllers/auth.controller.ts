@@ -117,6 +117,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         });
         return;
       }
+
+      if (error.message.includes('suspended')) {
+        res.status(403).json({
+          success: false,
+          message: error.message,
+        });
+        return;
+      }
     }
 
     res.status(500).json({

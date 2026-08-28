@@ -11,6 +11,7 @@ import addressRoutes from './address.routes';
 import wishlistRoutes from './wishlist.routes';
 import reviewRoutes from './review.routes';
 import userRoutes from './user.routes';
+import customerRoutes from './customer.routes';
 import dashboardRoutes from './dashboard.routes';
 
 const router = Router();
@@ -28,6 +29,7 @@ router.use('/addresses', addressRoutes);
 router.use('/wishlist', wishlistRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/users', userRoutes);
+router.use('/customers', customerRoutes);
 router.use('/dashboard', dashboardRoutes);
 
 export default router;

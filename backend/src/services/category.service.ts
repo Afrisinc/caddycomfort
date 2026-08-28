@@ -1,7 +1,6 @@
-import { PrismaClient, Category } from '@prisma/client';
+import { Category } from '@prisma/client';
 import { uploadBase64Image, deleteImage, isValidBase64Image } from '../utils/cloudinary';
-
-const prisma = new PrismaClient();
+import prisma from '../config/database';
 
 interface CreateCategoryData {
   name: string;

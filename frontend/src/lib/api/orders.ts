@@ -1,18 +1,28 @@
 import apiClient, { handleApiResponse, handleApiError } from '@/lib/api-client';
-import { Order, CreateOrderData, PaginatedResponse, PaginationParams } from '@/types/api';
+import { Order, CreateOrderData, PaginationParams } from '@/types/api';
+
+export interface UserOrdersResult {
+  orders: Order[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
 
 export const ordersApi = {
   /**
-   * Get user's orders
+   * Get the logged-in user's orders
    */
-  getAll: async (pagination?: PaginationParams): Promise<PaginatedResponse<Order>> => {
+  getAll: async (pagination?: PaginationParams): Promise<UserOrdersResult> => {
     try {
       const params = new URLSearchParams();
       if (pagination?.page) params.append('page', pagination.page.toString());
       if (pagination?.limit) params.append('limit', pagination.limit.toString());
 
-      const response = await apiClient.get(`/orders?${params.toString()}`);
-      return handleApiResponse<PaginatedResponse<Order>>(response).data!;
+      const response = await apiClient.get(`/orders/my-orders?${params.toString()}`);
+      return handleApiResponse<UserOrdersResult>(response).data!;
     } catch (error) {
       throw handleApiError(error);
     }

@@ -1,6 +1,5 @@
-import { PrismaClient, Coupon, DiscountType } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Coupon, DiscountType } from '@prisma/client';
+import prisma from '../config/database';
 
 interface CreateCouponData {
   code: string;

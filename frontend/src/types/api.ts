@@ -161,6 +161,44 @@ export interface CouponValidation {
   coupon?: Coupon;
 }
 
+// Customer Types (admin)
+export type CustomerStatus = 'vip' | 'active' | 'inactive' | 'suspended';
+
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  avatar: string | null;
+  isActive: boolean;
+  joinedAt: string;
+  ordersCount: number;
+  totalSpent: number;
+  lastOrderAt: string | null;
+  status: CustomerStatus;
+}
+
+export interface CustomerStats {
+  totalCustomers: number;
+  activeCount: number;
+  avgOrdersPerCustomer: number;
+  avgOrderValue: number;
+}
+
+export interface CustomerOrderSummary {
+  id: string;
+  orderNumber: string;
+  status: OrderStatus;
+  total: number;
+  createdAt: string;
+}
+
+export interface CustomerDetail extends Customer {
+  isVerified: boolean;
+  addresses: Address[];
+  orders: CustomerOrderSummary[];
+}
+
 // Address Types
 export interface Address {
   id: string;
@@ -324,6 +362,86 @@ export interface SalesAnalytics {
     sales: number;
     orders: number;
   }>;
+}
+
+// Inventory Types (admin)
+export type InventoryLogType = 'RESTOCK' | 'SALE' | 'RETURN' | 'DAMAGED' | 'ADJUSTMENT';
+
+export interface InventorySummary {
+  totalProducts: number;
+  activeProducts: number;
+  inactiveProducts: number;
+  totalStockQuantity: number;
+  totalInventoryValue: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+}
+
+export interface InventoryValuationItem {
+  productId: string;
+  productName: string;
+  sku: string;
+  category: string;
+  unitPrice: number;
+  quantity: number;
+  totalValue: number;
+  lastRestockedAt: string | null;
+  isActive: boolean;
+}
+
+export interface InventoryValuation {
+  items: InventoryValuationItem[];
+  summary: {
+    totalProducts: number;
+    totalQuantity: number;
+    totalValue: number;
+    averageValue: number;
+  };
+}
+
+export interface RestockRecommendation {
+  productId: string;
+  productName: string;
+  sku: string;
+  currentStock: number;
+  averageDailySales: number;
+  daysOfStockLeft: number;
+  recommendedRestockQuantity: number;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+}
+
+export interface InventoryLogEntry {
+  id: string;
+  productId: string;
+  type: InventoryLogType;
+  quantity: number;
+  reason: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  product?: { id?: string; name: string; sku: string; stockQuantity?: number };
+}
+
+export interface InventoryLogsResult {
+  logs: InventoryLogEntry[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface StockAdjustmentInput {
+  productId: string;
+  quantity: number;
+  type: InventoryLogType;
+  reason: string;
+}
+
+export interface BulkAdjustResult {
+  successful: Array<{ productId: string; success: true; result: { product: Product; log: InventoryLogEntry } }>;
+  failed: Array<{ productId: string; success: false; error: string }>;
+  summary: { total: number; successful: number; failed: number };
 }
 
 // Utility Types

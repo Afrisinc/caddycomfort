@@ -12,20 +12,23 @@ export class OrderController {
       const { shippingAddress, paymentMethod, notes } = req.body;
 
       if (!shippingAddress) {
-        return res.status(400).json({ error: 'Shipping address is required' });
+        return res.status(400).json({ success: false, message: 'Shipping address is required' });
       }
 
       if (!shippingAddress.street || !shippingAddress.city || !shippingAddress.state || !shippingAddress.postalCode || !shippingAddress.country) {
-        return res.status(400).json({ error: 'Complete shipping address is required (street, city, state, postalCode, country)' });
+        return res.status(400).json({
+          success: false,
+          message: 'Complete shipping address is required (street, city, state, postalCode, country)',
+        });
       }
 
       if (!paymentMethod) {
-        return res.status(400).json({ error: 'Payment method is required' });
+        return res.status(400).json({ success: false, message: 'Payment method is required' });
       }
 
       const validPaymentMethods = ['CREDIT_CARD', 'DEBIT_CARD', 'PAYPAL', 'BANK_TRANSFER', 'CASH_ON_DELIVERY'];
       if (!validPaymentMethods.includes(paymentMethod)) {
-        return res.status(400).json({ error: 'Invalid payment method' });
+        return res.status(400).json({ success: false, message: 'Invalid payment method' });
       }
 
       const order = await OrderService.createOrder({
@@ -35,15 +38,15 @@ export class OrderController {
         notes,
       });
 
-      res.status(201).json(order);
+      res.status(201).json({ success: true, message: 'Order created successfully', data: order });
     } catch (error: any) {
       if (error.message === 'Cart is empty') {
-        return res.status(400).json({ error: error.message });
+        return res.status(400).json({ success: false, message: error.message });
       }
       if (error.message.includes('not available') || error.message.includes('Insufficient stock')) {
-        return res.status(400).json({ error: error.message });
+        return res.status(400).json({ success: false, message: error.message });
       }
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -53,20 +56,20 @@ export class OrderController {
   static async getOrderById(req: Request, res: Response) {
     try {
       const { orderId } = req.params;
-      const userId = req.user!.role === 'ADMIN' || req.user!.role === 'SUPER_ADMIN' 
-        ? undefined 
+      const userId = req.user!.role === 'ADMIN' || req.user!.role === 'SUPER_ADMIN'
+        ? undefined
         : req.user!.userId;
 
       const order = await OrderService.getOrderById(orderId, userId);
-      res.json(order);
+      res.json({ success: true, data: order });
     } catch (error: any) {
       if (error.message === 'Order not found') {
-        return res.status(404).json({ error: error.message });
+        return res.status(404).json({ success: false, message: error.message });
       }
       if (error.message === 'Unauthorized') {
-        return res.status(403).json({ error: error.message });
+        return res.status(403).json({ success: false, message: error.message });
       }
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -81,15 +84,15 @@ export class OrderController {
         : req.user!.userId;
 
       const order = await OrderService.getOrderByNumber(orderNumber, userId);
-      res.json(order);
+      res.json({ success: true, data: order });
     } catch (error: any) {
       if (error.message === 'Order not found') {
-        return res.status(404).json({ error: error.message });
+        return res.status(404).json({ success: false, message: error.message });
       }
       if (error.message === 'Unauthorized') {
-        return res.status(403).json({ error: error.message });
+        return res.status(403).json({ success: false, message: error.message });
       }
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -104,9 +107,9 @@ export class OrderController {
       const status = req.query.status as OrderStatus | undefined;
 
       const result = await OrderService.getUserOrders(userId, page, limit, status);
-      res.json(result);
+      res.json({ success: true, data: result });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -130,9 +133,9 @@ export class OrderController {
         startDate,
         endDate
       );
-      res.json(result);
+      res.json({ success: true, data: result });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -145,24 +148,24 @@ export class OrderController {
       const { status } = req.body;
 
       if (!status) {
-        return res.status(400).json({ error: 'Status is required' });
+        return res.status(400).json({ success: false, message: 'Status is required' });
       }
 
       const validStatuses = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
       if (!validStatuses.includes(status)) {
-        return res.status(400).json({ error: 'Invalid status' });
+        return res.status(400).json({ success: false, message: 'Invalid status' });
       }
 
       const order = await OrderService.updateOrderStatus(orderId, status);
-      res.json(order);
+      res.json({ success: true, message: 'Order status updated successfully', data: order });
     } catch (error: any) {
       if (error.message === 'Order not found') {
-        return res.status(404).json({ error: error.message });
+        return res.status(404).json({ success: false, message: error.message });
       }
       if (error.message.includes('Cannot update status')) {
-        return res.status(400).json({ error: error.message });
+        return res.status(400).json({ success: false, message: error.message });
       }
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -175,21 +178,21 @@ export class OrderController {
       const { paymentStatus } = req.body;
 
       if (!paymentStatus) {
-        return res.status(400).json({ error: 'Payment status is required' });
+        return res.status(400).json({ success: false, message: 'Payment status is required' });
       }
 
       const validStatuses = ['PENDING', 'PAID', 'FAILED', 'REFUNDED'];
       if (!validStatuses.includes(paymentStatus)) {
-        return res.status(400).json({ error: 'Invalid payment status' });
+        return res.status(400).json({ success: false, message: 'Invalid payment status' });
       }
 
       const order = await OrderService.updatePaymentStatus(orderId, paymentStatus);
-      res.json(order);
+      res.json({ success: true, message: 'Payment status updated successfully', data: order });
     } catch (error: any) {
       if (error.message === 'Order not found') {
-        return res.status(404).json({ error: error.message });
+        return res.status(404).json({ success: false, message: error.message });
       }
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -202,21 +205,21 @@ export class OrderController {
       const { orderId } = req.params;
 
       const order = await OrderService.cancelOrder(orderId, userId);
-      res.json(order);
+      res.json({ success: true, message: 'Order cancelled successfully', data: order });
     } catch (error: any) {
       if (error.message === 'Order not found') {
-        return res.status(404).json({ error: error.message });
+        return res.status(404).json({ success: false, message: error.message });
       }
       if (error.message === 'Unauthorized') {
-        return res.status(403).json({ error: error.message });
+        return res.status(403).json({ success: false, message: error.message });
       }
       if (
         error.message.includes('already cancelled') ||
         error.message.includes('Cannot cancel')
       ) {
-        return res.status(400).json({ error: error.message });
+        return res.status(400).json({ success: false, message: error.message });
       }
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -229,9 +232,9 @@ export class OrderController {
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
 
       const stats = await OrderService.getOrderStats(startDate, endDate);
-      res.json(stats);
+      res.json({ success: true, data: stats });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -242,9 +245,9 @@ export class OrderController {
     try {
       const limit = parseInt(req.query.limit as string) || 10;
       const orders = await OrderService.getRecentOrders(limit);
-      res.json(orders);
+      res.json({ success: true, data: { orders } });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 }

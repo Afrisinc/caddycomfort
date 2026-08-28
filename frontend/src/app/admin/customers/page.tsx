@@ -1,16 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
-import { 
-  Search, 
-  MoreVertical, 
-  Eye, 
-  Mail, 
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  Search,
+  MoreVertical,
+  Eye,
+  Mail,
   Ban,
   UserCheck,
   Users as UsersIcon,
   TrendingUp,
-  ShoppingBag
+  ShoppingBag,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,85 +33,81 @@ import {
 } from '@/components/ui/select';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { customersApi } from '@/lib/api';
+import { Customer, CustomerStats, CustomerStatus } from '@/types/api';
+import { formatRelativeTime } from '@/lib/utils';
+import { toast } from 'sonner';
+
+const STATUS_BADGES: Record<CustomerStatus, { label: string; className: string }> = {
+  vip: { label: 'VIP', className: 'bg-purple-100 text-purple-700' },
+  active: { label: 'Active', className: 'bg-green-100 text-green-700' },
+  inactive: { label: 'Inactive', className: 'bg-gray-100 text-gray-700' },
+  suspended: { label: 'Suspended', className: 'bg-red-100 text-red-700' },
+};
+
+function formatMoney(amount: number): string {
+  return `Rwf ${(amount / 1000).toFixed(0)}K`;
+}
 
 function CustomersManagement() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<CustomerStatus | 'all'>('all');
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [stats, setStats] = useState<CustomerStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  const stats = [
-    { title: 'Total Customers', value: '892', icon: UsersIcon, change: '+15.3%', trend: 'up' },
-    { title: 'Active', value: '784', icon: UserCheck, change: '+8.1%', trend: 'up' },
-    { title: 'Avg Orders', value: '2.4', icon: ShoppingBag, change: '+12.2%', trend: 'up' },
-    { title: 'Avg Value', value: 'Rwf 245K', icon: TrendingUp, change: '+5.7%', trend: 'up' },
-  ];
+  useEffect(() => {
+    fetchCustomers();
+    fetchStats();
+  }, []);
 
-  const customers = [
-    {
-      id: 1,
-      name: 'Sarah Johnson',
-      email: 'sarah.j@example.com',
-      phone: '+250 788 123 456',
-      orders: 12,
-      totalSpent: 3680000,
-      status: 'active',
-      joinDate: '2024-08-15',
-      lastOrder: '2 days ago',
-    },
-    {
-      id: 2,
-      name: 'Michael Brown',
-      email: 'michael.b@example.com',
-      phone: '+250 788 234 567',
-      orders: 8,
-      totalSpent: 2340000,
-      status: 'active',
-      joinDate: '2024-09-22',
-      lastOrder: '5 days ago',
-    },
-    {
-      id: 3,
-      name: 'Emily Davis',
-      email: 'emily.d@example.com',
-      phone: '+250 788 345 678',
-      orders: 15,
-      totalSpent: 4520000,
-      status: 'vip',
-      joinDate: '2024-07-10',
-      lastOrder: '1 day ago',
-    },
-    {
-      id: 4,
-      name: 'David Wilson',
-      email: 'david.w@example.com',
-      phone: '+250 788 456 789',
-      orders: 3,
-      totalSpent: 890000,
-      status: 'active',
-      joinDate: '2024-11-05',
-      lastOrder: '2 weeks ago',
-    },
-    {
-      id: 5,
-      name: 'Jessica Martinez',
-      email: 'jessica.m@example.com',
-      phone: '+250 788 567 890',
-      orders: 0,
-      totalSpent: 0,
-      status: 'inactive',
-      joinDate: '2024-10-20',
-      lastOrder: 'Never',
-    },
-  ];
-
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, { label: string; className: string }> = {
-      active: { label: 'Active', className: 'bg-green-100 text-green-700' },
-      vip: { label: 'VIP', className: 'bg-purple-100 text-purple-700' },
-      inactive: { label: 'Inactive', className: 'bg-gray-100 text-gray-700' },
-    };
-    const config = variants[status] || variants.active;
-    return <Badge className={config.className}>{config.label}</Badge>;
+  const fetchCustomers = async () => {
+    try {
+      setIsLoading(true);
+      const data = await customersApi.getAll();
+      setCustomers(Array.isArray(data) ? data : []);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to load customers');
+      setCustomers([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const fetchStats = async () => {
+    try {
+      const data = await customersApi.getStats();
+      setStats(data);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to load customer statistics');
+    }
+  };
+
+  const handleToggleStatus = async (customer: Customer) => {
+    const nextActive = !customer.isActive;
+    try {
+      setTogglingId(customer.id);
+      await customersApi.updateStatus(customer.id, nextActive);
+      toast.success(nextActive ? `${customer.name} reactivated` : `${customer.name} suspended`);
+      await Promise.all([fetchCustomers(), fetchStats()]);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update customer status');
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const statCards = stats
+    ? [
+        { title: 'Total Customers', value: stats.totalCustomers.toLocaleString(), icon: UsersIcon },
+        { title: 'Active', value: stats.activeCount.toLocaleString(), icon: UserCheck },
+        { title: 'Avg Orders', value: stats.avgOrdersPerCustomer.toFixed(1), icon: ShoppingBag },
+        { title: 'Avg Value', value: formatMoney(stats.avgOrderValue), icon: TrendingUp },
+      ]
+    : [];
 
   const filteredCustomers = customers.filter((customer) => {
     const matchesSearch =
@@ -121,33 +119,29 @@ function CustomersManagement() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <AdminHeader title="Customer Management" description="View and manage your customers">
-        <Button className="bg-accent-rose hover:bg-accent-rose-dark">
-          <Mail className="h-4 w-4 mr-2" />
-          Send Newsletter
-        </Button>
-      </AdminHeader>
+      <AdminHeader title="Customer Management" description="View and manage your customers" />
 
       <div className="px-4 sm:px-8 py-8">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat) => (
-            <Card key={stat.title}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">{stat.title}</p>
-                    <p className="text-2xl font-bold mt-1">{stat.value}</p>
-                    <p className="text-sm text-green-600 mt-1">{stat.change}</p>
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {statCards.map((stat) => (
+              <Card key={stat.title}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">{stat.title}</p>
+                      <p className="text-2xl font-bold mt-1">{stat.value}</p>
+                    </div>
+                    <div className="h-12 w-12 rounded-full bg-accent-rose/10 flex items-center justify-center">
+                      <stat.icon className="h-6 w-6 text-accent-rose" />
+                    </div>
                   </div>
-                  <div className="h-12 w-12 rounded-full bg-accent-rose/10 flex items-center justify-center">
-                    <stat.icon className="h-6 w-6 text-accent-rose" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* Filters */}
         <Card className="mb-6">
@@ -164,15 +158,16 @@ function CustomersManagement() {
                   />
                 </div>
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as CustomerStatus | 'all')}>
                 <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Customers</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="vip">VIP</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -185,85 +180,113 @@ function CustomersManagement() {
             <CardTitle>All Customers ({filteredCustomers.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4 font-semibold">Customer</th>
-                    <th className="text-left py-3 px-4 font-semibold">Contact</th>
-                    <th className="text-left py-3 px-4 font-semibold">Orders</th>
-                    <th className="text-left py-3 px-4 font-semibold">Total Spent</th>
-                    <th className="text-left py-3 px-4 font-semibold">Last Order</th>
-                    <th className="text-left py-3 px-4 font-semibold">Status</th>
-                    <th className="text-right py-3 px-4 font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredCustomers.map((customer) => (
-                    <tr key={customer.id} className="border-b hover:bg-muted/50">
-                      <td className="py-4 px-4">
-                        <div>
-                          <p className="font-medium">{customer.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Joined {new Date(customer.joinDate).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div>
-                          <p className="text-sm">{customer.email}</p>
-                          <p className="text-sm text-muted-foreground">{customer.phone}</p>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <p className="font-medium">{customer.orders}</p>
-                      </td>
-                      <td className="py-4 px-4">
-                        <p className="font-medium">
-                          Rwf {(customer.totalSpent / 1000).toFixed(0)}K
-                        </p>
-                      </td>
-                      <td className="py-4 px-4">
-                        <p className="text-sm">{customer.lastOrder}</p>
-                      </td>
-                      <td className="py-4 px-4">{getStatusBadge(customer.status)}</td>
-                      <td className="py-4 px-4 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Eye className="h-4 w-4 mr-2" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Mail className="h-4 w-4 mr-2" />
-                              Send Email
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
-                              <Ban className="h-4 w-4 mr-2" />
-                              Suspend Account
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {filteredCustomers.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No customers found</p>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-accent-rose" />
               </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-3 px-4 font-semibold">Customer</th>
+                        <th className="text-left py-3 px-4 font-semibold">Contact</th>
+                        <th className="text-left py-3 px-4 font-semibold">Orders</th>
+                        <th className="text-left py-3 px-4 font-semibold">Total Spent</th>
+                        <th className="text-left py-3 px-4 font-semibold">Last Order</th>
+                        <th className="text-left py-3 px-4 font-semibold">Status</th>
+                        <th className="text-right py-3 px-4 font-semibold">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredCustomers.map((customer) => {
+                        const badge = STATUS_BADGES[customer.status];
+                        return (
+                          <tr key={customer.id} className="border-b hover:bg-muted/50">
+                            <td className="py-4 px-4">
+                              <div>
+                                <p className="font-medium">{customer.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  Joined{' '}
+                                  {new Date(customer.joinedAt).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                  })}
+                                </p>
+                              </div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div>
+                                <p className="text-sm">{customer.email}</p>
+                                <p className="text-sm text-muted-foreground">{customer.phone || '—'}</p>
+                              </div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <p className="font-medium">{customer.ordersCount}</p>
+                            </td>
+                            <td className="py-4 px-4">
+                              <p className="font-medium">{formatMoney(customer.totalSpent)}</p>
+                            </td>
+                            <td className="py-4 px-4">
+                              <p className="text-sm">{formatRelativeTime(customer.lastOrderAt)}</p>
+                            </td>
+                            <td className="py-4 px-4">
+                              <Badge className={badge.className}>{badge.label}</Badge>
+                            </td>
+                            <td className="py-4 px-4 text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" disabled={togglingId === customer.id}>
+                                    {togglingId === customer.id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <MoreVertical className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => router.push(`/admin/customers/${customer.id}`)}>
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    View Details
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem asChild>
+                                    <a href={`mailto:${customer.email}`}>
+                                      <Mail className="h-4 w-4 mr-2" />
+                                      Send Email
+                                    </a>
+                                  </DropdownMenuItem>
+                                  {customer.isActive ? (
+                                    <DropdownMenuItem
+                                      className="text-red-600"
+                                      onClick={() => handleToggleStatus(customer)}
+                                    >
+                                      <Ban className="h-4 w-4 mr-2" />
+                                      Suspend Account
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem onClick={() => handleToggleStatus(customer)}>
+                                      <UserCheck className="h-4 w-4 mr-2" />
+                                      Reactivate Account
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {filteredCustomers.length === 0 && (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">No customers found</p>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
@@ -274,8 +297,10 @@ function CustomersManagement() {
 
 export default function CustomersManagementPage() {
   return (
-    <AdminLayout>
-      <CustomersManagement />
-    </AdminLayout>
+    <ProtectedRoute requireAdmin>
+      <AdminLayout>
+        <CustomersManagement />
+      </AdminLayout>
+    </ProtectedRoute>
   );
 }

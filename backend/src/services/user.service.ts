@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { sendPasswordChangedEmail } from '../utils/notify/auth.notify';
-
-const prisma = new PrismaClient();
+import prisma from '../config/database';
 
 interface UpdateProfileData {
   firstName?: string;
@@ -34,6 +32,7 @@ export class UserService {
         avatar: true,
         role: true,
         isVerified: true,
+        isActive: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -71,6 +70,7 @@ export class UserService {
         avatar: true,
         role: true,
         isVerified: true,
+        isActive: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -193,6 +193,7 @@ export class UserService {
         avatar: true,
         role: true,
         isVerified: true,
+        isActive: true,
         createdAt: true,
         updatedAt: true,
         _count: {
@@ -223,6 +224,7 @@ export class UserService {
         avatar: true,
         role: true,
         isVerified: true,
+        isActive: true,
         createdAt: true,
         updatedAt: true,
         addresses: true,

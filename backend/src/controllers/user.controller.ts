@@ -9,11 +9,11 @@ export class UserController {
     try {
       const userId = req.user!.userId;
       const user = await UserService.getProfile(userId);
-      res.json(user);
+      res.json({ success: true, data: user });
     } catch (error) {
       res.status(500).json({
-        message: 'Error fetching profile',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error fetching profile',
       });
     }
   }
@@ -34,11 +34,11 @@ export class UserController {
         avatar,
       });
 
-      res.json(user);
+      res.json({ success: true, message: 'Profile updated successfully', data: user });
     } catch (error) {
       res.status(500).json({
-        message: 'Error updating profile',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error updating profile',
       });
     }
   }
@@ -53,6 +53,7 @@ export class UserController {
 
       if (!currentPassword || !newPassword) {
         return res.status(400).json({
+          success: false,
           message: 'Current password and new password are required',
         });
       }
@@ -62,19 +63,19 @@ export class UserController {
         newPassword,
       });
 
-      res.json({ message: 'Password changed successfully' });
+      res.json({ success: true, message: 'Password changed successfully' });
     } catch (error) {
       if (error instanceof Error) {
         if (error.message === 'Current password is incorrect') {
-          return res.status(400).json({ message: error.message });
+          return res.status(400).json({ success: false, message: error.message });
         }
         if (error.message === 'New password must be at least 6 characters') {
-          return res.status(400).json({ message: error.message });
+          return res.status(400).json({ success: false, message: error.message });
         }
       }
       res.status(500).json({
-        message: 'Error changing password',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error changing password',
       });
     }
   }
@@ -86,11 +87,11 @@ export class UserController {
     try {
       const userId = req.user!.userId;
       const stats = await UserService.getUserStats(userId);
-      res.json(stats);
+      res.json({ success: true, data: stats });
     } catch (error) {
       res.status(500).json({
-        message: 'Error fetching statistics',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error fetching statistics',
       });
     }
   }

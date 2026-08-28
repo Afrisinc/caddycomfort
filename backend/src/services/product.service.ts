@@ -1,7 +1,6 @@
-import { PrismaClient, Product, Prisma } from '@prisma/client';
+import { Product, Prisma } from '@prisma/client';
 import { uploadBase64Image, uploadMultipleBase64Images, deleteMultipleImages, isValidBase64Image } from '../utils/cloudinary';
-
-const prisma = new PrismaClient();
+import prisma from '../config/database';
 
 interface CreateProductData {
   name: string;

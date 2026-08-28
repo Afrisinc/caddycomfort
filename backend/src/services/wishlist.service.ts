@@ -1,6 +1,5 @@
-import { PrismaClient, WishlistItem } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { WishlistItem } from '@prisma/client';
+import prisma from '../config/database';
 
 interface WishlistItemWithProduct extends WishlistItem {
   product: {

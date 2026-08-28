@@ -1,19 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { 
+import React, { useState, useEffect, useMemo } from 'react';
+import {
   Search,
-  Filter,
   Download,
   Upload,
   AlertTriangle,
   Package,
-  TrendingUp,
   TrendingDown,
+  TrendingUp,
   MoreVertical,
   Edit,
-  Eye
+  Eye,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,169 +33,146 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { AdjustStockDialog } from '@/components/admin/AdjustStockDialog';
+import { StockHistoryDialog } from '@/components/admin/StockHistoryDialog';
+import { ImportStockDialog } from '@/components/admin/ImportStockDialog';
+import { inventoryApi } from '@/lib/api';
+import {
+  InventorySummary,
+  InventoryValuationItem,
+  RestockRecommendation,
+} from '@/types/api';
+import { formatRelativeTime } from '@/lib/utils';
+import { toast } from 'sonner';
+
+type StockTier = 'out' | 'critical' | 'low' | 'good';
+
+function getStockTier(quantity: number): StockTier {
+  if (quantity <= 0) return 'out';
+  if (quantity <= 3) return 'critical';
+  if (quantity <= 10) return 'low';
+  return 'good';
+}
+
+const TIER_CONFIG: Record<StockTier, { label: string; className: string }> = {
+  good: { label: 'In Stock', className: 'bg-green-100 text-green-700' },
+  low: { label: 'Low Stock', className: 'bg-orange-100 text-orange-700' },
+  critical: { label: 'Critical', className: 'bg-red-100 text-red-700' },
+  out: { label: 'Out of Stock', className: 'bg-gray-100 text-gray-700' },
+};
+
+function formatK(amount: number): string {
+  return `Rwf ${(amount / 1000).toFixed(0)}K`;
+}
+
+function escapeCsvField(value: string | number): string {
+  const text = String(value);
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function downloadCsv(filename: string, rows: (string | number)[][]) {
+  const csv = rows.map((row) => row.map(escapeCsvField).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
 
 function Inventory() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [stockFilter, setStockFilter] = useState('all');
+  const [stockFilter, setStockFilter] = useState<'all' | 'good' | 'low' | 'out'>('all');
+  const [items, setItems] = useState<InventoryValuationItem[]>([]);
+  const [summary, setSummary] = useState<InventorySummary | null>(null);
+  const [recommendations, setRecommendations] = useState<RestockRecommendation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const stats = [
-    {
-      title: 'Total Products',
-      value: '156',
-      change: '+12',
-      trend: 'up',
-      icon: Package,
-    },
-    {
-      title: 'Low Stock Items',
-      value: '23',
-      change: '+5',
-      trend: 'up',
-      icon: AlertTriangle,
-      alert: true,
-    },
-    {
-      title: 'Out of Stock',
-      value: '8',
-      change: '-2',
-      trend: 'down',
-      icon: TrendingDown,
-      alert: true,
-    },
-    {
-      title: 'Total Stock Value',
-      value: 'Rwf 45.2M',
-      change: '+8.5%',
-      trend: 'up',
-      icon: TrendingUp,
-    },
-  ];
+  const [adjustTarget, setAdjustTarget] = useState<InventoryValuationItem | null>(null);
+  const [historyTarget, setHistoryTarget] = useState<InventoryValuationItem | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
-  const inventoryItems = [
-    {
-      id: 1,
-      sku: 'DRS-001',
-      name: 'Elegant Silk Dress',
-      category: 'Women',
-      currentStock: 3,
-      reservedStock: 1,
-      availableStock: 2,
-      reorderPoint: 5,
-      reorderQuantity: 20,
-      location: 'Warehouse A',
-      lastRestocked: '2024-11-15',
-      unitCost: 150000,
-      status: 'low',
-    },
-    {
-      id: 2,
-      sku: 'JKT-002',
-      name: 'Classic Leather Jacket',
-      category: 'Men',
-      currentStock: 2,
-      reservedStock: 0,
-      availableStock: 2,
-      reorderPoint: 3,
-      reorderQuantity: 15,
-      location: 'Warehouse A',
-      lastRestocked: '2024-11-10',
-      unitCost: 450000,
-      status: 'critical',
-    },
-    {
-      id: 3,
-      sku: 'BAG-003',
-      name: 'Designer Handbag',
-      category: 'Accessories',
-      currentStock: 0,
-      reservedStock: 0,
-      availableStock: 0,
-      reorderPoint: 5,
-      reorderQuantity: 10,
-      location: 'Warehouse B',
-      lastRestocked: '2024-10-20',
-      unitCost: 600000,
-      status: 'out',
-    },
-    {
-      id: 4,
-      sku: 'SWT-004',
-      name: 'Cashmere Sweater',
-      category: 'Women',
-      currentStock: 4,
-      reservedStock: 1,
-      availableStock: 3,
-      reorderPoint: 5,
-      reorderQuantity: 25,
-      location: 'Warehouse A',
-      lastRestocked: '2024-11-20',
-      unitCost: 280000,
-      status: 'low',
-    },
-    {
-      id: 5,
-      sku: 'SNK-005',
-      name: 'Premium Sneakers',
-      category: 'Accessories',
-      currentStock: 25,
-      reservedStock: 3,
-      availableStock: 22,
-      reorderPoint: 10,
-      reorderQuantity: 30,
-      location: 'Warehouse B',
-      lastRestocked: '2024-11-25',
-      unitCost: 180000,
-      status: 'good',
-    },
-    {
-      id: 6,
-      sku: 'DRS-006',
-      name: 'Summer Floral Dress',
-      category: 'Women',
-      currentStock: 45,
-      reservedStock: 5,
-      availableStock: 40,
-      reorderPoint: 15,
-      reorderQuantity: 50,
-      location: 'Warehouse A',
-      lastRestocked: '2024-11-28',
-      unitCost: 120000,
-      status: 'good',
-    },
-  ];
+  useEffect(() => {
+    fetchAll();
+  }, []);
 
-  const getStatusConfig = (status: string) => {
-    const configs: Record<string, { label: string; className: string }> = {
-      good: { label: 'In Stock', className: 'bg-green-100 text-green-700' },
-      low: { label: 'Low Stock', className: 'bg-orange-100 text-orange-700' },
-      critical: { label: 'Critical', className: 'bg-red-100 text-red-700' },
-      out: { label: 'Out of Stock', className: 'bg-gray-100 text-gray-700' },
-    };
-    return configs[status] || configs.good;
+  const fetchAll = async () => {
+    try {
+      setIsLoading(true);
+      const [valuation, summaryData, recs] = await Promise.all([
+        inventoryApi.getValuation(),
+        inventoryApi.getSummary(),
+        inventoryApi.getRestockRecommendations(),
+      ]);
+      setItems(valuation.items);
+      setSummary(summaryData);
+      setRecommendations(recs);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to load inventory');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const filteredItems = inventoryItems.filter((item) => {
+  const recommendationByProduct = useMemo(
+    () => new Map(recommendations.map((r) => [r.productId, r])),
+    [recommendations]
+  );
+
+  const filteredItems = items.filter((item) => {
     const matchesSearch =
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.sku.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
+    const tier = getStockTier(item.quantity);
     const matchesFilter =
       stockFilter === 'all' ||
-      (stockFilter === 'low' && (item.status === 'low' || item.status === 'critical')) ||
-      (stockFilter === 'out' && item.status === 'out') ||
-      (stockFilter === 'good' && item.status === 'good');
-    
+      (stockFilter === 'low' && (tier === 'low' || tier === 'critical')) ||
+      (stockFilter === 'out' && tier === 'out') ||
+      (stockFilter === 'good' && tier === 'good');
+
     return matchesSearch && matchesFilter;
   });
+
+  const statCards = summary
+    ? [
+        { title: 'Total Products', value: summary.totalProducts.toLocaleString(), icon: Package, alert: false },
+        { title: 'Low Stock Items', value: summary.lowStockCount.toLocaleString(), icon: AlertTriangle, alert: summary.lowStockCount > 0 },
+        { title: 'Out of Stock', value: summary.outOfStockCount.toLocaleString(), icon: TrendingDown, alert: summary.outOfStockCount > 0 },
+        { title: 'Total Stock Value', value: formatK(summary.totalInventoryValue), icon: TrendingUp, alert: false },
+      ]
+    : [];
+
+  const handleExport = () => {
+    const rows: (string | number)[][] = [
+      ['SKU', 'Product', 'Category', 'Current Stock', 'Unit Price (Rwf)', 'Total Value (Rwf)', 'Status', 'Last Restocked'],
+      ...filteredItems.map((item) => [
+        item.sku,
+        item.productName,
+        item.category,
+        item.quantity,
+        item.unitPrice,
+        item.totalValue,
+        TIER_CONFIG[getStockTier(item.quantity)].label,
+        item.lastRestockedAt ? new Date(item.lastRestockedAt).toISOString().slice(0, 10) : 'Never',
+      ]),
+    ];
+    downloadCsv(`inventory-${new Date().toISOString().slice(0, 10)}.csv`, rows);
+    toast.success('Inventory exported');
+  };
 
   return (
     <div className="min-h-screen bg-muted/30">
       <AdminHeader title="Inventory Management" description="Monitor and manage stock levels">
-        <Button variant="outline">
+        <Button variant="outline" onClick={handleExport} disabled={filteredItems.length === 0}>
           <Download className="h-4 w-4 mr-2" />
           Export
         </Button>
-        <Button className="bg-accent-rose hover:bg-accent-rose-dark">
+        <Button className="bg-accent-rose hover:bg-accent-rose-dark" onClick={() => setImportOpen(true)}>
           <Upload className="h-4 w-4 mr-2" />
           Import Stock
         </Button>
@@ -204,20 +180,14 @@ function Inventory() {
 
       <div className="px-4 sm:px-8 py-8">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat) => {
-            const Icon = stat.icon;
-            return (
+        {summary && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {statCards.map((stat) => (
               <Card key={stat.title}>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className={`p-3 rounded-lg ${stat.alert ? 'bg-orange-50' : 'bg-accent-rose/10'}`}>
-                      <Icon className={`h-6 w-6 ${stat.alert ? 'text-orange-600' : 'text-accent-rose'}`} />
-                    </div>
-                    <div className={`text-sm font-medium ${
-                      stat.trend === 'up' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {stat.change}
+                      <stat.icon className={`h-6 w-6 ${stat.alert ? 'text-orange-600' : 'text-accent-rose'}`} />
                     </div>
                   </div>
                   <div>
@@ -226,9 +196,9 @@ function Inventory() {
                   </div>
                 </CardContent>
               </Card>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Filters */}
         <Card className="mb-6">
@@ -245,7 +215,7 @@ function Inventory() {
                   />
                 </div>
               </div>
-              <Select value={stockFilter} onValueChange={setStockFilter}>
+              <Select value={stockFilter} onValueChange={(v) => setStockFilter(v as typeof stockFilter)}>
                 <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="Stock Status" />
                 </SelectTrigger>
@@ -254,16 +224,6 @@ function Inventory() {
                   <SelectItem value="good">In Stock</SelectItem>
                   <SelectItem value="low">Low Stock</SelectItem>
                   <SelectItem value="out">Out of Stock</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="All Locations" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Locations</SelectItem>
-                  <SelectItem value="warehouse-a">Warehouse A</SelectItem>
-                  <SelectItem value="warehouse-b">Warehouse B</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -276,122 +236,138 @@ function Inventory() {
             <CardTitle>Inventory Items ({filteredItems.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4 font-semibold">Product</th>
-                    <th className="text-left py-3 px-4 font-semibold">Current Stock</th>
-                    <th className="text-left py-3 px-4 font-semibold">Reserved</th>
-                    <th className="text-left py-3 px-4 font-semibold">Available</th>
-                    <th className="text-left py-3 px-4 font-semibold">Reorder Point</th>
-                    <th className="text-left py-3 px-4 font-semibold">Location</th>
-                    <th className="text-left py-3 px-4 font-semibold">Last Restocked</th>
-                    <th className="text-left py-3 px-4 font-semibold">Value</th>
-                    <th className="text-left py-3 px-4 font-semibold">Status</th>
-                    <th className="text-right py-3 px-4 font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredItems.map((item) => {
-                    const statusConfig = getStatusConfig(item.status);
-                    const totalValue = item.currentStock * item.unitCost;
-                    
-                    return (
-                      <tr key={item.id} className="border-b hover:bg-muted/50">
-                        <td className="py-4 px-4">
-                          <div>
-                            <p className="font-medium">{item.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {item.sku} • {item.category}
-                            </p>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <p className="font-semibold">{item.currentStock}</p>
-                        </td>
-                        <td className="py-4 px-4">
-                          <p className="text-sm">{item.reservedStock}</p>
-                        </td>
-                        <td className="py-4 px-4">
-                          <p className="font-medium">{item.availableStock}</p>
-                        </td>
-                        <td className="py-4 px-4">
-                          <p className="text-sm">{item.reorderPoint}</p>
-                          {item.currentStock <= item.reorderPoint && (
-                            <p className="text-xs text-orange-600">
-                              Order {item.reorderQuantity}
-                            </p>
-                          )}
-                        </td>
-                        <td className="py-4 px-4">
-                          <p className="text-sm">{item.location}</p>
-                        </td>
-                        <td className="py-4 px-4">
-                          <p className="text-sm">
-                            {new Date(item.lastRestocked).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}
-                          </p>
-                        </td>
-                        <td className="py-4 px-4">
-                          <p className="font-medium">
-                            Rwf {(totalValue / 1000).toFixed(0)}K
-                          </p>
-                        </td>
-                        <td className="py-4 px-4">
-                          <Badge className={statusConfig.className}>
-                            {statusConfig.label}
-                          </Badge>
-                        </td>
-                        <td className="py-4 px-4 text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Adjust Stock
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Eye className="h-4 w-4 mr-2" />
-                                View History
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Package className="h-4 w-4 mr-2" />
-                                Create Reorder
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {filteredItems.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No inventory items found</p>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-accent-rose" />
               </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-3 px-4 font-semibold">Product</th>
+                        <th className="text-left py-3 px-4 font-semibold">Current Stock</th>
+                        <th className="text-left py-3 px-4 font-semibold">Last Restocked</th>
+                        <th className="text-left py-3 px-4 font-semibold">Value</th>
+                        <th className="text-left py-3 px-4 font-semibold">Status</th>
+                        <th className="text-right py-3 px-4 font-semibold">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredItems.map((item) => {
+                        const tier = getStockTier(item.quantity);
+                        const tierConfig = TIER_CONFIG[tier];
+                        const recommendation = recommendationByProduct.get(item.productId);
+
+                        return (
+                          <tr key={item.productId} className="border-b hover:bg-muted/50">
+                            <td className="py-4 px-4">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium">{item.productName}</p>
+                                  {!item.isActive && (
+                                    <Badge variant="outline" className="text-xs text-muted-foreground">
+                                      Draft
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                  {item.sku} • {item.category}
+                                </p>
+                              </div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <p className="font-semibold">{item.quantity}</p>
+                              {recommendation && (
+                                <p className="text-xs text-orange-600">
+                                  Restock {recommendation.recommendedRestockQuantity}
+                                  {recommendation.priority === 'HIGH' ? ' (urgent)' : ''}
+                                </p>
+                              )}
+                            </td>
+                            <td className="py-4 px-4">
+                              <p className="text-sm">{formatRelativeTime(item.lastRestockedAt)}</p>
+                            </td>
+                            <td className="py-4 px-4">
+                              <p className="font-medium">{formatK(item.totalValue)}</p>
+                            </td>
+                            <td className="py-4 px-4">
+                              <Badge className={tierConfig.className}>{tierConfig.label}</Badge>
+                            </td>
+                            <td className="py-4 px-4 text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => setAdjustTarget(item)}>
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Adjust Stock
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => setHistoryTarget(item)}>
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    View History
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {filteredItems.length === 0 && (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">No inventory items found</p>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {adjustTarget && (
+        <AdjustStockDialog
+          open={!!adjustTarget}
+          onOpenChange={(open) => !open && setAdjustTarget(null)}
+          productId={adjustTarget.productId}
+          productName={adjustTarget.productName}
+          currentStock={adjustTarget.quantity}
+          onSuccess={fetchAll}
+        />
+      )}
+
+      {historyTarget && (
+        <StockHistoryDialog
+          open={!!historyTarget}
+          onOpenChange={(open) => !open && setHistoryTarget(null)}
+          productId={historyTarget.productId}
+          productName={historyTarget.productName}
+        />
+      )}
+
+      <ImportStockDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        items={items}
+        onSuccess={fetchAll}
+      />
     </div>
   );
 }
 
 export default function InventoryPage() {
   return (
-    <AdminLayout>
-      <Inventory />
-    </AdminLayout>
+    <ProtectedRoute requireAdmin>
+      <AdminLayout>
+        <Inventory />
+      </AdminLayout>
+    </ProtectedRoute>
   );
 }

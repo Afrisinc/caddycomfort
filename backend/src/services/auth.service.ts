@@ -1,7 +1,8 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import jwt, { SignOptions } from 'jsonwebtoken';
-import { PrismaClient, User, UserRole } from '@prisma/client';
+import { User, UserRole } from '@prisma/client';
+import prisma from '../config/database';
 import {
   sendVerificationEmail,
   sendPasswordResetEmail,
@@ -9,8 +10,6 @@ import {
   sendPasswordChangedEmail,
   sendWelcomeEmail,
 } from '../utils/notify/auth.notify';
-
-const prisma = new PrismaClient();
 
 const VERIFICATION_CODE_TTL_MS = 15 * 60 * 1000;
 const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
@@ -157,6 +156,10 @@ export class AuthService {
 
     if (new Date() > storedToken.expiresAt) {
       throw new Error('Refresh token expired');
+    }
+
+    if (!storedToken.user.isActive) {
+      throw new Error('Your account has been suspended. Please contact support.');
     }
 
     // Revoke old token
@@ -409,6 +412,10 @@ export class AuthService {
 
     if (!isValidPassword) {
       throw new Error('Invalid email or password');
+    }
+
+    if (!user.isActive) {
+      throw new Error('Your account has been suspended. Please contact support.');
     }
 
     // Generate tokens

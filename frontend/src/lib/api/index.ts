@@ -9,3 +9,5 @@ export * from './wishlist';
 export * from './reviews';
 export * from './coupons';
 export * from './users';
+export * from './customers';
+export * from './inventory';

@@ -19,9 +19,9 @@ export class InventoryController {
         limit,
         type
       );
-      res.json(result);
+      res.json({ success: true, data: result });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -43,9 +43,9 @@ export class InventoryController {
         startDate,
         endDate
       );
-      res.json(result);
+      res.json({ success: true, data: result });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -57,14 +57,17 @@ export class InventoryController {
       const { productId, quantity, type, reason } = req.body;
 
       if (!productId || quantity === undefined || !type || !reason) {
-        return res.status(400).json({ 
-          error: 'Product ID, quantity, type, and reason are required' 
+        res.status(400).json({
+          success: false,
+          message: 'Product ID, quantity, type, and reason are required',
         });
+        return;
       }
 
       const validTypes = ['RESTOCK', 'SALE', 'RETURN', 'DAMAGED', 'ADJUSTMENT'];
       if (!validTypes.includes(type)) {
-        return res.status(400).json({ error: 'Invalid inventory log type' });
+        res.status(400).json({ success: false, message: 'Invalid inventory log type' });
+        return;
       }
 
       const result = await InventoryService.adjustStock({
@@ -74,19 +77,21 @@ export class InventoryController {
         reason,
       });
 
-      res.json(result);
+      res.json({ success: true, message: 'Stock adjusted successfully', data: result });
     } catch (error: any) {
       if (error.message === 'Product not found') {
-        return res.status(404).json({ error: error.message });
+        res.status(404).json({ success: false, message: error.message });
+        return;
       }
       if (
         error.message.includes('must be positive') ||
         error.message.includes('must be negative') ||
         error.message.includes('Insufficient stock')
       ) {
-        return res.status(400).json({ error: error.message });
+        res.status(400).json({ success: false, message: error.message });
+        return;
       }
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -98,26 +103,29 @@ export class InventoryController {
       const { adjustments } = req.body;
 
       if (!adjustments || !Array.isArray(adjustments)) {
-        return res.status(400).json({ error: 'Adjustments array is required' });
+        res.status(400).json({ success: false, message: 'Adjustments array is required' });
+        return;
       }
 
       if (adjustments.length === 0) {
-        return res.status(400).json({ error: 'At least one adjustment is required' });
+        res.status(400).json({ success: false, message: 'At least one adjustment is required' });
+        return;
       }
 
-      // Validate each adjustment
       for (const adj of adjustments) {
         if (!adj.productId || adj.quantity === undefined || !adj.type || !adj.reason) {
-          return res.status(400).json({ 
-            error: 'Each adjustment must have productId, quantity, type, and reason' 
+          res.status(400).json({
+            success: false,
+            message: 'Each adjustment must have productId, quantity, type, and reason',
           });
+          return;
         }
       }
 
       const result = await InventoryService.bulkAdjustStock(adjustments);
-      res.json(result);
+      res.json({ success: true, data: result });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -128,9 +136,9 @@ export class InventoryController {
     try {
       const threshold = parseInt(req.query.threshold as string) || 10;
       const alerts = await InventoryService.getInventoryAlerts(threshold);
-      res.json(alerts);
+      res.json({ success: true, data: { alerts } });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -140,9 +148,9 @@ export class InventoryController {
   static async getInventorySummary(req: Request, res: Response) {
     try {
       const summary = await InventoryService.getInventorySummary();
-      res.json(summary);
+      res.json({ success: true, data: { summary } });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -152,9 +160,9 @@ export class InventoryController {
   static async getInventoryValuation(req: Request, res: Response) {
     try {
       const valuation = await InventoryService.getInventoryValuation();
-      res.json(valuation);
+      res.json({ success: true, data: valuation });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -165,9 +173,9 @@ export class InventoryController {
     try {
       const days = parseInt(req.query.days as string) || 30;
       const turnover = await InventoryService.getInventoryTurnover(days);
-      res.json(turnover);
+      res.json({ success: true, data: turnover });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -185,9 +193,9 @@ export class InventoryController {
         endDate,
         productId
       );
-      res.json(movement);
+      res.json({ success: true, data: movement });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -199,26 +207,29 @@ export class InventoryController {
       const { actualCounts } = req.body;
 
       if (!actualCounts || !Array.isArray(actualCounts)) {
-        return res.status(400).json({ error: 'Actual counts array is required' });
+        res.status(400).json({ success: false, message: 'Actual counts array is required' });
+        return;
       }
 
       if (actualCounts.length === 0) {
-        return res.status(400).json({ error: 'At least one count is required' });
+        res.status(400).json({ success: false, message: 'At least one count is required' });
+        return;
       }
 
-      // Validate each count
       for (const count of actualCounts) {
         if (!count.productId || count.actualCount === undefined) {
-          return res.status(400).json({ 
-            error: 'Each count must have productId and actualCount' 
+          res.status(400).json({
+            success: false,
+            message: 'Each count must have productId and actualCount',
           });
+          return;
         }
       }
 
       const result = await InventoryService.reconcileInventory(actualCounts);
-      res.json(result);
+      res.json({ success: true, data: result });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -234,9 +245,9 @@ export class InventoryController {
         threshold,
         daysToAnalyze
       );
-      res.json(recommendations);
+      res.json({ success: true, data: { recommendations } });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 }

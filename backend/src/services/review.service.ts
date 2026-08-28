@@ -1,6 +1,5 @@
-import { PrismaClient, Review } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Review } from '@prisma/client';
+import prisma from '../config/database';
 
 interface CreateReviewData {
   productId: string;

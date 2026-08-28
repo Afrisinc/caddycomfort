@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { authApi } from '@/lib/api';
+import { authApi, usersApi } from '@/lib/api';
 
 export interface User {
   id: string;
@@ -24,7 +24,7 @@ interface AuthStore {
     phone?: string;
   }) => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (userData: Partial<User>) => void;
+  updateProfile: (userData: { firstName?: string; lastName?: string; phone?: string }) => Promise<void>;
   checkAuth: () => Promise<boolean>;
   verifyEmail: (email: string, code: string) => Promise<void>;
   resendVerification: (email: string) => Promise<void>;
@@ -100,9 +100,17 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      updateProfile: (userData) => {
+      updateProfile: async (userData) => {
+        const updated = await usersApi.updateProfile(userData);
         set((state) => ({
-          user: state.user ? { ...state.user, ...userData } : null,
+          user: state.user
+            ? {
+                ...state.user,
+                firstName: updated.firstName,
+                lastName: updated.lastName,
+                phone: updated.phone,
+              }
+            : null,
         }));
       },
 

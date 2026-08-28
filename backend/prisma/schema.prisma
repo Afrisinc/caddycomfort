@@ -22,6 +22,7 @@ model User {
   avatar        String?
   role          UserRole  @default(CUSTOMER)
   isVerified    Boolean   @default(false)
+  isActive      Boolean   @default(true)
   verificationCode       String?
   verificationCodeExpiry DateTime?
   passwordResetToken     String?   @unique

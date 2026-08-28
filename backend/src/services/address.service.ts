@@ -1,6 +1,5 @@
-import { PrismaClient, Address } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Address } from '@prisma/client';
+import prisma from '../config/database';
 
 interface CreateAddressData {
   fullName: string;

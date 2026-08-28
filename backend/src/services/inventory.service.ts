@@ -303,6 +303,8 @@ export class InventoryService {
    * Get inventory valuation report
    */
   static async getInventoryValuation() {
+    // Intentionally includes inactive/draft products: stock still needs to
+    // be tracked and restocked before a product is published.
     const products = await prisma.product.findMany({
       select: {
         id: true,
@@ -317,13 +319,19 @@ export class InventoryService {
           },
         },
       },
-      where: {
-        isActive: true,
-      },
       orderBy: {
         name: 'asc',
       },
     });
+
+    const lastRestocks = await prisma.inventoryLog.groupBy({
+      by: ['productId'],
+      where: { type: 'RESTOCK' },
+      _max: { createdAt: true },
+    });
+    const lastRestockedByProduct = new Map(
+      lastRestocks.map((r) => [r.productId, r._max.createdAt])
+    );
 
     const valuation = products.map((product) => ({
       productId: product.id,
@@ -333,6 +341,8 @@ export class InventoryService {
       unitPrice: product.price,
       quantity: product.stockQuantity,
       totalValue: product.price * product.stockQuantity,
+      lastRestockedAt: lastRestockedByProduct.get(product.id) || null,
+      isActive: product.isActive,
     }));
 
     const totalValue = valuation.reduce((sum, item) => sum + item.totalValue, 0);

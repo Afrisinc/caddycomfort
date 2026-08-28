@@ -9,11 +9,11 @@ export class AddressController {
     try {
       const userId = req.user!.userId;
       const addresses = await AddressService.getUserAddresses(userId);
-      res.json(addresses);
+      res.json({ success: true, data: addresses });
     } catch (error) {
       res.status(500).json({
-        message: 'Error fetching addresses',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error fetching addresses',
       });
     }
   }
@@ -27,14 +27,14 @@ export class AddressController {
       const { id } = req.params;
 
       const address = await AddressService.getById(id, userId);
-      res.json(address);
+      res.json({ success: true, data: address });
     } catch (error) {
       if (error instanceof Error && error.message === 'Address not found') {
-        return res.status(404).json({ message: error.message });
+        return res.status(404).json({ success: false, message: error.message });
       }
       res.status(500).json({
-        message: 'Error fetching address',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error fetching address',
       });
     }
   }
@@ -46,16 +46,16 @@ export class AddressController {
     try {
       const userId = req.user!.userId;
       const address = await AddressService.getDefaultAddress(userId);
-      
+
       if (!address) {
-        return res.status(404).json({ message: 'No default address found' });
+        return res.status(404).json({ success: false, message: 'No default address found' });
       }
 
-      res.json(address);
+      res.json({ success: true, data: address });
     } catch (error) {
       res.status(500).json({
-        message: 'Error fetching default address',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error fetching default address',
       });
     }
   }
@@ -81,6 +81,7 @@ export class AddressController {
       // Validation
       if (!fullName || !phone || !addressLine1 || !city || !state || !postalCode || !country) {
         return res.status(400).json({
+          success: false,
           message: 'Required fields: fullName, phone, addressLine1, city, state, postalCode, country',
         });
       }
@@ -97,11 +98,11 @@ export class AddressController {
         isDefault,
       });
 
-      res.status(201).json(address);
+      res.status(201).json({ success: true, message: 'Address created successfully', data: address });
     } catch (error) {
       res.status(500).json({
-        message: 'Error creating address',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error creating address',
       });
     }
   }
@@ -116,14 +117,14 @@ export class AddressController {
       const updateData = req.body;
 
       const address = await AddressService.update(id, userId, updateData);
-      res.json(address);
+      res.json({ success: true, message: 'Address updated successfully', data: address });
     } catch (error) {
       if (error instanceof Error && error.message === 'Address not found') {
-        return res.status(404).json({ message: error.message });
+        return res.status(404).json({ success: false, message: error.message });
       }
       res.status(500).json({
-        message: 'Error updating address',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error updating address',
       });
     }
   }
@@ -137,14 +138,14 @@ export class AddressController {
       const { id } = req.params;
 
       const address = await AddressService.setDefault(id, userId);
-      res.json(address);
+      res.json({ success: true, message: 'Default address updated', data: address });
     } catch (error) {
       if (error instanceof Error && error.message === 'Address not found') {
-        return res.status(404).json({ message: error.message });
+        return res.status(404).json({ success: false, message: error.message });
       }
       res.status(500).json({
-        message: 'Error setting default address',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error setting default address',
       });
     }
   }
@@ -158,14 +159,14 @@ export class AddressController {
       const { id } = req.params;
 
       await AddressService.delete(id, userId);
-      res.json({ message: 'Address deleted successfully' });
+      res.json({ success: true, message: 'Address deleted successfully' });
     } catch (error) {
       if (error instanceof Error && error.message === 'Address not found') {
-        return res.status(404).json({ message: error.message });
+        return res.status(404).json({ success: false, message: error.message });
       }
       res.status(500).json({
-        message: 'Error deleting address',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error deleting address',
       });
     }
   }

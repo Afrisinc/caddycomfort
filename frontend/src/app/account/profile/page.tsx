@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'sonner';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -18,9 +18,9 @@ export default function ProfilePage() {
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
-    email: user?.email || '',
     phone: user?.phone || '',
   });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -28,10 +28,37 @@ export default function ProfilePage() {
     }
   }, [isAuthenticated, router]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        phone: user.phone || '',
+      });
+    }
+  }, [user]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateProfile(formData);
-    toast.success('Profile updated successfully');
+
+    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+      toast.error('First and last name are required');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      await updateProfile({
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        phone: formData.phone.trim() || undefined,
+      });
+      toast.success('Profile updated successfully');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update profile');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!isAuthenticated || !user) return null;
@@ -57,6 +84,7 @@ export default function ProfilePage() {
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                   required
+                  disabled={isSaving}
                 />
               </div>
               <div>
@@ -66,19 +94,17 @@ export default function ProfilePage() {
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                   required
+                  disabled={isSaving}
                 />
               </div>
             </div>
 
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-              />
+              <Input id="email" type="email" value={user.email} disabled />
+              <p className="text-xs text-muted-foreground mt-1">
+                Contact support to change your email address
+              </p>
             </div>
 
             <div>
@@ -88,12 +114,17 @@ export default function ProfilePage() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                disabled={isSaving}
               />
             </div>
 
-            <Button type="submit" className="bg-accent-rose hover:bg-accent-rose-dark">
-              <Save className="mr-2 h-4 w-4" />
-              Save Changes
+            <Button type="submit" className="bg-accent-rose hover:bg-accent-rose-dark" disabled={isSaving}>
+              {isSaving ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
           </form>
         </div>
