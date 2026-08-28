@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserService = void 0;
 const client_1 = require("@prisma/client");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
+const auth_notify_1 = require("../utils/notify/auth.notify");
 const prisma = new client_1.PrismaClient();
 class UserService {
     /**
@@ -85,7 +86,7 @@ class UserService {
         // Hash new password
         const hashedPassword = await bcryptjs_1.default.hash(newPassword, 10);
         // Update password
-        await prisma.user.update({
+        const updatedUser = await prisma.user.update({
             where: { id: userId },
             data: { password: hashedPassword },
         });
@@ -94,6 +95,7 @@ class UserService {
             where: { userId },
             data: { isRevoked: true },
         });
+        await (0, auth_notify_1.sendPasswordChangedEmail)(updatedUser);
     }
     /**
      * Get user statistics

@@ -37,6 +37,7 @@ interface ProductFormData {
   slug: string;
   description: string;
   price: number;
+  salePrice: number;
   comparePrice: number;
   sku: string;
   categoryId: string;
@@ -62,6 +63,7 @@ function AddProduct() {
     slug: '',
     description: '',
     price: 0,
+    salePrice: 0,
     comparePrice: 0,
     sku: '',
     categoryId: '',
@@ -197,7 +199,8 @@ function AddProduct() {
         slug: formData.slug.trim(),
         description: formData.description.trim(),
         price: Number(formData.price),
-        comparePrice: formData.comparePrice ? Number(formData.comparePrice) : undefined,
+        salePrice: formData.salePrice && formData.salePrice > 0 ? Number(formData.salePrice) : undefined,
+        comparePrice: formData.comparePrice && formData.comparePrice > 0 ? Number(formData.comparePrice) : undefined,
         sku: formData.sku.trim() || `PRD-${Date.now()}`, // Generate SKU if empty
         categoryId: formData.categoryId,
         images: formData.images,
@@ -338,9 +341,9 @@ function AddProduct() {
                 <CardTitle>Pricing</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="price">Price (RWF) *</Label>
+                    <Label htmlFor="price">Regular Price (RWF) *</Label>
                     <Input 
                       id="price" 
                       type="number"
@@ -350,6 +353,19 @@ function AddProduct() {
                       required
                       disabled={isSubmitting}
                     />
+                    <p className="text-xs text-muted-foreground mt-1">Standard selling price</p>
+                  </div>
+                  <div>
+                    <Label htmlFor="salePrice">Sale Price (RWF)</Label>
+                    <Input 
+                      id="salePrice" 
+                      type="number"
+                      placeholder="0"
+                      value={formData.salePrice || ''}
+                      onChange={(e) => setFormData({ ...formData, salePrice: Number(e.target.value) })}
+                      disabled={isSubmitting}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Promotional / discounted price</p>
                   </div>
                   <div>
                     <Label htmlFor="comparePrice">Compare at Price (RWF)</Label>
@@ -361,18 +377,7 @@ function AddProduct() {
                       onChange={(e) => setFormData({ ...formData, comparePrice: Number(e.target.value) })}
                       disabled={isSubmitting}
                     />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="cost">Cost per Item (RWF)</Label>
-                    <Input 
-                      id="cost" 
-                      type="number"
-                      placeholder="0"
-                      disabled={isSubmitting}
-                    />
+                    <p className="text-xs text-muted-foreground mt-1">Original strikethrough price</p>
                   </div>
                 </div>
               </CardContent>

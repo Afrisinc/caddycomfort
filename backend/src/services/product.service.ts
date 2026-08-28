@@ -8,6 +8,7 @@ interface CreateProductData {
   slug: string;
   description: string;
   price: number;
+  salePrice?: number;
   comparePrice?: number;
   sku: string;
   categoryId: string;
@@ -25,6 +26,7 @@ interface UpdateProductData {
   slug?: string;
   description?: string;
   price?: number;
+  salePrice?: number;
   comparePrice?: number;
   sku?: string;
   categoryId?: string;
@@ -112,15 +114,26 @@ export class ProductService {
       }
     }
 
+    const resolvedComparePrice = data.comparePrice !== undefined ? data.comparePrice : (data as any).compareAtPrice;
+
     // Create product
     const product = await prisma.product.create({
       data: {
-        ...data,
+        name: data.name,
+        slug: data.slug,
+        description: data.description,
+        price: data.price,
+        salePrice: data.salePrice !== undefined ? data.salePrice : null,
+        comparePrice: resolvedComparePrice !== undefined ? resolvedComparePrice : null,
+        sku: data.sku,
+        categoryId: data.categoryId,
         images: imageUrls,
         sizes: data.sizes || [],
         colors: data.colors || [],
         tags: data.tags || [],
         stockQuantity: data.stockQuantity || 0,
+        isActive: data.isActive ?? true,
+        isFeatured: data.isFeatured ?? false,
       },
       include: {
         category: true,
@@ -371,13 +384,30 @@ export class ProductService {
       }
     }
 
+    const resolvedComparePrice = data.comparePrice !== undefined ? data.comparePrice : (data as any).compareAtPrice;
+
     // Update product
+    const updateData: Prisma.ProductUpdateInput = {
+      ...(data.name !== undefined && { name: data.name }),
+      ...(data.slug !== undefined && { slug: data.slug }),
+      ...(data.description !== undefined && { description: data.description }),
+      ...(data.price !== undefined && { price: data.price }),
+      ...(data.salePrice !== undefined && { salePrice: data.salePrice }),
+      ...(resolvedComparePrice !== undefined && { comparePrice: resolvedComparePrice }),
+      ...(data.sku !== undefined && { sku: data.sku }),
+      ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
+      ...(imageUrls !== undefined && { images: imageUrls }),
+      ...(data.sizes !== undefined && { sizes: data.sizes }),
+      ...(data.colors !== undefined && { colors: data.colors }),
+      ...(data.tags !== undefined && { tags: data.tags }),
+      ...(data.stockQuantity !== undefined && { stockQuantity: data.stockQuantity }),
+      ...(data.isActive !== undefined && { isActive: data.isActive }),
+      ...(data.isFeatured !== undefined && { isFeatured: data.isFeatured }),
+    };
+
     const updated = await prisma.product.update({
       where: { id },
-      data: {
-        ...data,
-        images: imageUrls,
-      },
+      data: updateData,
       include: {
         category: true,
       },
