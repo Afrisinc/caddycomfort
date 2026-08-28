@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Mail, Phone, MapPin, Clock } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { contactApi } from '@/lib/api';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -17,11 +18,27 @@ export default function ContactPage() {
     subject: '',
     message: '',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('Message sent! We\'ll get back to you soon.');
-    setFormData({ name: '', email: '', subject: '', message: '' });
+    setIsSubmitting(true);
+    try {
+      const [firstName, ...rest] = formData.name.trim().split(' ');
+      await contactApi.submit({
+        email: formData.email,
+        firstName,
+        lastName: rest.join(' ') || undefined,
+        subject: formData.subject,
+        message: formData.message,
+      });
+      toast.success('Message sent! We\'ll get back to you soon.');
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send message');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const contactInfo = [
@@ -89,8 +106,8 @@ export default function ContactPage() {
                     required
                   />
                 </div>
-                <Button type="submit" size="lg" className="bg-accent-rose hover:bg-accent-rose-dark">
-                  Send Message
+                <Button type="submit" size="lg" className="bg-accent-rose hover:bg-accent-rose-dark" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send Message'}
                 </Button>
               </form>
             </div>

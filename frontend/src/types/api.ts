@@ -171,6 +171,12 @@ export interface CouponStats {
   totalDiscountGiven: number;
 }
 
+// Contact Types
+export interface ContactResult {
+  id: string;
+  subscribed: boolean;
+}
+
 // Customer Types (admin)
 export type CustomerStatus = 'vip' | 'active' | 'inactive' | 'suspended';
 

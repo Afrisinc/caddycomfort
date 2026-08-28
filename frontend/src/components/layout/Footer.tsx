@@ -3,9 +3,29 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Facebook, Instagram, Twitter, Mail } from 'lucide-react';
+import { Facebook, Instagram, Twitter, Mail, Loader2 } from 'lucide-react';
+import { newsletterApi } from '@/lib/api';
+import { toast } from 'sonner';
 
 export function Footer() {
+  const [email, setEmail] = React.useState('');
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setIsSubmitting(true);
+    try {
+      await newsletterApi.subscribe(email);
+      toast.success('You\'re subscribed to our newsletter!');
+      setEmail('');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to subscribe');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <footer className="bg-card border-t mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -114,13 +134,25 @@ export function Footer() {
             <p className="text-sm text-muted-foreground mb-4">
               Subscribe to our newsletter for exclusive offers and updates.
             </p>
-            <div className="flex flex-col space-y-2">
-              <Input type="email" placeholder="Enter your email" />
-              <Button className="bg-accent-rose hover:bg-accent-rose-dark">
-                <Mail className="h-4 w-4 mr-2" />
-                Subscribe
+            <form onSubmit={handleSubscribe} className="flex flex-col space-y-2">
+              <Input
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <Button type="submit" className="bg-accent-rose hover:bg-accent-rose-dark" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Mail className="h-4 w-4 mr-2" />
+                    Subscribe
+                  </>
+                )}
               </Button>
-            </div>
+            </form>
           </div>
         </div>
 

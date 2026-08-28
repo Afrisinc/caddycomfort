@@ -2,17 +2,27 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowRight, Send } from 'lucide-react';
+import { ArrowRight, Send, Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import { newsletterApi } from '@/lib/api';
+import { toast } from 'sonner';
 
 export function NewsletterSection() {
   const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle newsletter subscription
-    console.log('Subscribing:', email);
-    setEmail('');
+    setIsSubmitting(true);
+    try {
+      await newsletterApi.subscribe(email);
+      toast.success('You\'re subscribed to our newsletter!');
+      setEmail('');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to subscribe');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -49,9 +59,16 @@ export function NewsletterSection() {
               type="submit"
               size="lg"
               className="h-14 px-8 bg-accent-rose hover:bg-accent-rose-dark text-white whitespace-nowrap"
+              disabled={isSubmitting}
             >
-              Subscribe Now
-              <ArrowRight className="ml-2 h-4 w-4" />
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  Subscribe Now
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              )}
             </Button>
           </div>
         </form>

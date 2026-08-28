@@ -13,6 +13,7 @@ import reviewRoutes from './review.routes';
 import userRoutes from './user.routes';
 import customerRoutes from './customer.routes';
 import dashboardRoutes from './dashboard.routes';
+import contactRoutes from './contact.routes';
 
 const router = Router();
 
@@ -31,5 +32,6 @@ router.use('/reviews', reviewRoutes);
 router.use('/users', userRoutes);
 router.use('/customers', customerRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/contact', contactRoutes);
 
 export default router;
