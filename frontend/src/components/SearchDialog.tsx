@@ -8,14 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useDebounce } from '@/hooks/useDebounce';
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  category: string;
-}
+import { productsApi } from '@/lib/api';
+import { Product } from '@/types/api';
 
 interface SearchDialogProps {
   open: boolean;
@@ -25,6 +19,7 @@ interface SearchDialogProps {
 export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<Product[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('recentSearches');
@@ -37,20 +32,15 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
   const router = useRouter();
 
   const fetchSuggestions = useCallback(async (searchQuery: string) => {
-    // Mock data - replace with actual API call
-    const mockProducts: Product[] = [
-      { id: '1', name: 'Elegant Silk Dress', price: 299000, image: '/images/products/dress-1.jpg', category: 'Women' },
-      { id: '2', name: 'Classic Leather Jacket', price: 450000, image: '/images/products/jacket-1.jpg', category: 'Men' },
-      { id: '3', name: 'Designer Handbag', price: 350000, image: '/images/products/bag-1.jpg', category: 'Accessories' },
-      { id: '4', name: 'Cashmere Sweater', price: 180000, image: '/images/products/sweater-1.jpg', category: 'Women' },
-      { id: '5', name: 'Silk Scarf', price: 75000, image: '/images/products/scarf-1.jpg', category: 'Accessories' },
-    ];
-
-    const filtered = mockProducts.filter(product =>
-      product.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    setSuggestions(filtered.slice(0, 5));
+    try {
+      setIsSearching(true);
+      const results = await productsApi.search(searchQuery, 6);
+      setSuggestions(results);
+    } catch {
+      setSuggestions([]);
+    } finally {
+      setIsSearching(false);
+    }
   }, []);
 
   // Fetch suggestions when debounced query changes
@@ -78,11 +68,18 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
     }
   };
 
+  const goToProduct = (product: Product) => {
+    saveRecentSearch(query);
+    router.push(`/shop/${product.id}`);
+    onOpenChange(false);
+    setQuery('');
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedIndex(prev => 
+        setSelectedIndex(prev =>
           prev < suggestions.length - 1 ? prev + 1 : prev
         );
         break;
@@ -93,9 +90,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
       case 'Enter':
         e.preventDefault();
         if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-          router.push(`/shop/${suggestions[selectedIndex].id}`);
-          onOpenChange(false);
-          setQuery('');
+          goToProduct(suggestions[selectedIndex]);
         } else {
           handleSearch();
         }
@@ -112,13 +107,6 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
     setRecentSearches(updated);
     localStorage.setItem('recentSearches', JSON.stringify(updated));
   };
-
-  // Reset state when dialog closes
-  useEffect(() => {
-    if (open) {
-      // Dialog opened, focus will be handled by autoFocus
-    }
-  }, [open]);
 
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange(newOpen);
@@ -138,7 +126,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
         <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <DialogTitle className="text-lg font-semibold">Search Products</DialogTitle>
         </DialogHeader>
-        
+
         <div className="p-6">
           <div className="relative mb-4">
             <Input
@@ -189,7 +177,19 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
             {/* Suggestions */}
             {query.length >= 2 && (
               <div>
-                {suggestions.length > 0 ? (
+                {isSearching ? (
+                  <div className="space-y-1">
+                    {Array.from({ length: 3 }, (_, i) => (
+                      <div key={i} className="flex items-center gap-4 p-3 animate-pulse">
+                        <div className="w-16 h-16 shrink-0 rounded bg-muted" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 w-3/4 rounded bg-muted" />
+                          <div className="h-3 w-1/3 rounded bg-muted" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : suggestions.length > 0 ? (
                   <>
                     <h4 className="text-sm font-semibold mb-3 px-2">Products</h4>
                     <div className="space-y-1">
@@ -201,23 +201,23 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
                               ? 'bg-accent-rose/10'
                               : 'hover:bg-muted'
                           }`}
-                          onClick={() => {
-                            router.push(`/shop/${product.id}`);
-                            onOpenChange(false);
-                            setQuery('');
-                          }}
+                          onClick={() => goToProduct(product)}
                         >
-                          <div className="relative w-16 h-16 shrink-0">
-                            <Image
-                              src={product.image}
-                              alt={product.name}
-                              fill
-                              className="object-cover rounded"
-                            />
+                          <div className="relative w-16 h-16 shrink-0 bg-muted rounded overflow-hidden">
+                            {(product.imageUrl || product.images[0]) && (
+                              <Image
+                                src={product.imageUrl || product.images[0]}
+                                alt={product.name}
+                                fill
+                                className="object-cover"
+                              />
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{product.name}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{product.category}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {product.category?.name || 'Uncategorized'}
+                            </p>
                           </div>
                           <p className="text-sm font-semibold text-accent-rose">
                             Rwf {product.price.toLocaleString()}

@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-import Image from 'next/image';
-import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Navbar } from '@/components/layout/Navbar';
+import { Footer } from '@/components/layout/Footer';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,126 +11,140 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { ProductCard } from '@/components/products/ProductCard';
+import { ProductGridSkeleton } from '@/components/products/ProductCardSkeleton';
+import { productsApi, categoriesApi, wishlistApi } from '@/lib/api';
+import { toProductCardProps } from '@/lib/productCard';
+import { Category, Product } from '@/types/api';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useCartStore } from '@/store/useCartStore';
+import { toast } from 'sonner';
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  salePrice?: number;
-  image: string;
-  category: string;
-  brand: string;
-  rating: number;
-}
+const MAX_PRICE = 1000000;
 
 function SearchContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const query = searchParams.get('q') || '';
-  
+  const { isAuthenticated } = useAuthStore();
+  const { addItem } = useCartStore();
+
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [sortBy, setSortBy] = useState('relevance');
-  const [priceRange, setPriceRange] = useState([0, 1000000]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [priceRange, setPriceRange] = useState([0, MAX_PRICE]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
 
-  const categories = ['Women', 'Men', 'Accessories', 'Shoes'];
-  const brands = ['Luxury Brand', 'Premium Co', 'Designer House', 'Classic Style'];
-
-  const fetchSearchResults = React.useCallback(async (searchQuery: string) => {
-    setIsLoading(true);
-    // Mock data - replace with actual API call
-    const mockProducts: Product[] = [
-      { id: '1', name: 'Elegant Silk Dress', price: 299000, image: '/images/products/dress-1.jpg', category: 'Women', brand: 'Luxury Brand', rating: 4.8 },
-      { id: '2', name: 'Classic Leather Jacket', price: 450000, image: '/images/products/jacket-1.jpg', category: 'Men', brand: 'Designer House', rating: 4.9 },
-      { id: '3', name: 'Designer Handbag', price: 350000, salePrice: 280000, image: '/images/products/bag-1.jpg', category: 'Accessories', brand: 'Premium Co', rating: 4.7 },
-      { id: '4', name: 'Cashmere Sweater', price: 180000, image: '/images/products/sweater-1.jpg', category: 'Women', brand: 'Classic Style', rating: 4.6 },
-      { id: '5', name: 'Silk Scarf', price: 75000, image: '/images/products/scarf-1.jpg', category: 'Accessories', brand: 'Luxury Brand', rating: 4.5 },
-      { id: '6', name: 'Tailored Blazer', price: 380000, image: '/images/products/blazer-1.jpg', category: 'Men', brand: 'Designer House', rating: 4.8 },
-      { id: '7', name: 'Evening Gown', price: 520000, image: '/images/products/gown-1.jpg', category: 'Women', brand: 'Premium Co', rating: 4.9 },
-      { id: '8', name: 'Leather Loafers', price: 220000, image: '/images/products/shoes-1.jpg', category: 'Shoes', brand: 'Classic Style', rating: 4.7 },
-    ];
-
-    const filtered = mockProducts.filter(product =>
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.category.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    setTimeout(() => {
-      setProducts(filtered);
-      setIsLoading(false);
-    }, 500);
+  useEffect(() => {
+    categoriesApi
+      .getAll()
+      .then((cats) => setCategories(cats.filter((c) => (c._count?.products ?? 0) > 0)))
+      .catch(() => {});
   }, []);
 
-  // Fetch search results
   useEffect(() => {
-    if (query) {
-      fetchSearchResults(query);
+    if (!isAuthenticated) {
+      setWishlistIds(new Set());
+      return;
     }
-  }, [query, fetchSearchResults]);
+    wishlistApi.getAll().then((items) => setWishlistIds(new Set(items.map((i) => i.productId)))).catch(() => {});
+  }, [isAuthenticated]);
 
-  // Apply filters and sorting using useMemo
+  useEffect(() => {
+    if (!query.trim()) {
+      setProducts([]);
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    productsApi
+      .getAll({ search: query, isActive: true }, { limit: 40 })
+      .then((r) => setProducts(r.products))
+      .catch(() => setProducts([]))
+      .finally(() => setIsLoading(false));
+  }, [query]);
+
+  // Apply filters and sorting client-side over the search-matched batch
   const filteredProducts = React.useMemo(() => {
-    let filtered = [...products];
+    let filtered = products.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1]);
 
-    // Price filter
-    filtered = filtered.filter(
-      p => p.price >= priceRange[0] && p.price <= priceRange[1]
-    );
-
-    // Category filter
-    if (selectedCategories.length > 0) {
-      filtered = filtered.filter(p => selectedCategories.includes(p.category));
+    if (selectedCategoryIds.length > 0) {
+      filtered = filtered.filter((p) => p.categoryId && selectedCategoryIds.includes(p.categoryId));
     }
 
-    // Brand filter
-    if (selectedBrands.length > 0) {
-      filtered = filtered.filter(p => selectedBrands.includes(p.brand));
-    }
-
-    // Sorting
     switch (sortBy) {
       case 'price-low':
-        filtered.sort((a, b) => a.price - b.price);
+        filtered = [...filtered].sort((a, b) => a.price - b.price);
         break;
       case 'price-high':
-        filtered.sort((a, b) => b.price - a.price);
-        break;
-      case 'rating':
-        filtered.sort((a, b) => b.rating - a.rating);
+        filtered = [...filtered].sort((a, b) => b.price - a.price);
         break;
       case 'newest':
-        // Keep original order for newest
+        filtered = [...filtered].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         break;
       default:
-        // Relevance - keep original order
+        // relevance — keep the order the search API returned
         break;
     }
 
     return filtered;
-  }, [products, priceRange, selectedCategories, selectedBrands, sortBy]);
+  }, [products, priceRange, selectedCategoryIds, sortBy]);
 
-  const toggleCategory = (category: string) => {
-    setSelectedCategories(prev =>
-      prev.includes(category)
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
-    );
-  };
-
-  const toggleBrand = (brand: string) => {
-    setSelectedBrands(prev =>
-      prev.includes(brand)
-        ? prev.filter(b => b !== brand)
-        : [...prev, brand]
+  const toggleCategory = (categoryId: string) => {
+    setSelectedCategoryIds((prev) =>
+      prev.includes(categoryId) ? prev.filter((c) => c !== categoryId) : [...prev, categoryId]
     );
   };
 
   const clearFilters = () => {
-    setPriceRange([0, 1000000]);
-    setSelectedCategories([]);
-    setSelectedBrands([]);
+    setPriceRange([0, MAX_PRICE]);
+    setSelectedCategoryIds([]);
     setSortBy('relevance');
+  };
+
+  const handleQuickAddToCart = (product: Product) => {
+    if (product.stockQuantity <= 0) {
+      toast.error('This item is out of stock');
+      return;
+    }
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.salePrice ?? product.price,
+      image: product.imageUrl || product.images[0] || '',
+      quantity: 1,
+      size: product.sizes[0] || '',
+      color: product.colors[0] || '',
+    });
+    toast.success(`${product.name} added to cart`);
+  };
+
+  const handleToggleWishlist = async (product: Product) => {
+    if (!isAuthenticated) {
+      toast.error('Please log in to save items to your wishlist');
+      router.push('/login');
+      return;
+    }
+    const inWishlist = wishlistIds.has(product.id);
+    try {
+      if (inWishlist) {
+        await wishlistApi.removeByProductId(product.id);
+        setWishlistIds((prev) => {
+          const next = new Set(prev);
+          next.delete(product.id);
+          return next;
+        });
+        toast.success('Removed from wishlist');
+      } else {
+        await wishlistApi.add(product.id);
+        setWishlistIds((prev) => new Set(prev).add(product.id));
+        toast.success('Added to wishlist');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update wishlist');
+    }
   };
 
   const FilterSection = (
@@ -141,7 +155,7 @@ function SearchContent() {
         <Slider
           value={priceRange}
           onValueChange={setPriceRange}
-          max={1000000}
+          max={MAX_PRICE}
           step={10000}
           className="mb-2"
         />
@@ -152,42 +166,25 @@ function SearchContent() {
       </div>
 
       {/* Categories */}
-      <div>
-        <h3 className="font-semibold mb-4">Category</h3>
-        <div className="space-y-2">
-          {categories.map((category) => (
-            <div key={category} className="flex items-center space-x-2">
-              <Checkbox
-                id={category}
-                checked={selectedCategories.includes(category)}
-                onCheckedChange={() => toggleCategory(category)}
-              />
-              <Label htmlFor={category} className="text-sm cursor-pointer">
-                {category}
-              </Label>
-            </div>
-          ))}
+      {categories.length > 0 && (
+        <div>
+          <h3 className="font-semibold mb-4">Category</h3>
+          <div className="space-y-2">
+            {categories.map((category) => (
+              <div key={category.id} className="flex items-center space-x-2">
+                <Checkbox
+                  id={category.id}
+                  checked={selectedCategoryIds.includes(category.id)}
+                  onCheckedChange={() => toggleCategory(category.id)}
+                />
+                <Label htmlFor={category.id} className="text-sm cursor-pointer">
+                  {category.name}
+                </Label>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-
-      {/* Brands */}
-      <div>
-        <h3 className="font-semibold mb-4">Brand</h3>
-        <div className="space-y-2">
-          {brands.map((brand) => (
-            <div key={brand} className="flex items-center space-x-2">
-              <Checkbox
-                id={brand}
-                checked={selectedBrands.includes(brand)}
-                onCheckedChange={() => toggleBrand(brand)}
-              />
-              <Label htmlFor={brand} className="text-sm cursor-pointer">
-                {brand}
-              </Label>
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
 
       <Button variant="outline" className="w-full" onClick={clearFilters}>
         Clear Filters
@@ -197,8 +194,9 @@ function SearchContent() {
 
   return (
     <div className="min-h-screen">
+      <Navbar />
       {/* Header */}
-      <div className="bg-muted/30 py-12 mb-8">
+      <div className="bg-muted/30 py-12 mb-8 pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 mb-4">
             <Search className="h-5 w-5 text-muted-foreground" />
@@ -216,9 +214,7 @@ function SearchContent() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Desktop Filters */}
           <aside className="hidden lg:block w-64 shrink-0">
-            <div className="sticky top-24">
-              {FilterSection}
-            </div>
+            <div className="sticky top-24">{FilterSection}</div>
           </aside>
 
           {/* Main Content */}
@@ -238,9 +234,7 @@ function SearchContent() {
                     <SheetHeader>
                       <SheetTitle>Filters</SheetTitle>
                     </SheetHeader>
-                    <div className="mt-6">
-                      {FilterSection}
-                    </div>
+                    <div className="mt-6">{FilterSection}</div>
                   </SheetContent>
                 </Sheet>
               </div>
@@ -255,64 +249,25 @@ function SearchContent() {
                   <SelectItem value="newest">Newest</SelectItem>
                   <SelectItem value="price-low">Price: Low to High</SelectItem>
                   <SelectItem value="price-high">Price: High to Low</SelectItem>
-                  <SelectItem value="rating">Highest Rated</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Products Grid */}
             {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="animate-pulse">
-                    <div className="bg-muted aspect-3/4 rounded-lg mb-4" />
-                    <div className="h-4 bg-muted rounded w-3/4 mb-2" />
-                    <div className="h-4 bg-muted rounded w-1/2" />
-                  </div>
-                ))}
-              </div>
+              <ProductGridSkeleton count={6} />
             ) : filteredProducts.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredProducts.map((product) => (
-                  <Link
+                  <ProductCard
                     key={product.id}
+                    {...toProductCardProps(product)}
                     href={`/shop/${product.id}`}
-                    className="group"
-                  >
-                    <div className="relative aspect-3/4 mb-4 overflow-hidden rounded-lg bg-muted">
-                      <Image
-                        src={product.image}
-                        alt={product.name}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      {product.salePrice && (
-                        <div className="absolute top-2 right-2 bg-accent-rose text-white px-2 py-1 rounded text-xs font-semibold">
-                          SALE
-                        </div>
-                      )}
-                    </div>
-                    <h3 className="font-medium mb-1 group-hover:text-accent-rose transition-colors">
-                      {product.name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-2">{product.category}</p>
-                    <div className="flex items-center gap-2">
-                      {product.salePrice ? (
-                        <>
-                          <span className="font-semibold text-accent-rose">
-                            Rwf {product.salePrice.toLocaleString()}
-                          </span>
-                          <span className="text-sm text-muted-foreground line-through">
-                            Rwf {product.price.toLocaleString()}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="font-semibold">
-                          Rwf {product.price.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                  </Link>
+                    isWishlisted={wishlistIds.has(product.id)}
+                    onAddToCart={() => handleQuickAddToCart(product)}
+                    onWishlist={() => handleToggleWishlist(product)}
+                    onQuickView={() => router.push(`/shop/${product.id}`)}
+                  />
                 ))}
               </div>
             ) : (
@@ -328,6 +283,7 @@ function SearchContent() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

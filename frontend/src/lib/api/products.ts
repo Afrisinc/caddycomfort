@@ -2,10 +2,19 @@ import apiClient, { handleApiResponse, handleApiError } from '@/lib/api-client';
 import {
   Product,
   ProductFilters,
-  PaginatedResponse,
   PaginationParams,
   SortParams,
 } from '@/types/api';
+
+export interface ProductListResult {
+  products: Product[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
 
 export const productsApi = {
   /**
@@ -15,7 +24,7 @@ export const productsApi = {
     filters?: ProductFilters,
     pagination?: PaginationParams,
     sort?: SortParams
-  ): Promise<PaginatedResponse<Product>> => {
+  ): Promise<ProductListResult> => {
     try {
       const params = new URLSearchParams();
 
@@ -41,7 +50,7 @@ export const productsApi = {
       }
 
       const response = await apiClient.get(`/products?${params.toString()}`);
-      return handleApiResponse<PaginatedResponse<Product>>(response).data!;
+      return handleApiResponse<ProductListResult>(response).data!;
     } catch (error) {
       throw handleApiError(error);
     }

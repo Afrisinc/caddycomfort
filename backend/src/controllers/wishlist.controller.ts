@@ -9,11 +9,11 @@ export class WishlistController {
     try {
       const userId = req.user!.userId;
       const wishlist = await WishlistService.getUserWishlist(userId);
-      res.json(wishlist);
+      res.json({ success: true, data: wishlist });
     } catch (error) {
       res.status(500).json({
-        message: 'Error fetching wishlist',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error fetching wishlist',
       });
     }
   }
@@ -27,23 +27,23 @@ export class WishlistController {
       const { productId } = req.body;
 
       if (!productId) {
-        return res.status(400).json({ message: 'Product ID is required' });
+        return res.status(400).json({ success: false, message: 'Product ID is required' });
       }
 
       const item = await WishlistService.addToWishlist(userId, productId);
-      res.status(201).json(item);
+      res.status(201).json({ success: true, message: 'Added to wishlist', data: item });
     } catch (error) {
       if (error instanceof Error) {
         if (error.message === 'Product not found') {
-          return res.status(404).json({ message: error.message });
+          return res.status(404).json({ success: false, message: error.message });
         }
         if (error.message === 'Product already in wishlist') {
-          return res.status(409).json({ message: error.message });
+          return res.status(409).json({ success: false, message: error.message });
         }
       }
       res.status(500).json({
-        message: 'Error adding to wishlist',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error adding to wishlist',
       });
     }
   }
@@ -57,14 +57,14 @@ export class WishlistController {
       const { id } = req.params;
 
       await WishlistService.removeFromWishlist(userId, id);
-      res.json({ message: 'Item removed from wishlist' });
+      res.json({ success: true, message: 'Item removed from wishlist' });
     } catch (error) {
       if (error instanceof Error && error.message === 'Wishlist item not found') {
-        return res.status(404).json({ message: error.message });
+        return res.status(404).json({ success: false, message: error.message });
       }
       res.status(500).json({
-        message: 'Error removing from wishlist',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error removing from wishlist',
       });
     }
   }
@@ -78,14 +78,14 @@ export class WishlistController {
       const { productId } = req.params;
 
       await WishlistService.removeByProductId(userId, productId);
-      res.json({ message: 'Product removed from wishlist' });
+      res.json({ success: true, message: 'Product removed from wishlist' });
     } catch (error) {
       if (error instanceof Error && error.message === 'Product not in wishlist') {
-        return res.status(404).json({ message: error.message });
+        return res.status(404).json({ success: false, message: error.message });
       }
       res.status(500).json({
-        message: 'Error removing from wishlist',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error removing from wishlist',
       });
     }
   }
@@ -99,11 +99,11 @@ export class WishlistController {
       const { productId } = req.params;
 
       const inWishlist = await WishlistService.isInWishlist(userId, productId);
-      res.json({ inWishlist });
+      res.json({ success: true, data: { inWishlist } });
     } catch (error) {
       res.status(500).json({
-        message: 'Error checking wishlist',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error checking wishlist',
       });
     }
   }
@@ -115,11 +115,11 @@ export class WishlistController {
     try {
       const userId = req.user!.userId;
       const count = await WishlistService.clearWishlist(userId);
-      res.json({ message: 'Wishlist cleared', itemsRemoved: count });
+      res.json({ success: true, message: 'Wishlist cleared', data: { itemsRemoved: count } });
     } catch (error) {
       res.status(500).json({
-        message: 'Error clearing wishlist',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error clearing wishlist',
       });
     }
   }
@@ -131,11 +131,11 @@ export class WishlistController {
     try {
       const userId = req.user!.userId;
       const count = await WishlistService.getCount(userId);
-      res.json({ count });
+      res.json({ success: true, data: { count } });
     } catch (error) {
       res.status(500).json({
-        message: 'Error getting wishlist count',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error getting wishlist count',
       });
     }
   }
@@ -148,13 +148,14 @@ export class WishlistController {
       const userId = req.user!.userId;
       const movedCount = await WishlistService.moveToCart(userId);
       res.json({
+        success: true,
         message: 'Items moved to cart',
-        movedCount,
+        data: { movedCount },
       });
     } catch (error) {
       res.status(500).json({
-        message: 'Error moving items to cart',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error moving items to cart',
       });
     }
   }

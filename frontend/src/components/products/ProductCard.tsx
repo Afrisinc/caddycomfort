@@ -10,6 +10,7 @@ interface ProductCardProps {
   id: string;
   title: string;
   category: string;
+  categorySlug?: string;
   price: string;
   originalPrice?: string;
   discount?: string;
@@ -19,6 +20,7 @@ interface ProductCardProps {
   rating?: number;
   isNew?: boolean;
   isBestSeller?: boolean;
+  isWishlisted?: boolean;
   onAddToCart?: () => void;
   onWishlist?: () => void;
   onQuickView?: () => void;
@@ -28,6 +30,7 @@ export function ProductCard({
   id,
   title,
   category,
+  categorySlug,
   price,
   originalPrice,
   discount,
@@ -37,6 +40,7 @@ export function ProductCard({
   rating,
   isNew = false,
   isBestSeller = false,
+  isWishlisted = false,
   onAddToCart,
   onWishlist,
   onQuickView,
@@ -130,11 +134,11 @@ export function ProductCard({
           <Button
             size="icon"
             variant="secondary"
-            className="rounded-full bg-card/95 backdrop-blur-md hover:bg-accent-rose hover:text-white shadow-lg border border-border/50 hover:border-accent-rose hover:scale-110 transition-all duration-200"
+            className={`rounded-full bg-card/95 backdrop-blur-md hover:bg-accent-rose hover:text-white shadow-lg border border-border/50 hover:border-accent-rose hover:scale-110 transition-all duration-200 ${isWishlisted ? 'text-accent-rose' : ''}`}
             onClick={onWishlist}
-            aria-label="Add to wishlist"
+            aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
           >
-            <Heart className="h-4 w-4" />
+            <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
           </Button>
         </div>
 
@@ -168,7 +172,7 @@ export function ProductCard({
           </Link>
           
           <div className="flex items-center justify-between pt-1">
-            <Link href={`/shop?category=${category.toLowerCase()}`}>
+            <Link href={`/shop?category=${categorySlug || category.toLowerCase()}`}>
               <h5 className="text-xs font-medium text-muted-foreground hover:text-accent-rose transition-colors uppercase tracking-wide">
                 {category}
               </h5>

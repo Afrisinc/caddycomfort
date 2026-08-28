@@ -1,18 +1,28 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/products/ProductCard';
+import { ProductGridSkeleton } from '@/components/products/ProductCardSkeleton';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useCartStore } from '@/store/useCartStore';
+import { wishlistApi } from '@/lib/api';
+import { toProductCardProps } from '@/lib/productCard';
+import { WishlistItem } from '@/types/api';
+import { toast } from 'sonner';
 import { ArrowLeft, Heart } from 'lucide-react';
 
 export default function WishlistPage() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
+  const { addItem } = useCartStore();
+
+  const [items, setItems] = useState<WishlistItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -20,26 +30,52 @@ export default function WishlistPage() {
     }
   }, [isAuthenticated, router]);
 
-  const wishlistItems = [
-    {
-      id: '1',
-      title: 'Cashmere Sweater',
-      category: "Women's Collection",
-      price: 'Rwf 299,000',
-      originalPrice: 'Rwf 399,000',
-      discount: '25%',
-      image: '/images/products/product-img-1.jpg',
-    },
-    {
-      id: '2',
-      title: 'Silk Dress',
-      category: "Women's Collection",
-      price: 'Rwf 189,000',
-      originalPrice: 'Rwf 249,000',
-      discount: '24%',
-      image: '/images/products/product-img-2.jpg',
-    },
-  ];
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetchWishlist();
+  }, [isAuthenticated]);
+
+  const fetchWishlist = async () => {
+    try {
+      setIsLoading(true);
+      const data = await wishlistApi.getAll();
+      setItems(data);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to load wishlist');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRemove = async (item: WishlistItem) => {
+    // Optimistic: the heart click is the only affordance for "remove" on this page.
+    setItems((prev) => prev.filter((i) => i.id !== item.id));
+    try {
+      await wishlistApi.remove(item.id);
+      toast.success('Removed from wishlist');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to remove item');
+      fetchWishlist();
+    }
+  };
+
+  const handleAddToCart = (item: WishlistItem) => {
+    const { product } = item;
+    if (product.stockQuantity <= 0) {
+      toast.error('This item is out of stock');
+      return;
+    }
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.salePrice ?? product.price,
+      image: product.imageUrl || product.images[0] || '',
+      quantity: 1,
+      size: product.sizes[0] || '',
+      color: product.colors[0] || '',
+    });
+    toast.success(`${product.name} added to cart`);
+  };
 
   if (!isAuthenticated) return null;
 
@@ -56,15 +92,27 @@ export default function WishlistPage() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-4xl font-serif mb-2">My Wishlist</h1>
-              <p className="text-muted-foreground">{wishlistItems.length} items saved</p>
+              <p className="text-muted-foreground">
+                {isLoading ? 'Loading…' : `${items.length} item${items.length === 1 ? '' : 's'} saved`}
+              </p>
             </div>
             <Heart className="h-12 w-12 text-accent-rose" />
           </div>
 
-          {wishlistItems.length > 0 ? (
+          {isLoading ? (
+            <ProductGridSkeleton count={4} />
+          ) : items.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {wishlistItems.map((product) => (
-                <ProductCard key={product.id} {...product} href={`/shop/${product.id}`} />
+              {items.map((item) => (
+                <ProductCard
+                  key={item.id}
+                  {...toProductCardProps(item.product)}
+                  href={`/shop/${item.product.id}`}
+                  isWishlisted
+                  onWishlist={() => handleRemove(item)}
+                  onAddToCart={() => handleAddToCart(item)}
+                  onQuickView={() => router.push(`/shop/${item.product.id}`)}
+                />
               ))}
             </div>
           ) : (

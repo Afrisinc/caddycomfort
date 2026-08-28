@@ -43,12 +43,22 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
       isFeatured,
       search,
       tags,
+      sizes,
+      colors,
       inStock,
       page,
       limit,
       sortBy,
       sortOrder,
     } = req.query;
+
+    // Accepts repeated query keys (?sizes=S&sizes=M), a single value, or a
+    // comma-separated string, and normalizes to a string array.
+    const toStringArray = (value: unknown): string[] | undefined => {
+      if (!value) return undefined;
+      if (Array.isArray(value)) return value.map(String);
+      return String(value).split(',').filter(Boolean);
+    };
 
     const filters = {
       categoryId: categoryId as string,
@@ -57,7 +67,9 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
       isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
       isFeatured: isFeatured === 'true' ? true : isFeatured === 'false' ? false : undefined,
       search: search as string,
-      tags: tags ? (tags as string).split(',') : undefined,
+      tags: toStringArray(tags),
+      sizes: toStringArray(sizes),
+      colors: toStringArray(colors),
       inStock: inStock === 'true',
     };
 

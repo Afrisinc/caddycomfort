@@ -46,6 +46,8 @@ interface ProductFilters {
   isFeatured?: boolean;
   search?: string;
   tags?: string[];
+  sizes?: string[];
+  colors?: string[];
   inStock?: boolean;
 }
 
@@ -164,6 +166,8 @@ export class ProductService {
       isFeatured,
       search,
       tags,
+      sizes,
+      colors,
       inStock,
     } = filters || {};
 
@@ -174,9 +178,21 @@ export class ProductService {
       sortOrder = 'desc',
     } = pagination || {};
 
+    // A parent category (e.g. "Women") should also surface products filed
+    // under its children (e.g. "Dresses") — most products live one level
+    // down, not directly on the parent.
+    let categoryIds: string[] | undefined;
+    if (categoryId) {
+      const children = await prisma.category.findMany({
+        where: { parentId: categoryId },
+        select: { id: true },
+      });
+      categoryIds = [categoryId, ...children.map((c) => c.id)];
+    }
+
     // Build where clause
     const where: Prisma.ProductWhereInput = {
-      ...(categoryId && { categoryId }),
+      ...(categoryIds && { categoryId: { in: categoryIds } }),
       ...(isActive !== undefined && { isActive }),
       ...(isFeatured !== undefined && { isFeatured }),
       ...(inStock && { stockQuantity: { gt: 0 } }),
@@ -192,7 +208,19 @@ export class ProductService {
       ...(tags && tags.length > 0 && {
         tags: { hasSome: tags },
       }),
+      ...(sizes && sizes.length > 0 && {
+        sizes: { hasSome: sizes },
+      }),
+      ...(colors && colors.length > 0 && {
+        colors: { hasSome: colors },
+      }),
     };
+
+    // "popularity" isn't a real column — it's how often a product has been
+    // ordered, which Prisma expresses as a relation-count orderBy instead of
+    // a flat field.
+    const orderBy: Prisma.ProductOrderByWithRelationInput =
+      sortBy === 'popularity' ? { orderItems: { _count: sortOrder } } : { [sortBy]: sortOrder };
 
     // Execute queries
     const [products, total] = await Promise.all([
@@ -204,7 +232,7 @@ export class ProductService {
             select: { reviews: true, orderItems: true },
           },
         },
-        orderBy: { [sortBy]: sortOrder },
+        orderBy,
         skip: (page - 1) * limit,
         take: limit,
       }),

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/useAuthStore';
 import { usersApi, ordersApi } from '@/lib/api';
@@ -19,7 +20,6 @@ import {
   LogOut,
   ShoppingBag,
   TrendingUp,
-  Loader2,
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -143,168 +143,192 @@ export default function AccountPage() {
             </p>
           </div>
 
+          {/* Stats */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-24">
-              <Loader2 className="h-8 w-8 animate-spin text-accent-rose" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {Array.from({ length: 4 }, (_, i) => (
+                <div key={i} className="bg-card border rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <Skeleton className="h-5 w-5 rounded-full" />
+                    <Skeleton className="h-7 w-16" />
+                  </div>
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              ))}
             </div>
           ) : (
-            <>
-              {/* Stats */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                {statCards.map((stat) => {
-                  const Icon = stat.icon;
-                  return (
-                    <div
-                      key={stat.label}
-                      className="bg-card border rounded-lg p-6"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <Icon className="h-5 w-5 text-accent-rose" />
-                        <span className="text-2xl font-bold">{stat.value}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{stat.label}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {statCards.map((stat) => {
+                const Icon = stat.icon;
+                return (
+                  <div
+                    key={stat.label}
+                    className="bg-card border rounded-lg p-6"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <Icon className="h-5 w-5 text-accent-rose" />
+                      <span className="text-2xl font-bold">{stat.value}</span>
                     </div>
-                  );
-                })}
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Quick Links */}
-                <div className="lg:col-span-2 space-y-6">
-                  <div>
-                    <h2 className="text-2xl font-serif mb-4">Quick Actions</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {quickLinks.map((link) => {
-                        const Icon = link.icon;
-                        return (
-                          <Link
-                            key={link.href}
-                            href={link.href}
-                            className="bg-card border rounded-lg p-6 hover:border-accent-rose transition-all group"
-                          >
-                            <div className="flex items-start gap-4">
-                              <div className="h-12 w-12 rounded-full bg-accent-rose-subtle flex items-center justify-center group-hover:bg-accent-rose-muted transition-colors">
-                                <Icon className="h-6 w-6 text-accent-rose" />
-                              </div>
-                              <div>
-                                <h3 className="text-base font-semibold mb-1">{link.title}</h3>
-                                <p className="text-sm text-muted-foreground">
-                                  {link.description}
-                                </p>
-                              </div>
-                            </div>
-                          </Link>
-                        );
-                      })}
-                    </div>
+                    <p className="text-sm text-muted-foreground">{stat.label}</p>
                   </div>
-
-                  {/* Recent Orders */}
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-2xl font-serif">Recent Orders</h2>
-                      <Link href="/account/orders">
-                        <Button variant="ghost" size="sm">
-                          View All
-                        </Button>
-                      </Link>
-                    </div>
-                    {recentOrders.length === 0 ? (
-                      <div className="bg-card border rounded-lg p-8 text-center text-sm text-muted-foreground">
-                        You haven&apos;t placed any orders yet.
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {recentOrders.map((order) => {
-                          const badge = ORDER_STATUS_BADGES[order.status];
-                          return (
-                            <div
-                              key={order.id}
-                              className="bg-card border rounded-lg p-4"
-                            >
-                              <div className="flex items-center justify-between mb-2">
-                                <div>
-                                  <p className="font-semibold">{order.orderNumber}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {new Date(order.createdAt).toLocaleDateString()} • {order.items.length} item
-                                    {order.items.length === 1 ? '' : 's'}
-                                  </p>
-                                </div>
-                                <div className="text-right">
-                                  <p className="font-semibold">{formatMoney(order.total)}</p>
-                                  <span className={`text-xs px-2 py-1 rounded-full ${badge.className}`}>
-                                    {badge.label}
-                                  </span>
-                                </div>
-                              </div>
-                              <Link href={`/account/orders/${order.id}`}>
-                                <Button variant="outline" size="sm" className="w-full">
-                                  View Details
-                                </Button>
-                              </Link>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Account Info Sidebar */}
-                <div className="space-y-6">
-                  <div className="bg-card border rounded-lg p-6">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="h-16 w-16 rounded-full bg-accent-rose-subtle flex items-center justify-center">
-                        <User className="h-8 w-8 text-accent-rose" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-lg">
-                          {user.firstName} {user.lastName}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
-                      </div>
-                    </div>
-
-                    <div className="gap-4 flex flex-col">
-                      <Link href="/account/profile">
-                        <Button variant="outline" className="w-full justify-start">
-                          <Settings className="mr-2 h-4 w-4" />
-                          Account Settings
-                        </Button>
-                      </Link>
-                      <Link href="/shop">
-                        <Button className="w-full justify-start bg-accent-rose hover:bg-accent-rose-dark">
-                          <ShoppingBag className="mr-2 h-4 w-4" />
-                          Continue Shopping
-                        </Button>
-                      </Link>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-destructive hover:text-white hover:bg-destructive"
-                        onClick={handleLogout}
-                      >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Sign Out
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Support */}
-                  <div className="bg-card border rounded-lg p-6">
-                    <h3 className="text-base font-semibold mb-4">Need Help?</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Our customer service team is here to assist you.
-                    </p>
-                    <Link href="/contact">
-                      <Button variant="outline" size="sm" className="w-full">
-                        Contact Support
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </>
+                );
+              })}
+            </div>
           )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Quick Links */}
+            <div className="lg:col-span-2 space-y-6">
+              <div>
+                <h2 className="text-2xl font-serif mb-4">Quick Actions</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {quickLinks.map((link) => {
+                    const Icon = link.icon;
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className="bg-card border rounded-lg p-6 hover:border-accent-rose transition-all group"
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className="h-12 w-12 rounded-full bg-accent-rose-subtle flex items-center justify-center group-hover:bg-accent-rose-muted transition-colors">
+                            <Icon className="h-6 w-6 text-accent-rose" />
+                          </div>
+                          <div>
+                            <h3 className="text-base font-semibold mb-1">{link.title}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {link.description}
+                            </p>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Recent Orders */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-serif">Recent Orders</h2>
+                  <Link href="/account/orders">
+                    <Button variant="ghost" size="sm">
+                      View All
+                    </Button>
+                  </Link>
+                </div>
+                {isLoading ? (
+                  <div className="space-y-4">
+                    {Array.from({ length: 2 }, (_, i) => (
+                      <div key={i} className="bg-card border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-28" />
+                            <Skeleton className="h-3 w-36" />
+                          </div>
+                          <div className="space-y-2 text-right">
+                            <Skeleton className="h-4 w-20 ml-auto" />
+                            <Skeleton className="h-5 w-16 ml-auto rounded-full" />
+                          </div>
+                        </div>
+                        <Skeleton className="h-9 w-full" />
+                      </div>
+                    ))}
+                  </div>
+                ) : recentOrders.length === 0 ? (
+                  <div className="bg-card border rounded-lg p-8 text-center text-sm text-muted-foreground">
+                    You haven&apos;t placed any orders yet.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {recentOrders.map((order) => {
+                      const badge = ORDER_STATUS_BADGES[order.status];
+                      return (
+                        <div
+                          key={order.id}
+                          className="bg-card border rounded-lg p-4"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <p className="font-semibold">{order.orderNumber}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(order.createdAt).toLocaleDateString()} • {order.items.length} item
+                                {order.items.length === 1 ? '' : 's'}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold">{formatMoney(order.total)}</p>
+                              <span className={`text-xs px-2 py-1 rounded-full ${badge.className}`}>
+                                {badge.label}
+                              </span>
+                            </div>
+                          </div>
+                          <Link href={`/account/orders/${order.id}`}>
+                            <Button variant="outline" size="sm" className="w-full">
+                              View Details
+                            </Button>
+                          </Link>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Account Info Sidebar */}
+            <div className="space-y-6">
+              <div className="bg-card border rounded-lg p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="h-16 w-16 rounded-full bg-accent-rose-subtle flex items-center justify-center">
+                    <User className="h-8 w-8 text-accent-rose" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">
+                      {user.firstName} {user.lastName}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                  </div>
+                </div>
+
+                <div className="gap-4 flex flex-col">
+                  <Link href="/account/profile">
+                    <Button variant="outline" className="w-full justify-start">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Account Settings
+                    </Button>
+                  </Link>
+                  <Link href="/shop">
+                    <Button className="w-full justify-start bg-accent-rose hover:bg-accent-rose-dark">
+                      <ShoppingBag className="mr-2 h-4 w-4" />
+                      Continue Shopping
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-destructive hover:text-white hover:bg-destructive"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </Button>
+                </div>
+              </div>
+
+              {/* Support */}
+              <div className="bg-card border rounded-lg p-6">
+                <h3 className="text-base font-semibold mb-4">Need Help?</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Our customer service team is here to assist you.
+                </p>
+                <Link href="/contact">
+                  <Button variant="outline" size="sm" className="w-full">
+                    Contact Support
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

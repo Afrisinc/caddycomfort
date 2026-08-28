@@ -127,7 +127,7 @@ export function Footer() {
         {/* Bottom */}
         <div className="pt-8 border-t flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           <p className="text-sm text-muted-foreground">
-            © 2025 CaddyComfort. All rights reserved.
+             © {new Date().getFullYear()} CaddyComfort. All rights reserved.
           </p>
           <div className="flex space-x-6">
             <Link

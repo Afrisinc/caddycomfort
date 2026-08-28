@@ -9,14 +9,24 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { SearchDialog } from '@/components/SearchDialog';
+import { wishlistApi } from '@/lib/api';
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
+  const [wishlistCount, setWishlistCount] = React.useState(0);
   const items = useCartStore((state) => state.items);
   const { isAuthenticated, user } = useAuthStore();
   const cartItemCount = items.reduce((total, item) => total + item.quantity, 0);
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      setWishlistCount(0);
+      return;
+    }
+    wishlistApi.getCount().then(setWishlistCount).catch(() => {});
+  }, [isAuthenticated]);
 
   React.useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -61,19 +71,19 @@ export function Navbar() {
               SHOP
             </Link>
             <Link
-              href="/shop"
+              href="/shop?category=womans-cloth"
               className="text-sm font-medium hover:text-accent-rose transition-luxury"
             >
               WOMEN
             </Link>
             <Link
-              href="/shop"
+              href="/shop?category=men"
               className="text-sm font-medium hover:text-accent-rose transition-luxury"
             >
               MEN
             </Link>
             <Link
-              href="/shop"
+              href="/shop?category=kids"
               className="text-sm font-medium hover:text-accent-rose transition-luxury"
             >
               KIDS
@@ -116,8 +126,13 @@ export function Navbar() {
               </Button>
             </Link>
             <Link href="/account/wishlist">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="relative">
                 <Heart className="h-5 w-5" />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-accent-rose text-white text-xs flex items-center justify-center">
+                    {wishlistCount}
+                  </span>
+                )}
               </Button>
             </Link>
             <Link href="/cart">
@@ -177,10 +192,24 @@ export function Navbar() {
                     <span className="text-accent-rose opacity-0 group-hover:opacity-100 transition-opacity">→</span>
                   </Link>
                   <Link
-                    href="/collections"
+                    href="/shop?category=womans-cloth"
                     className="group flex items-center justify-between px-4 py-3 rounded-lg hover:bg-accent-rose-subtle/30 transition-all"
                   >
-                    <span className="text-base font-medium">Collections</span>
+                    <span className="text-base font-medium">Women</span>
+                    <span className="text-accent-rose opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                  </Link>
+                  <Link
+                    href="/shop?category=men"
+                    className="group flex items-center justify-between px-4 py-3 rounded-lg hover:bg-accent-rose-subtle/30 transition-all"
+                  >
+                    <span className="text-base font-medium">Men</span>
+                    <span className="text-accent-rose opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                  </Link>
+                  <Link
+                    href="/shop?category=kids"
+                    className="group flex items-center justify-between px-4 py-3 rounded-lg hover:bg-accent-rose-subtle/30 transition-all"
+                  >
+                    <span className="text-base font-medium">Kids</span>
                     <span className="text-accent-rose opacity-0 group-hover:opacity-100 transition-opacity">→</span>
                   </Link>
                   <Link
@@ -226,7 +255,7 @@ export function Navbar() {
                     </div>
                   </Link>
                   <Link
-                    href="/wishlist"
+                    href="/account/wishlist"
                     className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent-rose-subtle/20 transition-all"
                   >
                     <div className="h-10 w-10 rounded-full bg-accent-rose-subtle/40 flex items-center justify-center">
@@ -234,7 +263,9 @@ export function Navbar() {
                     </div>
                     <div>
                       <p className="text-sm font-medium">Wishlist</p>
-                      <p className="text-xs text-muted-foreground">5 items saved</p>
+                      <p className="text-xs text-muted-foreground">
+                        {wishlistCount} item{wishlistCount === 1 ? '' : 's'} saved
+                      </p>
                     </div>
                   </Link>
                 </div>
