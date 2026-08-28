@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Plus, 
   Search, 
@@ -22,30 +23,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
+import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { categoriesApi } from '@/lib/api';
 import { Category } from '@/types/api';
 import { toast } from 'sonner';
 
 function CategoriesManagement() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch categories
   useEffect(() => {
@@ -71,22 +63,9 @@ function CategoriesManagement() {
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!categoryToDelete) return;
-
-    try {
-      setIsDeleting(true);
-      await categoriesApi.delete(categoryToDelete.id);
-      toast.success('Category deleted successfully');
-      setDeleteDialogOpen(false);
-      setCategoryToDelete(null);
-      // Refresh categories list
-      fetchCategories();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to delete category');
-    } finally {
-      setIsDeleting(false);
-    }
+  const handleDeleted = () => {
+    setCategoryToDelete(null);
+    fetchCategories();
   };
 
   const getParentName = (parentId: string | null | undefined) => {
@@ -131,6 +110,11 @@ function CategoriesManagement() {
   };
 
   const hierarchicalCategories = buildCategoryTree();
+
+  const categoryToDeleteChildCount = categoryToDelete
+    ? categories.filter((c) => c.parentId === categoryToDelete.id).length
+    : 0;
+  const categoryToDeleteProductCount = categoryToDelete?._count?.products ?? 0;
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -224,7 +208,6 @@ function CategoriesManagement() {
                     <th className="text-left py-3 px-4 font-semibold">Description</th>
                     <th className="text-left py-3 px-4 font-semibold">Parent</th>
                     <th className="text-left py-3 px-4 font-semibold">Products</th>
-                    <th className="text-left py-3 px-4 font-semibold">Status</th>
                     <th className="text-right py-3 px-4 font-semibold">Actions</th>
                   </tr>
                 </thead>
@@ -267,9 +250,6 @@ function CategoriesManagement() {
                         <td className="py-4 px-4">
                           <p className="font-medium">{countProducts(category)}</p>
                         </td>
-                        <td className="py-4 px-4">
-                          <Badge className="bg-green-100 text-green-700">Active</Badge>
-                        </td>
                         <td className="py-4 px-4 text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -278,7 +258,9 @@ function CategoriesManagement() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => router.push(`/admin/categories/${category.id}/edit`)}
+                              >
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit
                               </DropdownMenuItem>
@@ -310,38 +292,39 @@ function CategoriesManagement() {
         )}
 
         {/* Delete Confirmation Dialog */}
-        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Category</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete "{categoryToDelete?.name}"? This action cannot be undone.
-                {categoryToDelete && childCategories.filter(c => c.parentId === categoryToDelete.id).length > 0 && (
-                  <span className="block mt-2 text-red-600 font-medium">
-                    Warning: This category has child categories that will also be affected.
-                  </span>
+        <ConfirmDeleteDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          title="Delete Category"
+          description={
+            <>Are you sure you want to delete &quot;{categoryToDelete?.name}&quot;? This action cannot be undone.</>
+          }
+          warning={
+            (categoryToDeleteChildCount > 0 || categoryToDeleteProductCount > 0) && (
+              <>
+                {categoryToDeleteChildCount > 0 && (
+                  <p>
+                    This category has {categoryToDeleteChildCount} subcategor{categoryToDeleteChildCount === 1 ? 'y' : 'ies'} — remove{' '}
+                    {categoryToDeleteChildCount === 1 ? 'it' : 'them'} first before deleting.
+                  </p>
                 )}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteConfirm}
-                disabled={isDeleting}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                {isDeleting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  'Delete'
+                {categoryToDeleteProductCount > 0 && (
+                  <p className="mt-1">
+                    This category has {categoryToDeleteProductCount} product{categoryToDeleteProductCount === 1 ? '' : 's'} — remove or
+                    reassign {categoryToDeleteProductCount === 1 ? 'it' : 'them'} first before deleting.
+                  </p>
                 )}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+              </>
+            )
+          }
+          successMessage="Category deleted successfully"
+          errorMessage="Failed to delete category"
+          onConfirm={async () => {
+            if (!categoryToDelete) return;
+            await categoriesApi.delete(categoryToDelete.id);
+          }}
+          onSuccess={handleDeleted}
+        />
       </div>
     </div>
   );

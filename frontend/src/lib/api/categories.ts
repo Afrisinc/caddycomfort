@@ -21,7 +21,8 @@ export const categoriesApi = {
   getById: async (id: string): Promise<Category> => {
     try {
       const response = await apiClient.get(`/categories/${id}`);
-      return handleApiResponse<Category>(response).data!;
+      const result = handleApiResponse<{ category: Category }>(response).data!;
+      return result.category;
     } catch (error) {
       throw handleApiError(error);
     }
@@ -33,7 +34,8 @@ export const categoriesApi = {
   getBySlug: async (slug: string): Promise<Category> => {
     try {
       const response = await apiClient.get(`/categories/slug/${slug}`);
-      return handleApiResponse<Category>(response).data!;
+      const result = handleApiResponse<{ category: Category }>(response).data!;
+      return result.category;
     } catch (error) {
       throw handleApiError(error);
     }
