@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -232,12 +233,15 @@ function ProductsManagement() {
                 </thead>
                 <tbody>
                   {isLoading ? (
-                    <tr>
-                      <td colSpan={8} className="p-12 text-center">
-                        <Loader2 className="h-8 w-8 animate-spin mx-auto text-accent-rose" />
-                        <p className="text-muted-foreground mt-2">Loading products...</p>
-                      </td>
-                    </tr>
+                    Array.from({ length: 6 }, (_, i) => (
+                      <tr key={i} className="border-b">
+                        {Array.from({ length: 8 }, (_, j) => (
+                          <td key={j} className="p-4">
+                            <Skeleton className="h-4 w-full max-w-24 mx-auto" />
+                          </td>
+                        ))}
+                      </tr>
+                    ))
                   ) : filteredProducts.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="p-12 text-center text-muted-foreground">

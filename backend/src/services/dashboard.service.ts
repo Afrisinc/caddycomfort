@@ -145,10 +145,10 @@ export class DashboardService {
       take: limit,
     });
 
-    const productsWithDetails = await Promise.all(
-      topProducts.map(async (item) => {
-        const product = await prisma.product.findUnique({
-          where: { id: item.productId },
+    // One batched query instead of one concurrent query per product.
+    const products = topProducts.length
+      ? await prisma.product.findMany({
+          where: { id: { in: topProducts.map((item) => item.productId) } },
           select: {
             id: true,
             name: true,
@@ -164,15 +164,15 @@ export class DashboardService {
               },
             },
           },
-        });
+        })
+      : [];
+    const productById = new Map(products.map((p) => [p.id, p]));
 
-        return {
-          product,
-          totalSold: item._sum.quantity || 0,
-          orderCount: item._count.productId,
-        };
-      })
-    );
+    const productsWithDetails = topProducts.map((item) => ({
+      product: productById.get(item.productId) || null,
+      totalSold: item._sum.quantity || 0,
+      orderCount: item._count.productId,
+    }));
 
     return productsWithDetails.filter((item) => item.product !== null);
   }
@@ -319,22 +319,23 @@ export class DashboardService {
       }),
     ]);
 
-    const topCustomersWithSpending = await Promise.all(
-      topCustomers.map(async (customer) => {
-        const totalSpent = await prisma.order.aggregate({
+    // One grouped query instead of one concurrent aggregate per customer.
+    const spendByCustomer = topCustomers.length
+      ? await prisma.order.groupBy({
+          by: ['userId'],
           where: {
-            userId: customer.id,
+            userId: { in: topCustomers.map((c) => c.id) },
             status: 'DELIVERED',
           },
           _sum: { total: true },
-        });
+        })
+      : [];
+    const spentById = new Map(spendByCustomer.map((s) => [s.userId, s._sum.total || 0]));
 
-        return {
-          ...customer,
-          totalSpent: totalSpent._sum.total || 0,
-        };
-      })
-    );
+    const topCustomersWithSpending = topCustomers.map((customer) => ({
+      ...customer,
+      totalSpent: spentById.get(customer.id) || 0,
+    }));
 
     return {
       totalCustomers,

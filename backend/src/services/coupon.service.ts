@@ -375,21 +375,19 @@ export class CouponService {
    */
   static async getAvailableCoupons(userId?: string) {
     const now = new Date();
-    
+
     const coupons = await prisma.coupon.findMany({
       where: {
         isActive: true,
-        validFrom: { lte: now },
-        validUntil: { gte: now },
-        OR: [
-          { usageLimit: null },
-          { usedCount: { lt: prisma.coupon.fields.usageLimit } },
-        ],
+        OR: [{ validFrom: null }, { validFrom: { lte: now } }],
+        AND: [{ OR: [{ validUntil: null }, { validUntil: { gte: now } }] }],
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    return coupons;
+    // Prisma's where-clause can't compare two columns of the same row
+    // (usedCount vs usageLimit) without a raw query, so filter in JS instead.
+    return coupons.filter((c) => c.usageLimit === null || c.usedCount < c.usageLimit);
   }
 
   /**
@@ -400,11 +398,13 @@ export class CouponService {
 
     const [total, active, expired, used, unused] = await Promise.all([
       prisma.coupon.count(),
+      // validFrom/validUntil are optional ("no expiry"), so a null on either
+      // side must not disqualify the coupon from counting as active.
       prisma.coupon.count({
         where: {
           isActive: true,
-          validFrom: { lte: now },
-          validUntil: { gte: now },
+          OR: [{ validFrom: null }, { validFrom: { lte: now } }],
+          AND: [{ OR: [{ validUntil: null }, { validUntil: { gte: now } }] }],
         },
       }),
       prisma.coupon.count({

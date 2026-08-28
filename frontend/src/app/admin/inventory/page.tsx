@@ -12,12 +12,12 @@ import {
   MoreVertical,
   Edit,
   Eye,
-  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -180,7 +180,19 @@ function Inventory() {
 
       <div className="px-4 sm:px-8 py-8">
         {/* Stats */}
-        {summary && (
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {Array.from({ length: 4 }, (_, i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <Skeleton className="h-12 w-12 rounded-lg mb-4" />
+                  <Skeleton className="h-7 w-16 mb-2" />
+                  <Skeleton className="h-4 w-24" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : summary && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {statCards.map((stat) => (
               <Card key={stat.title}>
@@ -236,11 +248,7 @@ function Inventory() {
             <CardTitle>Inventory Items ({filteredItems.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-accent-rose" />
-              </div>
-            ) : (
+            {(
               <>
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -255,7 +263,17 @@ function Inventory() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredItems.map((item) => {
+                      {isLoading
+                        ? Array.from({ length: 6 }, (_, i) => (
+                            <tr key={i} className="border-b">
+                              {Array.from({ length: 6 }, (_, j) => (
+                                <td key={j} className="py-4 px-4">
+                                  <Skeleton className="h-4 w-full max-w-24" />
+                                </td>
+                              ))}
+                            </tr>
+                          ))
+                        : filteredItems.map((item) => {
                         const tier = getStockTier(item.quantity);
                         const tierConfig = TIER_CONFIG[tier];
                         const recommendation = recommendationByProduct.get(item.productId);
@@ -321,7 +339,7 @@ function Inventory() {
                   </table>
                 </div>
 
-                {filteredItems.length === 0 && (
+                {!isLoading && filteredItems.length === 0 && (
                   <div className="text-center py-12">
                     <p className="text-muted-foreground">No inventory items found</p>
                   </div>

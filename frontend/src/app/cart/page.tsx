@@ -1,33 +1,84 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { X, Minus, Plus, ShoppingBag, ArrowRight, Tag } from 'lucide-react';
+import { X, Minus, Plus, ShoppingBag, ArrowRight, Tag, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCartStore } from '@/store/useCartStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import { couponsApi } from '@/lib/api';
+import { Coupon } from '@/types/api';
+import { toast } from 'sonner';
+
+interface AppliedCoupon {
+  discount: number;
+  coupon: Coupon;
+}
+
+const FREE_SHIPPING_THRESHOLD = 100000;
+const STANDARD_SHIPPING = 5000;
+const TAX_RATE = 0.18;
 
 export default function CartPage() {
+  const router = useRouter();
   const { items, removeItem, updateQuantity, clearCart } = useCartStore();
+  const { isAuthenticated } = useAuthStore();
   const [couponCode, setCouponCode] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const discount = appliedCoupon ? subtotal * 0.1 : 0; // 10% discount
-  const shipping = subtotal > 100000 ? 0 : 5000;
-  const tax = (subtotal - discount) * 0.18; // 18% VAT
+  const discount = appliedCoupon?.discount ?? 0;
+  const isFreeShippingCoupon = appliedCoupon?.coupon.discountType === 'FREE_SHIPPING';
+  const shipping = isFreeShippingCoupon || subtotal > FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING;
+  const tax = (subtotal - discount) * TAX_RATE;
   const total = subtotal - discount + shipping + tax;
 
-  const handleApplyCoupon = () => {
-    if (couponCode.toLowerCase() === 'save10') {
-      setAppliedCoupon(couponCode);
+  const handleApplyCoupon = async () => {
+    const code = couponCode.trim();
+    if (!code) return;
+
+    if (!isAuthenticated) {
+      toast.error('Please log in to apply a coupon');
+      router.push('/login');
+      return;
+    }
+
+    try {
+      setIsApplyingCoupon(true);
+      const result = await couponsApi.validate(code, subtotal);
+      if (!result.valid || !result.coupon) {
+        toast.error(result.message || 'Invalid coupon code');
+        return;
+      }
+      setAppliedCoupon({ discount: result.discount ?? 0, coupon: result.coupon });
+      toast.success(`Coupon "${result.coupon.code}" applied!`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to validate coupon');
+    } finally {
+      setIsApplyingCoupon(false);
     }
   };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+  };
+
+  const discountLabel = appliedCoupon
+    ? appliedCoupon.coupon.discountType === 'PERCENTAGE'
+      ? `Discount (${appliedCoupon.coupon.discountValue}%)`
+      : appliedCoupon.coupon.discountType === 'FIXED_AMOUNT'
+      ? 'Discount'
+      : null
+    : null;
 
   if (items.length === 0) {
     return (
@@ -57,7 +108,7 @@ export default function CartPage() {
   return (
     <>
       <Navbar />
-      
+
       <div className="min-h-screen bg-background pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
           <h1 className="text-4xl font-serif mb-8">Shopping Cart</h1>
@@ -82,7 +133,7 @@ export default function CartPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between gap-4 mb-2">
                       <div>
-                        <h3 className="font-semibold truncate">{item.name}</h3>
+                        <h3 className="text-base font-semibold truncate">{item.name}</h3>
                         <div className="flex gap-2 text-sm text-muted-foreground mt-1">
                           <span>Size: {item.size}</span>
                           <span>•</span>
@@ -153,25 +204,35 @@ export default function CartPage() {
                     <Input
                       placeholder="Enter code"
                       value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value)}
-                      disabled={!!appliedCoupon}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                      disabled={!!appliedCoupon || isApplyingCoupon}
                     />
                     <Button
                       variant="outline"
                       onClick={handleApplyCoupon}
-                      disabled={!!appliedCoupon}
+                      disabled={!!appliedCoupon || isApplyingCoupon || !couponCode.trim()}
                     >
-                      <Tag className="h-4 w-4" />
+                      {isApplyingCoupon ? <Loader2 className="h-4 w-4 animate-spin" /> : <Tag className="h-4 w-4" />}
                     </Button>
                   </div>
-                  {appliedCoupon && (
-                    <Badge className="mt-2 bg-green-500">
-                      Coupon &quot;{appliedCoupon}&quot; applied!
-                    </Badge>
+                  {appliedCoupon ? (
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge className="bg-green-500">
+                        Coupon &quot;{appliedCoupon.coupon.code}&quot; applied!
+                      </Badge>
+                      <button
+                        onClick={handleRemoveCoupon}
+                        className="text-xs text-muted-foreground hover:text-destructive underline"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Try code: <span className="font-mono font-semibold">WELCOME10</span>
+                    </p>
                   )}
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Try code: <span className="font-mono font-semibold">SAVE10</span>
-                  </p>
                 </div>
 
                 <Separator className="my-4" />
@@ -182,10 +243,16 @@ export default function CartPage() {
                     <span className="text-muted-foreground">Subtotal</span>
                     <span>Rwf {subtotal.toLocaleString()}</span>
                   </div>
-                  {discount > 0 && (
+                  {discountLabel && discount > 0 && (
                     <div className="flex justify-between text-sm text-green-600">
-                      <span>Discount (10%)</span>
+                      <span>{discountLabel}</span>
                       <span>-Rwf {discount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {isFreeShippingCoupon && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Free shipping coupon</span>
+                      <span>Applied</span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm">
@@ -215,7 +282,7 @@ export default function CartPage() {
 
                 {shipping > 0 && (
                   <p className="text-xs text-muted-foreground mb-4">
-                    Add Rwf {(100000 - subtotal).toLocaleString()} more for free shipping
+                    Add Rwf {(FREE_SHIPPING_THRESHOLD - subtotal).toLocaleString()} more for free shipping
                   </p>
                 )}
 

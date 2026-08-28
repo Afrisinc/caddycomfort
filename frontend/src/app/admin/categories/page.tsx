@@ -3,19 +3,19 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { 
-  Plus, 
-  Search, 
-  MoreVertical, 
-  Edit, 
+import {
+  Plus,
+  Search,
+  MoreVertical,
+  Edit,
   Trash2,
   FolderTree,
   Package,
-  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -130,9 +130,41 @@ function CategoriesManagement() {
       <div className="px-4 sm:px-8 py-8">
         {/* Loading State */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-accent-rose" />
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {Array.from({ length: 3 }, (_, i) => (
+                <Card key={i}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-28" />
+                        <Skeleton className="h-7 w-12" />
+                      </div>
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <Card className="mb-6">
+              <CardContent className="p-6">
+                <Skeleton className="h-10 w-full" />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }, (_, i) => (
+                    <div key={i} className="flex gap-4">
+                      {Array.from({ length: 6 }, (_, j) => (
+                        <Skeleton key={j} className="h-4 flex-1" />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </>
         ) : (
           <>
             {/* Stats */}

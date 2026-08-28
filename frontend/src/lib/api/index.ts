@@ -11,3 +11,4 @@ export * from './coupons';
 export * from './users';
 export * from './customers';
 export * from './inventory';
+export * from './dashboard';

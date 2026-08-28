@@ -12,13 +12,13 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div className="space-y-4">
-            <Link href="/" className="inline-block relative h-10 w-40 md:h-12 md:w-48 hover:opacity-80 transition-opacity">
+            <Link href="/" className="inline-block relative h-12 w-48 md:h-14 md:w-56 hover:opacity-80 transition-opacity">
               <Image
                 src="/images/logo/logo.png"
                 alt="CaddyComfort"
                 fill
                 className="object-contain object-left"
-                sizes="(max-width: 768px) 160px, 192px"
+                sizes="(max-width: 768px) 192px, 224px"
               />
             </Link>
             <p className="text-sm text-muted-foreground">

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, use } from 'react';
+import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -9,22 +9,22 @@ import { CouponForm, CouponFormValues, EMPTY_COUPON_FORM, isoToDatetimeLocal } f
 import { couponsApi, CreateCouponData } from '@/lib/api/coupons';
 import { toast } from 'sonner';
 
-function CreateCouponContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const duplicateId = searchParams.get('duplicate');
+interface EditCouponPageProps {
+  params: Promise<{ id: string }>;
+}
 
+function EditCouponForm({ id }: { id: string }) {
+  const router = useRouter();
   const [initialValues, setInitialValues] = useState<CouponFormValues>(EMPTY_COUPON_FORM);
-  const [isLoadingSource, setIsLoadingSource] = useState(!!duplicateId);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!duplicateId) return;
     couponsApi
-      .getById(duplicateId)
+      .getById(id)
       .then((coupon) => {
         setInitialValues({
-          code: '',
+          code: coupon.code,
           description: coupon.description || '',
           discountType: coupon.discountType,
           discountValue: coupon.discountType === 'FREE_SHIPPING' ? '' : String(coupon.discountValue),
@@ -38,25 +38,26 @@ function CreateCouponContent() {
         });
       })
       .catch((error: any) => {
-        toast.error(error.message || 'Failed to load coupon to duplicate');
+        toast.error(error.message || 'Failed to load coupon');
+        router.push('/admin/coupons');
       })
-      .finally(() => setIsLoadingSource(false));
-  }, [duplicateId]);
+      .finally(() => setIsLoading(false));
+  }, [id]);
 
   const handleSubmit = async (data: CreateCouponData) => {
     try {
       setIsSubmitting(true);
-      await couponsApi.create(data);
-      toast.success('Coupon created successfully!');
+      await couponsApi.update(id, data);
+      toast.success('Coupon updated successfully!');
       router.push('/admin/coupons');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create coupon');
+      toast.error(error.message || 'Failed to update coupon');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isLoadingSource) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-muted/30 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-accent-rose" />
@@ -66,23 +67,22 @@ function CreateCouponContent() {
 
   return (
     <CouponForm
-      title={duplicateId ? 'Duplicate Coupon' : 'Create New Coupon'}
-      description="Set up a discount coupon for your customers"
+      title="Edit Coupon"
+      description="Update this coupon's details"
       initialValues={initialValues}
-      submitLabel="Create Coupon"
+      submitLabel="Save Changes"
       isSubmitting={isSubmitting}
       onSubmit={handleSubmit}
     />
   );
 }
 
-export default function CreateCouponPage() {
+export default function EditCouponPage({ params }: EditCouponPageProps) {
+  const { id } = use(params);
   return (
     <ProtectedRoute requireAdmin>
       <AdminLayout>
-        <Suspense fallback={null}>
-          <CreateCouponContent />
-        </Suspense>
+        <EditCouponForm id={id} />
       </AdminLayout>
     </ProtectedRoute>
   );

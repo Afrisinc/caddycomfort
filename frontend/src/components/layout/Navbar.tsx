@@ -45,14 +45,14 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link href="/" className="flex-shrink-0 relative h-10 w-40 md:h-12 md:w-48 hover:opacity-80 transition-opacity">
+          <Link href="/" className="flex-shrink-0 relative h-12 w-48 md:h-14 md:w-56 hover:opacity-80 transition-opacity">
             <Image
               src="/images/logo/logo.png"
               alt="CaddyComfort"
               fill
               className="object-contain object-left"
               priority
-              sizes="(max-width: 768px) 160px, 192px"
+              sizes="(max-width: 768px) 192px, 224px"
             />
           </Link>
 
@@ -156,13 +156,13 @@ export function Navbar() {
               <SheetContent side="right" className="w-[320px] sm:w-[380px]">
                 <SheetHeader className="border-b border-border/50 pb-6">
                   <SheetTitle className="text-left">
-                    <Link href="/" className="inline-block relative h-10 w-40 hover:opacity-80 transition-opacity">
+                    <Link href="/" className="inline-block relative h-12 w-48 hover:opacity-80 transition-opacity">
                       <Image
                         src="/images/logo/logo.png"
                         alt="CaddyComfort"
                         fill
                         className="object-contain object-left"
-                        sizes="160px"
+                        sizes="192px"
                       />
                     </Link>
                   </SheetTitle>

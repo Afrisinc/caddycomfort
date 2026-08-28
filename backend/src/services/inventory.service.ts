@@ -585,43 +585,47 @@ export class InventoryService {
       },
     });
 
-    // Get sales data for these products
-    const recommendations = await Promise.all(
-      lowStockProducts.map(async (product) => {
-        const salesLogs = await prisma.inventoryLog.findMany({
+    // Get sales data for all these products in a single query instead of
+    // firing one concurrent query per product (which was blowing through
+    // the connection pool once there were more than a handful of low-stock
+    // items).
+    const salesLogs = lowStockProducts.length
+      ? await prisma.inventoryLog.findMany({
           where: {
-            productId: product.id,
+            productId: { in: lowStockProducts.map((p) => p.id) },
             type: 'SALE',
-            createdAt: {
-              gte: startDate,
-            },
+            createdAt: { gte: startDate },
           },
-        });
+          select: { productId: true, quantity: true },
+        })
+      : [];
 
-        const totalSold = salesLogs.reduce(
-          (sum, log) => sum + Math.abs(log.quantity),
-          0
-        );
-        const averageDailySales = totalSold / daysToAnalyze;
-        const daysOfStockLeft = averageDailySales > 0
-          ? Math.floor(product.stockQuantity / averageDailySales)
-          : 999;
+    const soldByProduct = new Map<string, number>();
+    for (const log of salesLogs) {
+      soldByProduct.set(log.productId, (soldByProduct.get(log.productId) || 0) + Math.abs(log.quantity));
+    }
 
-        // Recommend restock quantity (30 days worth of stock)
-        const recommendedQuantity = Math.ceil(averageDailySales * 30);
+    const recommendations = lowStockProducts.map((product) => {
+      const totalSold = soldByProduct.get(product.id) || 0;
+      const averageDailySales = totalSold / daysToAnalyze;
+      const daysOfStockLeft = averageDailySales > 0
+        ? Math.floor(product.stockQuantity / averageDailySales)
+        : 999;
 
-        return {
-          productId: product.id,
-          productName: product.name,
-          sku: product.sku,
-          currentStock: product.stockQuantity,
-          averageDailySales: Math.round(averageDailySales * 100) / 100,
-          daysOfStockLeft,
-          recommendedRestockQuantity: recommendedQuantity,
-          priority: daysOfStockLeft < 7 ? 'HIGH' : daysOfStockLeft < 14 ? 'MEDIUM' : 'LOW',
-        };
-      })
-    );
+      // Recommend restock quantity (30 days worth of stock)
+      const recommendedQuantity = Math.ceil(averageDailySales * 30);
+
+      return {
+        productId: product.id,
+        productName: product.name,
+        sku: product.sku,
+        currentStock: product.stockQuantity,
+        averageDailySales: Math.round(averageDailySales * 100) / 100,
+        daysOfStockLeft,
+        recommendedRestockQuantity: recommendedQuantity,
+        priority: daysOfStockLeft < 7 ? 'HIGH' : daysOfStockLeft < 14 ? 'MEDIUM' : 'LOW',
+      };
+    });
 
     // Sort by priority and days of stock left
     recommendations.sort((a, b) => {

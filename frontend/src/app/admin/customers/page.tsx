@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -123,7 +124,23 @@ function CustomersManagement() {
 
       <div className="px-4 sm:px-8 py-8">
         {/* Stats */}
-        {stats && (
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {Array.from({ length: 4 }, (_, i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-7 w-14" />
+                    </div>
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : stats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {statCards.map((stat) => (
               <Card key={stat.title}>
@@ -180,11 +197,7 @@ function CustomersManagement() {
             <CardTitle>All Customers ({filteredCustomers.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-accent-rose" />
-              </div>
-            ) : (
+            {(
               <>
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -200,7 +213,17 @@ function CustomersManagement() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredCustomers.map((customer) => {
+                      {isLoading
+                        ? Array.from({ length: 5 }, (_, i) => (
+                            <tr key={i} className="border-b">
+                              {Array.from({ length: 7 }, (_, j) => (
+                                <td key={j} className="py-4 px-4">
+                                  <Skeleton className="h-4 w-full max-w-28" />
+                                </td>
+                              ))}
+                            </tr>
+                          ))
+                        : filteredCustomers.map((customer) => {
                         const badge = STATUS_BADGES[customer.status];
                         return (
                           <tr key={customer.id} className="border-b hover:bg-muted/50">
@@ -281,7 +304,7 @@ function CustomersManagement() {
                   </table>
                 </div>
 
-                {filteredCustomers.length === 0 && (
+                {!isLoading && filteredCustomers.length === 0 && (
                   <div className="text-center py-12">
                     <p className="text-muted-foreground">No customers found</p>
                   </div>

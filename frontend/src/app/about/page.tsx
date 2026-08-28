@@ -14,7 +14,7 @@ export default function AboutPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="text-5xl md:text-6xl font-serif mb-6">Our Story</h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Crafting timeless elegance since 2020, CaddyComfort brings you curated luxury fashion that celebrates individuality and sophistication.
+              Crafting timeless elegance since 2026, CaddyComfort brings you curated luxury fashion that celebrates individuality and sophistication.
             </p>
           </div>
         </div>

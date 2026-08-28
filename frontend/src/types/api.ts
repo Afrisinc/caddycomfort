@@ -146,6 +146,7 @@ export interface Coupon {
   minPurchaseAmount: number | null;
   maxDiscountAmount: number | null;
   usageLimit: number | null;
+  perUserLimit: number | null;
   usedCount: number;
   validFrom: string | null;
   validUntil: string | null;
@@ -159,6 +160,15 @@ export interface CouponValidation {
   message?: string;
   discount?: number;
   coupon?: Coupon;
+}
+
+export interface CouponStats {
+  total: number;
+  active: number;
+  expired: number;
+  used: number;
+  unused: number;
+  totalDiscountGiven: number;
 }
 
 // Customer Types (admin)
@@ -345,6 +355,63 @@ export interface DashboardStats {
   revenue: {
     total: number;
   };
+}
+
+export interface DashboardRecentOrder {
+  id: string;
+  orderNumber: string;
+  status: OrderStatus;
+  total: number;
+  createdAt: string;
+  user: { id: string; email: string; firstName: string | null; lastName: string | null; name: string | null };
+  items: { productName: string; quantity: number; price: number }[];
+}
+
+export interface DashboardLowStockProduct {
+  id: string;
+  name: string;
+  slug: string;
+  sku: string;
+  stockQuantity: number;
+  imageUrl: string | null;
+  category: { name: string } | null;
+}
+
+export interface RevenueByCategory {
+  categoryId: string;
+  categoryName: string;
+  revenue: number;
+  itemsSold: number;
+}
+
+export interface TopProduct {
+  product: {
+    id: string;
+    name: string;
+    slug: string;
+    price: number;
+    salePrice: number | null;
+    imageUrl: string | null;
+    images: string[];
+    stockQuantity: number;
+    category: { name: string } | null;
+  } | null;
+  totalSold: number;
+  orderCount: number;
+}
+
+export interface CustomerInsights {
+  totalCustomers: number;
+  newCustomersThisMonth: number;
+  topCustomers: Array<{
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    name: string | null;
+    _count: { orders: number };
+    totalSpent: number;
+  }>;
 }
 
 export interface SalesAnalytics {

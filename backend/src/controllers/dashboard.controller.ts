@@ -8,11 +8,11 @@ export class DashboardController {
   static async getOverallStats(req: Request, res: Response) {
     try {
       const stats = await DashboardService.getOverallStats();
-      res.json(stats);
+      res.json({ success: true, data: stats });
     } catch (error) {
       res.status(500).json({
-        message: 'Error fetching statistics',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error fetching statistics',
       });
     }
   }
@@ -24,17 +24,17 @@ export class DashboardController {
     try {
       const { period = 'month' } = req.query;
       const validPeriods = ['week', 'month', 'year'];
-      
+
       if (!validPeriods.includes(period as string)) {
-        return res.status(400).json({ message: 'Invalid period. Must be week, month, or year' });
+        return res.status(400).json({ success: false, message: 'Invalid period. Must be week, month, or year' });
       }
 
       const analytics = await DashboardService.getSalesAnalytics(period as 'week' | 'month' | 'year');
-      res.json(analytics);
+      res.json({ success: true, data: analytics });
     } catch (error) {
       res.status(500).json({
-        message: 'Error fetching sales analytics',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error fetching sales analytics',
       });
     }
   }
@@ -46,11 +46,11 @@ export class DashboardController {
     try {
       const { limit = '10' } = req.query;
       const products = await DashboardService.getTopProducts(parseInt(limit as string));
-      res.json(products);
+      res.json({ success: true, data: { products } });
     } catch (error) {
       res.status(500).json({
-        message: 'Error fetching top products',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error fetching top products',
       });
     }
   }
@@ -62,11 +62,11 @@ export class DashboardController {
     try {
       const { limit = '10' } = req.query;
       const orders = await DashboardService.getRecentOrders(parseInt(limit as string));
-      res.json(orders);
+      res.json({ success: true, data: { orders } });
     } catch (error) {
       res.status(500).json({
-        message: 'Error fetching recent orders',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error fetching recent orders',
       });
     }
   }
@@ -77,11 +77,11 @@ export class DashboardController {
   static async getRevenueByCategory(req: Request, res: Response) {
     try {
       const revenue = await DashboardService.getRevenueByCategory();
-      res.json(revenue);
+      res.json({ success: true, data: { revenue } });
     } catch (error) {
       res.status(500).json({
-        message: 'Error fetching revenue by category',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error fetching revenue by category',
       });
     }
   }
@@ -93,11 +93,11 @@ export class DashboardController {
     try {
       const { threshold = '10' } = req.query;
       const products = await DashboardService.getLowStockAlert(parseInt(threshold as string));
-      res.json(products);
+      res.json({ success: true, data: { products } });
     } catch (error) {
       res.status(500).json({
-        message: 'Error fetching low stock alert',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error fetching low stock alert',
       });
     }
   }
@@ -108,11 +108,11 @@ export class DashboardController {
   static async getCustomerInsights(req: Request, res: Response) {
     try {
       const insights = await DashboardService.getCustomerInsights();
-      res.json(insights);
+      res.json({ success: true, data: insights });
     } catch (error) {
       res.status(500).json({
-        message: 'Error fetching customer insights',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        message: error instanceof Error ? error.message : 'Error fetching customer insights',
       });
     }
   }

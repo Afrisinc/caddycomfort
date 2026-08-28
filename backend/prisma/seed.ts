@@ -512,11 +512,73 @@ async function seedShopCollection(categories: Awaited<ReturnType<typeof seedCate
   console.log(`Seeded ${count} shop collection products (bags, dresses, shoes, wigs)`);
 }
 
+async function seedCoupons() {
+  const coupons = [
+    {
+      code: 'SUMMER2024',
+      description: 'Summer sale discount',
+      discountType: 'PERCENTAGE' as const,
+      discountValue: 20,
+      minPurchaseAmount: 100000,
+      maxDiscountAmount: 50000,
+      usageLimit: 100,
+      validFrom: new Date('2024-06-01'),
+      validUntil: new Date('2024-08-31'),
+      isActive: true,
+    },
+    {
+      code: 'WELCOME10',
+      description: 'New customer welcome discount',
+      discountType: 'PERCENTAGE' as const,
+      discountValue: 10,
+      minPurchaseAmount: 50000,
+      maxDiscountAmount: 20000,
+      perUserLimit: 1,
+      validFrom: new Date('2024-01-01'),
+      isActive: true,
+    },
+    {
+      code: 'FREESHIP',
+      description: 'Free shipping on your order',
+      discountType: 'FREE_SHIPPING' as const,
+      discountValue: 1,
+      minPurchaseAmount: 150000,
+      usageLimit: 500,
+      validFrom: new Date('2025-01-01'),
+      validUntil: new Date('2026-12-31'),
+      isActive: true,
+    },
+    {
+      code: 'FLASH50',
+      description: 'Flash sale 50% off',
+      discountType: 'PERCENTAGE' as const,
+      discountValue: 50,
+      minPurchaseAmount: 200000,
+      maxDiscountAmount: 100000,
+      usageLimit: 100,
+      validFrom: new Date('2025-11-11'),
+      validUntil: new Date('2025-11-11T23:59:59'),
+      isActive: true,
+    },
+  ];
+
+  for (const coupon of coupons) {
+    await prisma.coupon.upsert({
+      where: { code: coupon.code },
+      update: {},
+      create: coupon,
+    });
+  }
+
+  console.log(`Seeded ${coupons.length} coupons`);
+}
+
 async function main() {
   await seedUsers();
   const categories = await seedCategories();
   await seedProducts(categories);
   await seedShopCollection(categories);
+  await seedCoupons();
 }
 
 main()
