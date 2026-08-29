@@ -2,7 +2,7 @@ import { Category, Product } from '@/types/api';
 
 const BACKEND_URL = process.env.BACKEND_INTERNAL_URL || 'http://localhost:5000';
 
-async function fetchApi<T>(path: string, revalidateSeconds: number): Promise<T> {
+export async function fetchApi<T>(path: string, revalidateSeconds: number): Promise<T> {
   const res = await fetch(`${BACKEND_URL}/api${path}`, { next: { revalidate: revalidateSeconds } });
   if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
   const json = await res.json();
