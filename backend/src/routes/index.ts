@@ -14,6 +14,8 @@ import userRoutes from './user.routes';
 import customerRoutes from './customer.routes';
 import dashboardRoutes from './dashboard.routes';
 import contactRoutes from './contact.routes';
+import paymentRoutes from './payment.routes';
+import webhookRoutes from './webhook.routes';
 
 const router = Router();
 
@@ -33,5 +35,7 @@ router.use('/users', userRoutes);
 router.use('/customers', customerRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/contact', contactRoutes);
+router.use('/payments', paymentRoutes);
+router.use('/webhooks', webhookRoutes);
 
 export default router;

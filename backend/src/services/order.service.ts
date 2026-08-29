@@ -9,6 +9,10 @@ export interface CreateOrderInput {
     state: string;
     postalCode: string;
     country: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
   };
   paymentMethod: PaymentMethod;
   notes?: string;
@@ -26,6 +30,8 @@ export interface OrderWithDetails {
     quantity: number;
     price: number;
     subtotal: number;
+    size: string | null;
+    color: string | null;
   }>;
   subtotal: number;
   discount: number;
@@ -90,6 +96,8 @@ export class OrderService {
         productName: item.product.name,
         quantity: item.quantity,
         price,
+        size: item.size,
+        color: item.color,
       };
     });
 
@@ -662,6 +670,8 @@ export class OrderService {
         quantity: item.quantity,
         price: item.price,
         subtotal: item.price * item.quantity,
+        size: item.size,
+        color: item.color,
       })),
       subtotal: order.subtotal,
       discount: order.discount,

@@ -244,7 +244,13 @@ export type OrderStatus =
 
 export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
 
-export type PaymentMethod = 'CASH_ON_DELIVERY' | 'CARD' | 'MOBILE_MONEY';
+export type PaymentMethod =
+  | 'CREDIT_CARD'
+  | 'DEBIT_CARD'
+  | 'PAYPAL'
+  | 'BANK_TRANSFER'
+  | 'MOBILE_MONEY'
+  | 'CASH_ON_DELIVERY';
 
 export interface OrderItem {
   id: string;
@@ -284,7 +290,17 @@ export interface Order {
 }
 
 export interface CreateOrderData {
-  addressId: string;
+  shippingAddress: {
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+  };
   paymentMethod: PaymentMethod;
   notes?: string;
 }

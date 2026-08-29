@@ -4,6 +4,8 @@ import { Prisma } from '@prisma/client';
 export interface CartItemInput {
   productId: string;
   quantity: number;
+  size?: string;
+  color?: string;
 }
 
 export interface CartWithDetails {
@@ -114,7 +116,9 @@ export class CartService {
   static async addItem(
     userId: string,
     productId: string,
-    quantity: number
+    quantity: number,
+    size?: string,
+    color?: string
   ): Promise<CartWithDetails> {
     // Validate product exists and is active
     const product = await prisma.product.findUnique({
@@ -154,7 +158,7 @@ export class CartService {
 
     // Check if item already exists in cart
     const existingItem = cart.items.find(
-      (item) => item.productId === productId
+      (item) => item.productId === productId && item.size === (size ?? null) && item.color === (color ?? null)
     );
 
     if (existingItem) {
@@ -181,6 +185,8 @@ export class CartService {
           userId,
           productId,
           quantity,
+          size,
+          color,
         },
       });
     }
@@ -482,7 +488,7 @@ export class CartService {
   ): Promise<CartWithDetails> {
     for (const item of guestCartItems) {
       try {
-        await this.addItem(userId, item.productId, item.quantity);
+        await this.addItem(userId, item.productId, item.quantity, item.size, item.color);
       } catch (error) {
         // Continue with other items if one fails
         console.error(`Failed to add item ${item.productId}:`, error);

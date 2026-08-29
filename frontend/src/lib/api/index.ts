@@ -13,3 +13,4 @@ export * from './customers';
 export * from './inventory';
 export * from './dashboard';
 export * from './contact';
+export * from './payment';

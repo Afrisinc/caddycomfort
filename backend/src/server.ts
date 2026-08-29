@@ -8,6 +8,7 @@ import { logger } from './config/logger';
 import { requestLogger } from './middleware/logger.middleware';
 import { errorHandler, notFound } from './middleware/error.middleware';
 import routes from './routes';
+import { initializePaymentReconciliationJob } from './jobs/payment-reconciliation.job';
 
 dotenv.config();
 
@@ -95,4 +96,6 @@ app.listen(PORT, () => {
   logger.info(`🚀 Server is running on port ${PORT}`);
   logger.info(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
   logger.info(`🔒 CORS enabled for: ${process.env.CORS_ORIGIN || 'http://localhost:3000'}`);
+
+  initializePaymentReconciliationJob();
 });

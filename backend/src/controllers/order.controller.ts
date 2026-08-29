@@ -26,7 +26,7 @@ export class OrderController {
         return res.status(400).json({ success: false, message: 'Payment method is required' });
       }
 
-      const validPaymentMethods = ['CREDIT_CARD', 'DEBIT_CARD', 'PAYPAL', 'BANK_TRANSFER', 'CASH_ON_DELIVERY'];
+      const validPaymentMethods = ['CREDIT_CARD', 'DEBIT_CARD', 'PAYPAL', 'BANK_TRANSFER', 'MOBILE_MONEY', 'CASH_ON_DELIVERY'];
       if (!validPaymentMethods.includes(paymentMethod)) {
         return res.status(400).json({ success: false, message: 'Invalid payment method' });
       }

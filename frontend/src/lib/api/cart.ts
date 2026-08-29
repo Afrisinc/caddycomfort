@@ -1,107 +1,88 @@
 import apiClient, { handleApiResponse, handleApiError } from '@/lib/api-client';
-import { Cart, CartItem } from '@/types/api';
+import { Cart } from '@/types/api';
+
+export interface CartItemData {
+  productId: string;
+  quantity: number;
+  size?: string;
+  color?: string;
+}
 
 export const cartApi = {
-  /**
-   * Get user's cart
-   */
   get: async (): Promise<Cart> => {
     try {
       const response = await apiClient.get('/cart');
-      return handleApiResponse<Cart>(response).data!;
+      const result = handleApiResponse<{ cart: Cart }>(response).data!;
+      return result.cart;
     } catch (error) {
       throw handleApiError(error);
     }
   },
 
-  /**
-   * Add item to cart
-   */
-  addItem: async (data: {
-    productId: string;
-    quantity: number;
-    size?: string;
-    color?: string;
-  }): Promise<CartItem> => {
+  addItem: async (data: CartItemData): Promise<Cart> => {
     try {
       const response = await apiClient.post('/cart/items', data);
-      return handleApiResponse<CartItem>(response).data!;
+      const result = handleApiResponse<{ cart: Cart }>(response).data!;
+      return result.cart;
     } catch (error) {
       throw handleApiError(error);
     }
   },
 
-  /**
-   * Update cart item quantity
-   */
-  updateItem: async (itemId: string, quantity: number): Promise<CartItem> => {
+  updateItem: async (itemId: string, quantity: number): Promise<Cart> => {
     try {
-      const response = await apiClient.put(`/cart/items/${itemId}`, { quantity });
-      return handleApiResponse<CartItem>(response).data!;
+      const response = await apiClient.patch(`/cart/items/${itemId}`, { quantity });
+      const result = handleApiResponse<{ cart: Cart }>(response).data!;
+      return result.cart;
     } catch (error) {
       throw handleApiError(error);
     }
   },
 
-  /**
-   * Remove item from cart
-   */
-  removeItem: async (itemId: string): Promise<void> => {
+  removeItem: async (itemId: string): Promise<Cart> => {
     try {
-      await apiClient.delete(`/cart/items/${itemId}`);
+      const response = await apiClient.delete(`/cart/items/${itemId}`);
+      const result = handleApiResponse<{ cart: Cart }>(response).data!;
+      return result.cart;
     } catch (error) {
       throw handleApiError(error);
     }
   },
 
-  /**
-   * Clear entire cart
-   */
   clear: async (): Promise<void> => {
     try {
-      await apiClient.delete('/cart');
+      const response = await apiClient.delete('/cart/clear');
+      handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
     }
   },
 
-  /**
-   * Apply coupon to cart
-   */
-  applyCoupon: async (code: string): Promise<Cart> => {
+  applyCoupon: async (couponCode: string): Promise<Cart> => {
     try {
-      const response = await apiClient.post('/cart/coupon', { code });
-      return handleApiResponse<Cart>(response).data!;
+      const response = await apiClient.post('/cart/coupon', { couponCode });
+      const result = handleApiResponse<{ cart: Cart }>(response).data!;
+      return result.cart;
     } catch (error) {
       throw handleApiError(error);
     }
   },
 
-  /**
-   * Remove coupon from cart
-   */
   removeCoupon: async (): Promise<Cart> => {
     try {
       const response = await apiClient.delete('/cart/coupon');
-      return handleApiResponse<Cart>(response).data!;
+      const result = handleApiResponse<{ cart: Cart }>(response).data!;
+      return result.cart;
     } catch (error) {
       throw handleApiError(error);
     }
   },
 
-  /**
-   * Get cart summary (totals)
-   */
-  getSummary: async (): Promise<{
-    subtotal: number;
-    discount: number;
-    tax: number;
-    shippingCost: number;
-    total: number;
-  }> => {
+  mergeGuestCart: async (items: CartItemData[]): Promise<Cart> => {
     try {
-      const response = await apiClient.get('/cart/summary');
-      return handleApiResponse(response).data!;
+      const response = await apiClient.post('/cart/merge', { items });
+      const result = handleApiResponse<{ cart: Cart }>(response).data!;
+      return result.cart;
     } catch (error) {
       throw handleApiError(error);
     }

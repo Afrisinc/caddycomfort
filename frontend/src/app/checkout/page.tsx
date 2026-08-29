@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -9,30 +9,49 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  Check, 
-  CreditCard, 
-  Truck, 
+import {
+  Check,
+  CreditCard,
+  Truck,
   Lock,
   ChevronLeft,
   MapPin,
-  Wallet
+  Wallet,
+  Loader2,
+  Smartphone,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/useCartStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'sonner';
+import { cartApi, ordersApi, paymentApi } from '@/lib/api';
+import { PaymentMethod } from '@/types/api';
 
 type Step = 'shipping' | 'payment' | 'review';
+type UiPaymentMethod = 'card' | 'momo' | 'cod';
+
+const PAYMENT_METHOD_MAP: Record<UiPaymentMethod, PaymentMethod> = {
+  card: 'CREDIT_CARD',
+  momo: 'MOBILE_MONEY',
+  cod: 'CASH_ON_DELIVERY',
+};
+
+const POLL_INTERVAL_MS = 4000;
+const MAX_POLL_ATTEMPTS = 30;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, clearCart } = useCartStore();
   const [currentStep, setCurrentStep] = useState<Step>('shipping');
   const [saveInfo, setSaveInfo] = useState(false);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [isAwaitingMobileApproval, setIsAwaitingMobileApproval] = useState(false);
+  const cancelPollRef = useRef(false);
 
-  // Shipping form state
   const [shippingData, setShippingData] = useState({
     firstName: '',
     lastName: '',
@@ -44,14 +63,7 @@ export default function CheckoutPage() {
     postalCode: '',
   });
 
-  // Payment form state
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'momo' | 'cod'>('card');
-  const [cardData, setCardData] = useState({
-    cardNumber: '',
-    cardName: '',
-    expiryDate: '',
-    cvv: '',
-  });
+  const [paymentMethod, setPaymentMethod] = useState<UiPaymentMethod>('card');
   const [momoNumber, setMomoNumber] = useState('');
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -67,9 +79,8 @@ export default function CheckoutPage() {
 
   const handleShippingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Basic validation
-    if (!shippingData.firstName || !shippingData.lastName || !shippingData.email || 
+
+    if (!shippingData.firstName || !shippingData.lastName || !shippingData.email ||
         !shippingData.phone || !shippingData.address || !shippingData.city) {
       toast.error('Please fill in all required fields');
       return;
@@ -81,12 +92,7 @@ export default function CheckoutPage() {
   const handlePaymentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (paymentMethod === 'card') {
-      if (!cardData.cardNumber || !cardData.cardName || !cardData.expiryDate || !cardData.cvv) {
-        toast.error('Please fill in all card details');
-        return;
-      }
-    } else if (paymentMethod === 'momo' && !momoNumber) {
+    if (paymentMethod === 'momo' && !momoNumber) {
       toast.error('Please enter your Mobile Money number');
       return;
     }
@@ -94,16 +100,132 @@ export default function CheckoutPage() {
     setCurrentStep('review');
   };
 
-  const handlePlaceOrder = () => {
-    // Simulate order processing
-    toast.success('Order placed successfully!');
-    clearCart();
+  const pollMobilePaymentStatus = async (orderId: string) => {
+    for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
+      if (cancelPollRef.current) return;
+
+      await sleep(POLL_INTERVAL_MS);
+      if (cancelPollRef.current) return;
+
+      try {
+        const status = await paymentApi.getStatus(orderId);
+
+        if (status.status === 'SUCCESSFUL') {
+          toast.success('Payment received! Order placed successfully.');
+          router.push('/account/orders');
+          return;
+        }
+
+        if (status.status === 'FAILED') {
+          toast.error('Payment failed. You can retry from your orders page.');
+          router.push('/account/orders');
+          return;
+        }
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to check payment status');
+        router.push('/account/orders');
+        return;
+      }
+    }
+
+    toast.info('Still waiting for approval. Check your orders page for the latest status.');
     router.push('/account/orders');
+  };
+
+  const handlePlaceOrder = async () => {
+    const { isAuthenticated } = useAuthStore.getState();
+    if (!isAuthenticated) {
+      toast.error('Please log in to place your order');
+      router.push('/login');
+      return;
+    }
+
+    setIsPlacingOrder(true);
+
+    try {
+      await cartApi.mergeGuestCart(
+        items.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity,
+          size: item.size,
+          color: item.color,
+        }))
+      );
+
+      const order = await ordersApi.create({
+        shippingAddress: {
+          street: shippingData.address,
+          city: shippingData.city,
+          state: shippingData.province || shippingData.city,
+          postalCode: shippingData.postalCode || '00000',
+          country: 'Rwanda',
+          firstName: shippingData.firstName,
+          lastName: shippingData.lastName,
+          email: shippingData.email,
+          phone: shippingData.phone,
+        },
+        paymentMethod: PAYMENT_METHOD_MAP[paymentMethod],
+      });
+
+      clearCart();
+
+      if (paymentMethod === 'cod') {
+        toast.success('Order placed successfully!');
+        router.push('/account/orders');
+        return;
+      }
+
+      const result = await paymentApi.initiate(order.id, {
+        email: shippingData.email,
+        phoneNumber: paymentMethod === 'momo' ? momoNumber : undefined,
+        customerName: `${shippingData.firstName} ${shippingData.lastName}`,
+      });
+
+      if (result.method === 'CARD' && result.checkoutUrl) {
+        window.location.href = result.checkoutUrl;
+        return;
+      }
+
+      if (result.method === 'MOBILE_MONEY') {
+        cancelPollRef.current = false;
+        setIsAwaitingMobileApproval(true);
+        await pollMobilePaymentStatus(order.id);
+        return;
+      }
+
+      router.push('/account/orders');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to place order');
+    } finally {
+      setIsPlacingOrder(false);
+      setIsAwaitingMobileApproval(false);
+    }
   };
 
   const getCurrentStepIndex = () => {
     return steps.findIndex(step => step.id === currentStep);
   };
+
+  if (isAwaitingMobileApproval) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-background pt-20 flex items-center justify-center">
+          <div className="text-center max-w-md mx-auto px-4">
+            <div className="h-16 w-16 rounded-full bg-accent-rose-subtle flex items-center justify-center mx-auto mb-6">
+              <Smartphone className="h-8 w-8 text-accent-rose animate-pulse" />
+            </div>
+            <h1 className="text-2xl font-serif mb-3">Approve the Payment</h1>
+            <p className="text-muted-foreground mb-6">
+              A payment request was sent to {momoNumber}. Approve it on your phone to complete the order.
+            </p>
+            <Loader2 className="h-6 w-6 animate-spin mx-auto text-accent-rose" />
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -132,7 +254,7 @@ export default function CheckoutPage() {
   return (
     <>
       <Navbar />
-      
+
       <div className="min-h-screen bg-background pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
           <Link href="/cart" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
@@ -266,13 +388,17 @@ export default function CheckoutPage() {
                           onChange={(e) => setShippingData({ ...shippingData, province: e.target.value })}
                         />
                       </div>
-                      <div className="md:col-span-2">
+                      <div>
                         <Label htmlFor="postalCode">Postal Code</Label>
                         <Input
                           id="postalCode"
                           value={shippingData.postalCode}
                           onChange={(e) => setShippingData({ ...shippingData, postalCode: e.target.value })}
                         />
+                      </div>
+                      <div>
+                        <Label htmlFor="country">Country</Label>
+                        <Input id="country" value="Rwanda" disabled />
                       </div>
                     </div>
 
@@ -310,7 +436,7 @@ export default function CheckoutPage() {
                       <h2 className="text-2xl font-serif">Payment Method</h2>
                     </div>
 
-                    <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as 'card' | 'momo' | 'cod')}>
+                    <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as UiPaymentMethod)}>
                       <div className="space-y-4">
                         {/* Credit Card */}
                         <div className="flex items-start space-x-3 border rounded-lg p-4">
@@ -320,46 +446,9 @@ export default function CheckoutPage() {
                               Credit / Debit Card
                             </Label>
                             {paymentMethod === 'card' && (
-                              <div className="mt-4 space-y-4">
-                                <div>
-                                  <Label htmlFor="cardNumber">Card Number</Label>
-                                  <Input
-                                    id="cardNumber"
-                                    placeholder="1234 5678 9012 3456"
-                                    value={cardData.cardNumber}
-                                    onChange={(e) => setCardData({ ...cardData, cardNumber: e.target.value })}
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor="cardName">Cardholder Name</Label>
-                                  <Input
-                                    id="cardName"
-                                    placeholder="John Doe"
-                                    value={cardData.cardName}
-                                    onChange={(e) => setCardData({ ...cardData, cardName: e.target.value })}
-                                  />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label htmlFor="expiryDate">Expiry Date</Label>
-                                    <Input
-                                      id="expiryDate"
-                                      placeholder="MM/YY"
-                                      value={cardData.expiryDate}
-                                      onChange={(e) => setCardData({ ...cardData, expiryDate: e.target.value })}
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label htmlFor="cvv">CVV</Label>
-                                    <Input
-                                      id="cvv"
-                                      placeholder="123"
-                                      value={cardData.cvv}
-                                      onChange={(e) => setCardData({ ...cardData, cvv: e.target.value })}
-                                    />
-                                  </div>
-                                </div>
-                              </div>
+                              <p className="text-sm text-muted-foreground mt-2">
+                                You&apos;ll be redirected to a secure payment page to enter your card details.
+                              </p>
                             )}
                           </div>
                         </div>
@@ -474,7 +563,7 @@ export default function CheckoutPage() {
                     </div>
                     <p className="text-sm">
                       {paymentMethod === 'card' && 'Credit/Debit Card'}
-                      {paymentMethod === 'momo' && 'Mobile Money'}
+                      {paymentMethod === 'momo' && `Mobile Money (${momoNumber})`}
                       {paymentMethod === 'cod' && 'Cash on Delivery'}
                     </p>
                   </div>
@@ -519,6 +608,7 @@ export default function CheckoutPage() {
                       size="lg"
                       className="flex-1"
                       onClick={() => setCurrentStep('payment')}
+                      disabled={isPlacingOrder}
                     >
                       Back
                     </Button>
@@ -526,8 +616,9 @@ export default function CheckoutPage() {
                       size="lg"
                       className="flex-1 bg-accent-rose hover:bg-accent-rose-dark"
                       onClick={handlePlaceOrder}
+                      disabled={isPlacingOrder}
                     >
-                      Place Order
+                      {isPlacingOrder ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Place Order'}
                     </Button>
                   </div>
                 </div>

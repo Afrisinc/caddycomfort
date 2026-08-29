@@ -9,9 +9,9 @@ export class CartController {
     try {
       const userId = req.user!.userId;
       const cart = await CartService.getOrCreateCart(userId);
-      res.json(cart);
+      res.json({ success: true, data: { cart } });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -21,29 +21,29 @@ export class CartController {
   static async addItem(req: Request, res: Response) {
     try {
       const userId = req.user!.userId;
-      const { productId, quantity } = req.body;
+      const { productId, quantity, size, color } = req.body;
 
       if (!productId || !quantity) {
-        return res.status(400).json({ error: 'Product ID and quantity are required' });
+        return res.status(400).json({ success: false, message: 'Product ID and quantity are required' });
       }
 
       if (quantity < 1) {
-        return res.status(400).json({ error: 'Quantity must be at least 1' });
+        return res.status(400).json({ success: false, message: 'Quantity must be at least 1' });
       }
 
-      const cart = await CartService.addItem(userId, productId, quantity);
-      res.status(201).json(cart);
+      const cart = await CartService.addItem(userId, productId, quantity, size, color);
+      res.status(201).json({ success: true, data: { cart } });
     } catch (error: any) {
       if (
         error.message.includes('not found') ||
         error.message.includes('not available')
       ) {
-        return res.status(404).json({ error: error.message });
+        return res.status(404).json({ success: false, message: error.message });
       }
       if (error.message.includes('Insufficient stock')) {
-        return res.status(400).json({ error: error.message });
+        return res.status(400).json({ success: false, message: error.message });
       }
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -57,26 +57,26 @@ export class CartController {
       const { quantity } = req.body;
 
       if (!quantity) {
-        return res.status(400).json({ error: 'Quantity is required' });
+        return res.status(400).json({ success: false, message: 'Quantity is required' });
       }
 
       if (quantity < 1) {
-        return res.status(400).json({ error: 'Quantity must be at least 1' });
+        return res.status(400).json({ success: false, message: 'Quantity must be at least 1' });
       }
 
       const cart = await CartService.updateItemQuantity(userId, cartItemId, quantity);
-      res.json(cart);
+      res.json({ success: true, data: { cart } });
     } catch (error: any) {
       if (error.message === 'Cart item not found') {
-        return res.status(404).json({ error: error.message });
+        return res.status(404).json({ success: false, message: error.message });
       }
       if (error.message === 'Unauthorized') {
-        return res.status(403).json({ error: error.message });
+        return res.status(403).json({ success: false, message: error.message });
       }
       if (error.message.includes('Insufficient stock')) {
-        return res.status(400).json({ error: error.message });
+        return res.status(400).json({ success: false, message: error.message });
       }
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -89,15 +89,15 @@ export class CartController {
       const { cartItemId } = req.params;
 
       const cart = await CartService.removeItem(userId, cartItemId);
-      res.json(cart);
+      res.json({ success: true, data: { cart } });
     } catch (error: any) {
       if (error.message === 'Cart item not found') {
-        return res.status(404).json({ error: error.message });
+        return res.status(404).json({ success: false, message: error.message });
       }
       if (error.message === 'Unauthorized') {
-        return res.status(403).json({ error: error.message });
+        return res.status(403).json({ success: false, message: error.message });
       }
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -108,9 +108,9 @@ export class CartController {
     try {
       const userId = req.user!.userId;
       const result = await CartService.clearCart(userId);
-      res.json(result);
+      res.json({ success: true, message: result.message });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -123,11 +123,11 @@ export class CartController {
       const { couponCode } = req.body;
 
       if (!couponCode) {
-        return res.status(400).json({ error: 'Coupon code is required' });
+        return res.status(400).json({ success: false, message: 'Coupon code is required' });
       }
 
       const cart = await CartService.applyCoupon(userId, couponCode);
-      res.json(cart);
+      res.json({ success: true, data: { cart } });
     } catch (error: any) {
       if (
         error.message.includes('Invalid') ||
@@ -138,9 +138,9 @@ export class CartController {
         error.message.includes('already used') ||
         error.message.includes('Minimum purchase')
       ) {
-        return res.status(400).json({ error: error.message });
+        return res.status(400).json({ success: false, message: error.message });
       }
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -151,9 +151,9 @@ export class CartController {
     try {
       const userId = req.user!.userId;
       const cart = await CartService.removeCoupon(userId);
-      res.json(cart);
+      res.json({ success: true, data: { cart } });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -164,9 +164,9 @@ export class CartController {
     try {
       const userId = req.user!.userId;
       const validation = await CartService.validateCart(userId);
-      res.json(validation);
+      res.json({ success: true, data: validation });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -177,9 +177,9 @@ export class CartController {
     try {
       const userId = req.user!.userId;
       const count = await CartService.getCartItemCount(userId);
-      res.json({ count });
+      res.json({ success: true, data: { count } });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 
@@ -192,13 +192,13 @@ export class CartController {
       const { items } = req.body;
 
       if (!items || !Array.isArray(items)) {
-        return res.status(400).json({ error: 'Items array is required' });
+        return res.status(400).json({ success: false, message: 'Items array is required' });
       }
 
       const cart = await CartService.mergeGuestCart(userId, items);
-      res.json(cart);
+      res.json({ success: true, data: { cart } });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 }
