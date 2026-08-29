@@ -1,9 +1,13 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { ApiError, ApiResponse } from '@/types/api';
 
+const isServer = typeof window === 'undefined';
+const serverBaseURL = `${process.env.BACKEND_INTERNAL_URL || 'http://localhost:5000'}/api`;
+const browserBaseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
+  baseURL: isServer ? serverBaseURL : browserBaseURL,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',

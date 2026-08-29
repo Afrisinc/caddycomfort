@@ -34,6 +34,7 @@ export const productsApi = {
         if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
         if (filters.search) params.append('search', filters.search);
         if (filters.isFeatured !== undefined) params.append('isFeatured', filters.isFeatured.toString());
+        if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString());
         if (filters.sizes?.length) filters.sizes.forEach(s => params.append('sizes', s));
         if (filters.colors?.length) filters.colors.forEach(c => params.append('colors', c));
         if (filters.tags?.length) filters.tags.forEach(t => params.append('tags', t));

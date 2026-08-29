@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -28,6 +29,7 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
+    optimizePackageImports: ['lucide-react', 'recharts', 'framer-motion', 'swiper'],
   },
   typescript: {
     ignoreBuildErrors: true,

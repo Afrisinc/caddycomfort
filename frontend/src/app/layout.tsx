@@ -3,10 +3,6 @@ import { Outfit, Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-export const revalidate = 0;
-
 const outfit = Outfit({
   variable: "--font-outfit",
   subsets: ["latin"],
