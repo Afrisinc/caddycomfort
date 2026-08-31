@@ -29,7 +29,7 @@ export const useCartStore = create<CartStore>()(
       addItem: (item) => {
         set((state) => {
           const existingItem = state.items.find(
-            (i) => i.id === item.id && i.size === item.size && i.color === item.color
+            (i) => i.id === item.id && i.size === item.size && i.color === item.color,
           );
 
           if (existingItem) {
@@ -37,7 +37,7 @@ export const useCartStore = create<CartStore>()(
               items: state.items.map((i) =>
                 i.id === item.id && i.size === item.size && i.color === item.color
                   ? { ...i, quantity: i.quantity + item.quantity }
-                  : i
+                  : i,
               ),
             };
           }
@@ -49,7 +49,7 @@ export const useCartStore = create<CartStore>()(
       removeItem: (id, size, color) => {
         set((state) => ({
           items: state.items.filter(
-            (item) => !(item.id === id && item.size === size && item.color === color)
+            (item) => !(item.id === id && item.size === size && item.color === color),
           ),
         }));
       },
@@ -59,7 +59,7 @@ export const useCartStore = create<CartStore>()(
           items: state.items.map((item) =>
             item.id === id && item.size === size && item.color === color
               ? { ...item, quantity }
-              : item
+              : item,
           ),
         }));
       },
@@ -78,6 +78,6 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: 'cart-storage',
-    }
-  )
+    },
+  ),
 );

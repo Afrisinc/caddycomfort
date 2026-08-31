@@ -16,11 +16,11 @@ export const useUIStore = create<UIStore>((set) => ({
   isMobileMenuOpen: false,
   isCartOpen: false,
   isSearchOpen: false,
-  
+
   setMobileMenuOpen: (open) => set({ isMobileMenuOpen: open }),
   setCartOpen: (open) => set({ isCartOpen: open }),
   setSearchOpen: (open) => set({ isSearchOpen: open }),
-  
+
   toggleMobileMenu: () => set((state) => ({ isMobileMenuOpen: !state.isMobileMenuOpen })),
   toggleCart: () => set((state) => ({ isCartOpen: !state.isCartOpen })),
   toggleSearch: () => set((state) => ({ isSearchOpen: !state.isSearchOpen })),

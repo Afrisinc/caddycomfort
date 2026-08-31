@@ -1,0 +1,265 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* Typography */
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-outfit);
+
+  /* Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-rose: var(--accent-rose);
+  --color-accent-rose-light: var(--accent-rose-light);
+  --color-accent-rose-dark: var(--accent-rose-dark);
+  --color-accent-rose-muted: var(--accent-rose-muted);
+  --color-accent-rose-vibrant: var(--accent-rose-vibrant);
+  --color-accent-rose-subtle: var(--accent-rose-subtle);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  /* Border Radius */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-button: 0.375rem;
+  --radius-card: 0.75rem;
+  --radius-input: 0.375rem;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-luxury: 0 25px 50px -12px rgb(0 0 0 / 0.15);
+
+  /* Spacing (4px system) */
+  --spacing-0: 0;
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+  --spacing-20: 5rem;
+  --spacing-24: 6rem;
+}
+
+:root {
+  --font-outfit: 'Outfit Variable', sans-serif;
+  --font-inter: 'Inter Variable', sans-serif;
+
+  /* Luxury Fashion Palette - Light Mode */
+  --background: #fafafa;
+  --foreground: #111827;
+
+  /* Primary - Charcoal */
+  --primary: #111827;
+  --primary-foreground: #fafafa;
+
+  /* Secondary - Off White */
+  --secondary: #f5f5f5;
+  --secondary-foreground: #111827;
+
+  /* Accent - Rose (6 variations) */
+  --accent: #c2185b;
+  --accent-foreground: #fafafa;
+  --accent-rose: #c2185b;
+  --accent-rose-light: #e91e63;
+  --accent-rose-dark: #880e4f;
+  --accent-rose-muted: #f8bbd0;
+  --accent-rose-vibrant: #d81b60;
+  --accent-rose-subtle: #fce4ec;
+
+  /* Card */
+  --card: #ffffff;
+  --card-foreground: #111827;
+
+  /* Popover */
+  --popover: #ffffff;
+  --popover-foreground: #111827;
+
+  /* Muted */
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+
+  /* Border & Input */
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #c2185b;
+
+  /* Destructive */
+  --destructive: #dc2626;
+  --destructive-foreground: #fafafa;
+}
+
+.dark {
+  /* Luxury Fashion Palette - Dark Mode */
+  --background: #0f172a;
+  --foreground: #f8fafc;
+
+  /* Primary */
+  --primary: #f8fafc;
+  --primary-foreground: #0f172a;
+
+  /* Secondary */
+  --secondary: #1e293b;
+  --secondary-foreground: #f8fafc;
+
+  /* Accent - Rose (adjusted for dark) */
+  --accent: #e91e63;
+  --accent-foreground: #f8fafc;
+  --accent-rose: #e91e63;
+  --accent-rose-light: #f06292;
+  --accent-rose-dark: #ad1457;
+  --accent-rose-muted: #4a1e3b;
+  --accent-rose-vibrant: #ec407a;
+  --accent-rose-subtle: #2d1b29;
+
+  /* Card */
+  --card: #1e293b;
+  --card-foreground: #f8fafc;
+
+  /* Popover */
+  --popover: #1e293b;
+  --popover-foreground: #f8fafc;
+
+  /* Muted */
+  --muted: #334155;
+  --muted-foreground: #94a3b8;
+
+  /* Border & Input */
+  --border: #334155;
+  --input: #334155;
+  --ring: #e91e63;
+
+  /* Destructive */
+  --destructive: #ef4444;
+  --destructive-foreground: #f8fafc;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1,
+      'kern' 1;
+  }
+
+  /* Headings use Outfit - modern elegant sans-serif */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-serif font-semibold tracking-tight;
+    letter-spacing: -0.02em;
+  }
+
+  h1 {
+    @apply text-5xl md:text-6xl lg:text-7xl;
+  }
+
+  h2 {
+    @apply text-4xl md:text-5xl;
+  }
+
+  h3 {
+    @apply text-3xl md:text-4xl;
+  }
+
+  h4 {
+    @apply text-2xl md:text-3xl;
+  }
+
+  h5 {
+    @apply text-xl md:text-2xl;
+  }
+
+  h6 {
+    @apply text-lg md:text-xl;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-accent-rose;
+  }
+}
+
+@layer utilities {
+  /* Luxury shadows */
+  .shadow-luxury {
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15);
+  }
+
+  .shadow-luxury-lg {
+    box-shadow: 0 35px 60px -15px rgb(0 0 0 / 0.2);
+  }
+
+  /* Text effects */
+  .text-gradient-rose {
+    @apply bg-gradient-to-r from-accent-rose via-accent-rose-vibrant to-accent-rose-light bg-clip-text text-transparent;
+  }
+
+  /* Smooth transitions */
+  .transition-luxury {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  /* Gradient animation */
+  @keyframes gradient {
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  .animate-gradient {
+    animation: gradient 3s ease infinite;
+  }
+}

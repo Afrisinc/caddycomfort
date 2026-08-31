@@ -25,48 +25,43 @@ export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
-      
+
       addItem: (item) =>
         set((state) => {
           const existingItem = state.items.find(
-            (i) => i.id === item.id && i.size === item.size && i.color === item.color
+            (i) => i.id === item.id && i.size === item.size && i.color === item.color,
           );
-          
+
           if (existingItem) {
             return {
               items: state.items.map((i) =>
                 i.id === item.id && i.size === item.size && i.color === item.color
                   ? { ...i, quantity: i.quantity + item.quantity }
-                  : i
+                  : i,
               ),
             };
           }
-          
+
           return { items: [...state.items, item] };
         }),
-      
+
       removeItem: (id) =>
         set((state) => ({
           items: state.items.filter((item) => item.id !== id),
         })),
-      
+
       updateQuantity: (id, quantity) =>
         set((state) => ({
-          items: state.items.map((item) =>
-            item.id === id ? { ...item, quantity } : item
-          ),
+          items: state.items.map((item) => (item.id === id ? { ...item, quantity } : item)),
         })),
-      
+
       clearCart: () => set({ items: [] }),
-      
+
       getTotal: () => {
         const state = get();
-        return state.items.reduce(
-          (total, item) => total + item.price * item.quantity,
-          0
-        );
+        return state.items.reduce((total, item) => total + item.price * item.quantity, 0);
       },
-      
+
       getItemCount: () => {
         const state = get();
         return state.items.reduce((count, item) => count + item.quantity, 0);
@@ -74,6 +69,6 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: 'cart-storage',
-    }
-  )
+    },
+  ),
 );

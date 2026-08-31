@@ -1,7 +1,5 @@
-'use client';
-
-import Link from 'next/link';
-import Image from 'next/image';
+import Link from '@/components/common/Link';
+import Image from '@/components/common/Image';
 import { Card } from '@/components/ui/card';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay } from 'swiper/modules';
@@ -61,7 +59,9 @@ export function HomeFlashSaleCarousel({ products }: { products: Product[] }) {
                   <div className="flex items-center justify-between">
                     <span className="text-lg font-bold text-white">{cardProps.price}</span>
                     {cardProps.originalPrice && (
-                      <span className="text-xs text-white/60 line-through">{cardProps.originalPrice}</span>
+                      <span className="text-xs text-white/60 line-through">
+                        {cardProps.originalPrice}
+                      </span>
                     )}
                   </div>
                   <Link href={`/shop/${product.id}`}>

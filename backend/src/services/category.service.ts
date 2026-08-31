@@ -91,10 +91,7 @@ export class CategoryService {
   /**
    * Get all categories with optional filters
    */
-  static async getAll(options?: {
-    includeChildren?: boolean;
-    parentId?: string | null;
-  }) {
+  static async getAll(options?: { includeChildren?: boolean; parentId?: string | null }) {
     const { includeChildren = true, parentId } = options || {};
 
     const where = parentId !== undefined ? { parentId } : {};
@@ -325,10 +322,7 @@ export class CategoryService {
   /**
    * Check if a category is a descendant of another
    */
-  private static async isDescendant(
-    ancestorId: string,
-    descendantId: string
-  ): Promise<boolean> {
+  private static async isDescendant(ancestorId: string, descendantId: string): Promise<boolean> {
     let currentId: string | null = descendantId;
 
     while (currentId) {

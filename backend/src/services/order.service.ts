@@ -79,7 +79,7 @@ export class OrderService {
 
       if (item.product.stockQuantity < item.quantity) {
         throw new Error(
-          `Insufficient stock for ${item.product.name}. Only ${item.product.stockQuantity} available`
+          `Insufficient stock for ${item.product.name}. Only ${item.product.stockQuantity} available`,
         );
       }
     }
@@ -257,10 +257,7 @@ export class OrderService {
   /**
    * Get order by order number
    */
-  static async getOrderByNumber(
-    orderNumber: string,
-    userId?: string
-  ): Promise<OrderWithDetails> {
+  static async getOrderByNumber(orderNumber: string, userId?: string): Promise<OrderWithDetails> {
     const order = await prisma.order.findUnique({
       where: { orderNumber },
       include: {
@@ -294,12 +291,7 @@ export class OrderService {
   /**
    * Get user orders
    */
-  static async getUserOrders(
-    userId: string,
-    page = 1,
-    limit = 10,
-    status?: OrderStatus
-  ) {
+  static async getUserOrders(userId: string, page = 1, limit = 10, status?: OrderStatus) {
     const skip = (page - 1) * limit;
 
     const where: Prisma.OrderWhereInput = { userId };
@@ -345,7 +337,7 @@ export class OrderService {
     status?: OrderStatus,
     paymentStatus?: PaymentStatus,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ) {
     const skip = (page - 1) * limit;
 
@@ -397,10 +389,7 @@ export class OrderService {
   /**
    * Update order status
    */
-  static async updateOrderStatus(
-    orderId: string,
-    status: OrderStatus
-  ): Promise<OrderWithDetails> {
+  static async updateOrderStatus(orderId: string, status: OrderStatus): Promise<OrderWithDetails> {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: { items: true },
@@ -468,7 +457,7 @@ export class OrderService {
    */
   static async updatePaymentStatus(
     orderId: string,
-    paymentStatus: PaymentStatus
+    paymentStatus: PaymentStatus,
   ): Promise<OrderWithDetails> {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
@@ -544,39 +533,34 @@ export class OrderService {
       if (endDate) where.createdAt.lte = endDate;
     }
 
-    const [
-      totalOrders,
-      statusCounts,
-      paymentStatusCounts,
-      totalRevenue,
-      averageOrderValue,
-    ] = await Promise.all([
-      prisma.order.count({ where }),
-      prisma.order.groupBy({
-        by: ['status'],
-        where,
-        _count: true,
-      }),
-      prisma.order.groupBy({
-        by: ['paymentStatus'],
-        where,
-        _count: true,
-      }),
-      prisma.order.aggregate({
-        where: {
-          ...where,
-          status: { not: 'CANCELLED' },
-        },
-        _sum: { total: true },
-      }),
-      prisma.order.aggregate({
-        where: {
-          ...where,
-          status: { not: 'CANCELLED' },
-        },
-        _avg: { total: true },
-      }),
-    ]);
+    const [totalOrders, statusCounts, paymentStatusCounts, totalRevenue, averageOrderValue] =
+      await Promise.all([
+        prisma.order.count({ where }),
+        prisma.order.groupBy({
+          by: ['status'],
+          where,
+          _count: true,
+        }),
+        prisma.order.groupBy({
+          by: ['paymentStatus'],
+          where,
+          _count: true,
+        }),
+        prisma.order.aggregate({
+          where: {
+            ...where,
+            status: { not: 'CANCELLED' },
+          },
+          _sum: { total: true },
+        }),
+        prisma.order.aggregate({
+          where: {
+            ...where,
+            status: { not: 'CANCELLED' },
+          },
+          _avg: { total: true },
+        }),
+      ]);
 
     return {
       totalOrders,
@@ -585,14 +569,14 @@ export class OrderService {
           acc[item.status] = item._count;
           return acc;
         },
-        {} as Record<string, number>
+        {} as Record<string, number>,
       ),
       byPaymentStatus: paymentStatusCounts.reduce(
         (acc, item) => {
           acc[item.paymentStatus] = item._count;
           return acc;
         },
-        {} as Record<string, number>
+        {} as Record<string, number>,
       ),
       totalRevenue: totalRevenue._sum.total || 0,
       averageOrderValue: averageOrderValue._avg.total || 0,

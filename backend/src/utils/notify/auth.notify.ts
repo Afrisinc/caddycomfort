@@ -15,7 +15,10 @@ const send = async (params: SendParams): Promise<void> => {
   try {
     await notify.send(params);
   } catch (error) {
-    logger.error({ err: error, to: params.to, template: params.template }, 'Failed to send notification');
+    logger.error(
+      { err: error, to: params.to, template: params.template },
+      'Failed to send notification',
+    );
   }
 };
 

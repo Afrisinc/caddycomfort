@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import {
@@ -33,7 +31,11 @@ interface AdjustStockDialogProps {
   onSuccess: () => void;
 }
 
-const TYPE_OPTIONS: { value: InventoryLogType; label: string; direction: 'increase' | 'decrease' | 'either' }[] = [
+const TYPE_OPTIONS: {
+  value: InventoryLogType;
+  label: string;
+  direction: 'increase' | 'decrease' | 'either';
+}[] = [
   { value: 'RESTOCK', label: 'Restock (new stock received)', direction: 'increase' },
   { value: 'RETURN', label: 'Customer Return', direction: 'increase' },
   { value: 'SALE', label: 'Sale (manual deduction)', direction: 'decrease' },
@@ -56,7 +58,8 @@ export function AdjustStockDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedOption = TYPE_OPTIONS.find((o) => o.value === type)!;
-  const effectiveDirection = selectedOption.direction === 'either' ? direction : selectedOption.direction;
+  const effectiveDirection =
+    selectedOption.direction === 'either' ? direction : selectedOption.direction;
   const signedQuantity = effectiveDirection === 'increase' ? amount : -amount;
   const projectedStock = currentStock + signedQuantity;
 
@@ -87,7 +90,9 @@ export function AdjustStockDialog({
     }
 
     if (projectedStock < 0) {
-      toast.error(`Not enough stock: only ${currentStock} unit${currentStock === 1 ? '' : 's'} available`);
+      toast.error(
+        `Not enough stock: only ${currentStock} unit${currentStock === 1 ? '' : 's'} available`,
+      );
       return;
     }
 
@@ -111,7 +116,12 @@ export function AdjustStockDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(next) => { if (!isSubmitting) onOpenChange(next); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!isSubmitting) onOpenChange(next);
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Adjust Stock</DialogTitle>
@@ -123,7 +133,11 @@ export function AdjustStockDialog({
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="space-y-2">
             <Label htmlFor="adjust-type">Reason Type</Label>
-            <Select value={type} onValueChange={(v) => handleTypeChange(v as InventoryLogType)} disabled={isSubmitting}>
+            <Select
+              value={type}
+              onValueChange={(v) => handleTypeChange(v as InventoryLogType)}
+              disabled={isSubmitting}
+            >
               <SelectTrigger id="adjust-type">
                 <SelectValue />
               </SelectTrigger>
@@ -140,7 +154,11 @@ export function AdjustStockDialog({
           {selectedOption.direction === 'either' && (
             <div className="space-y-2">
               <Label htmlFor="adjust-direction">Direction</Label>
-              <Select value={direction} onValueChange={(v) => setDirection(v as 'increase' | 'decrease')} disabled={isSubmitting}>
+              <Select
+                value={direction}
+                onValueChange={(v) => setDirection(v as 'increase' | 'decrease')}
+                disabled={isSubmitting}
+              >
                 <SelectTrigger id="adjust-direction">
                   <SelectValue />
                 </SelectTrigger>
@@ -168,7 +186,9 @@ export function AdjustStockDialog({
             <p className="text-xs text-muted-foreground">
               New stock will be <strong>{Math.max(projectedStock, 0)}</strong> unit
               {Math.max(projectedStock, 0) === 1 ? '' : 's'}
-              {projectedStock < 0 && <span className="text-red-600"> — exceeds available stock</span>}
+              {projectedStock < 0 && (
+                <span className="text-red-600"> — exceeds available stock</span>
+              )}
             </p>
           </div>
 

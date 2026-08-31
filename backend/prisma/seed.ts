@@ -247,7 +247,8 @@ async function seedProducts(categories: Awaited<ReturnType<typeof seedCategories
     {
       name: 'Elegant Silk Dress',
       slug: 'elegant-silk-dress',
-      description: 'A luxurious silk dress perfect for evening occasions, featuring a flattering silhouette and premium fabric.',
+      description:
+        'A luxurious silk dress perfect for evening occasions, featuring a flattering silhouette and premium fabric.',
       price: 150000,
       sku: 'DRS-001',
       categoryId: categories.dresses.id,
@@ -263,7 +264,8 @@ async function seedProducts(categories: Awaited<ReturnType<typeof seedCategories
     {
       name: 'Classic Leather Jacket',
       slug: 'classic-leather-jacket',
-      description: 'A timeless leather jacket crafted from genuine leather, built to last and get better with age.',
+      description:
+        'A timeless leather jacket crafted from genuine leather, built to last and get better with age.',
       price: 450000,
       sku: 'JKT-002',
       categoryId: categories.jackets.id,
@@ -279,7 +281,8 @@ async function seedProducts(categories: Awaited<ReturnType<typeof seedCategories
     {
       name: 'Designer Handbag',
       slug: 'designer-handbag',
-      description: 'A statement handbag with a structured shape, spacious interior, and premium hardware.',
+      description:
+        'A statement handbag with a structured shape, spacious interior, and premium hardware.',
       price: 600000,
       sku: 'BAG-003',
       categoryId: categories.bags.id,
@@ -295,7 +298,8 @@ async function seedProducts(categories: Awaited<ReturnType<typeof seedCategories
     {
       name: 'Cashmere Sweater',
       slug: 'cashmere-sweater',
-      description: 'An ultra-soft cashmere sweater that offers warmth without the bulk — a cold-weather essential.',
+      description:
+        'An ultra-soft cashmere sweater that offers warmth without the bulk — a cold-weather essential.',
       price: 280000,
       sku: 'SWT-004',
       categoryId: categories.womensClothing.id,
@@ -311,7 +315,8 @@ async function seedProducts(categories: Awaited<ReturnType<typeof seedCategories
     {
       name: 'Premium Sneakers',
       slug: 'premium-sneakers',
-      description: 'Everyday sneakers combining comfort and style, made with breathable materials and a durable sole.',
+      description:
+        'Everyday sneakers combining comfort and style, made with breathable materials and a durable sole.',
       price: 180000,
       sku: 'SNK-005',
       categoryId: categories.shoes.id,
@@ -327,7 +332,8 @@ async function seedProducts(categories: Awaited<ReturnType<typeof seedCategories
     {
       name: 'Summer Floral Dress',
       slug: 'summer-floral-dress',
-      description: 'A breezy floral dress made from lightweight fabric, ideal for warm-weather days.',
+      description:
+        'A breezy floral dress made from lightweight fabric, ideal for warm-weather days.',
       price: 120000,
       sku: 'DRS-006',
       categoryId: categories.dresses.id,
@@ -412,7 +418,10 @@ interface ShopMockItem {
 }
 
 function colorsFor(index: number): string[] {
-  return [CATALOG_COLORS[index % CATALOG_COLORS.length], CATALOG_COLORS[(index + 2) % CATALOG_COLORS.length]];
+  return [
+    CATALOG_COLORS[index % CATALOG_COLORS.length],
+    CATALOG_COLORS[(index + 2) % CATALOG_COLORS.length],
+  ];
 }
 
 function stockFor(index: number): number {
@@ -429,46 +438,232 @@ function stockFor(index: number): number {
  */
 async function seedShopCollection(categories: Awaited<ReturnType<typeof seedCategories>>) {
   const bags: ShopMockItem[] = [
-    { id: 'bag-1', title: 'Elegant Leather Handbag', price: 159000, originalPrice: 199000, image: '/new-images/bag/bag-1.jpg' },
-    { id: 'bag-2', title: 'Designer Tote Bag', price: 179000, originalPrice: 229000, image: '/new-images/bag/bag-2.jpg' },
-    { id: 'bag-3', title: 'Luxury Crossbody Bag', price: 139000, originalPrice: 179000, image: '/new-images/bag/bag-3.jpg' },
-    { id: 'bag-4', title: 'Premium Shoulder Bag', price: 169000, originalPrice: 219000, image: '/new-images/bag/bag-4.jpg' },
-    { id: 'bag-5', title: 'Stylish Clutch Bag', price: 119000, originalPrice: 149000, image: '/new-images/bag/bag-5.jpg' },
+    {
+      id: 'bag-1',
+      title: 'Elegant Leather Handbag',
+      price: 159000,
+      originalPrice: 199000,
+      image: '/new-images/bag/bag-1.jpg',
+    },
+    {
+      id: 'bag-2',
+      title: 'Designer Tote Bag',
+      price: 179000,
+      originalPrice: 229000,
+      image: '/new-images/bag/bag-2.jpg',
+    },
+    {
+      id: 'bag-3',
+      title: 'Luxury Crossbody Bag',
+      price: 139000,
+      originalPrice: 179000,
+      image: '/new-images/bag/bag-3.jpg',
+    },
+    {
+      id: 'bag-4',
+      title: 'Premium Shoulder Bag',
+      price: 169000,
+      originalPrice: 219000,
+      image: '/new-images/bag/bag-4.jpg',
+    },
+    {
+      id: 'bag-5',
+      title: 'Stylish Clutch Bag',
+      price: 119000,
+      originalPrice: 149000,
+      image: '/new-images/bag/bag-5.jpg',
+    },
   ];
 
   const dresses: ShopMockItem[] = [
-    { id: 'dress-1', title: 'Elegant Evening Gown', price: 249000, originalPrice: 329000, image: '/new-images/dress/dress-1.jpg' },
-    { id: 'dress-2', title: 'Classic A-Line Dress', price: 189000, originalPrice: 249000, image: '/new-images/dress/dress-2.jpg' },
-    { id: 'dress-3', title: 'Designer Cocktail Dress', price: 279000, originalPrice: 359000, image: '/new-images/dress/dress-3.jpg' },
-    { id: 'dress-4', title: 'Elegant Maxi Dress', price: 219000, originalPrice: 289000, image: '/new-images/dress/dress-4.jpg' },
-    { id: 'dress-5', title: 'Chic Midi Dress', price: 199000, originalPrice: 259000, image: '/new-images/dress/dress-5.jpg' },
-    { id: 'dress-6', title: 'Luxury Ball Gown', price: 349000, originalPrice: 449000, image: '/new-images/dress/dress-6.jpg' },
-    { id: 'dress-7', title: 'Stylish Casual Dress', price: 169000, originalPrice: 219000, image: '/new-images/dress/dress-7.jpg' },
-    { id: 'dress-8', title: 'Formal Business Dress', price: 229000, originalPrice: 299000, image: '/new-images/dress/dress-8.jpg' },
-    { id: 'dress-9', title: 'Elegant Wrap Dress', price: 209000, originalPrice: 269000, image: '/new-images/dress/dress-9.jpg' },
-    { id: 'dress-10', title: 'Designer Party Dress', price: 269000, originalPrice: 349000, image: '/new-images/dress/dress-10.jpg' },
-    { id: 'dress-11', title: 'Chic Bodycon Dress', price: 189000, originalPrice: 249000, image: '/new-images/dress/dress-11.jpg' },
-    { id: 'dress-12', title: 'Elegant Floral Dress', price: 219000, originalPrice: 289000, image: '/new-images/dress/dress-12.jpg' },
+    {
+      id: 'dress-1',
+      title: 'Elegant Evening Gown',
+      price: 249000,
+      originalPrice: 329000,
+      image: '/new-images/dress/dress-1.jpg',
+    },
+    {
+      id: 'dress-2',
+      title: 'Classic A-Line Dress',
+      price: 189000,
+      originalPrice: 249000,
+      image: '/new-images/dress/dress-2.jpg',
+    },
+    {
+      id: 'dress-3',
+      title: 'Designer Cocktail Dress',
+      price: 279000,
+      originalPrice: 359000,
+      image: '/new-images/dress/dress-3.jpg',
+    },
+    {
+      id: 'dress-4',
+      title: 'Elegant Maxi Dress',
+      price: 219000,
+      originalPrice: 289000,
+      image: '/new-images/dress/dress-4.jpg',
+    },
+    {
+      id: 'dress-5',
+      title: 'Chic Midi Dress',
+      price: 199000,
+      originalPrice: 259000,
+      image: '/new-images/dress/dress-5.jpg',
+    },
+    {
+      id: 'dress-6',
+      title: 'Luxury Ball Gown',
+      price: 349000,
+      originalPrice: 449000,
+      image: '/new-images/dress/dress-6.jpg',
+    },
+    {
+      id: 'dress-7',
+      title: 'Stylish Casual Dress',
+      price: 169000,
+      originalPrice: 219000,
+      image: '/new-images/dress/dress-7.jpg',
+    },
+    {
+      id: 'dress-8',
+      title: 'Formal Business Dress',
+      price: 229000,
+      originalPrice: 299000,
+      image: '/new-images/dress/dress-8.jpg',
+    },
+    {
+      id: 'dress-9',
+      title: 'Elegant Wrap Dress',
+      price: 209000,
+      originalPrice: 269000,
+      image: '/new-images/dress/dress-9.jpg',
+    },
+    {
+      id: 'dress-10',
+      title: 'Designer Party Dress',
+      price: 269000,
+      originalPrice: 349000,
+      image: '/new-images/dress/dress-10.jpg',
+    },
+    {
+      id: 'dress-11',
+      title: 'Chic Bodycon Dress',
+      price: 189000,
+      originalPrice: 249000,
+      image: '/new-images/dress/dress-11.jpg',
+    },
+    {
+      id: 'dress-12',
+      title: 'Elegant Floral Dress',
+      price: 219000,
+      originalPrice: 289000,
+      image: '/new-images/dress/dress-12.jpg',
+    },
   ];
 
   const shoes: ShopMockItem[] = [
-    { id: 'shoe-1', title: 'Premium Leather Heels', price: 189000, originalPrice: 249000, image: '/new-images/Shoes/shoe-1.jpg' },
-    { id: 'shoe-2', title: 'Designer High Heels', price: 219000, originalPrice: 289000, image: '/new-images/Shoes/shoe-2.jpg' },
-    { id: 'shoe-3', title: 'Elegant Stiletto Heels', price: 199000, originalPrice: 259000, image: '/new-images/Shoes/shoe-3.jpg' },
-    { id: 'shoe-4', title: 'Luxury Platform Heels', price: 229000, originalPrice: 299000, image: '/new-images/Shoes/shoe-4.jpg' },
-    { id: 'shoe-5', title: 'Chic Ankle Boots', price: 249000, originalPrice: 329000, image: '/new-images/Shoes/shoe-5.jpg' },
-    { id: 'shoe-6', title: 'Designer Pumps', price: 179000, originalPrice: 239000, image: '/new-images/Shoes/shoe-6.jpg' },
-    { id: 'shoe-7', title: 'Elegant Wedge Heels', price: 209000, originalPrice: 269000, image: '/new-images/Shoes/shoe-7.jpg' },
-    { id: 'shoe-8', title: 'Stylish Sandals', price: 159000, originalPrice: 199000, image: '/new-images/Shoes/shoe-8.jpg' },
-    { id: 'shoe-9', title: 'Luxury Court Shoes', price: 189000, originalPrice: 249000, image: '/new-images/Shoes/shoe-9.jpg' },
-    { id: 'shoe-10', title: 'Premium Block Heels', price: 199000, originalPrice: 259000, image: '/new-images/Shoes/shoe-10.jpg' },
-    { id: 'shoe-11', title: 'Designer Mules', price: 169000, originalPrice: 219000, image: '/new-images/Shoes/shoe-11.jpg' },
-    { id: 'shoe-12', title: 'Elegant Slingback Heels', price: 219000, originalPrice: 289000, image: '/new-images/Shoes/shoe-12.jpg' },
+    {
+      id: 'shoe-1',
+      title: 'Premium Leather Heels',
+      price: 189000,
+      originalPrice: 249000,
+      image: '/new-images/Shoes/shoe-1.jpg',
+    },
+    {
+      id: 'shoe-2',
+      title: 'Designer High Heels',
+      price: 219000,
+      originalPrice: 289000,
+      image: '/new-images/Shoes/shoe-2.jpg',
+    },
+    {
+      id: 'shoe-3',
+      title: 'Elegant Stiletto Heels',
+      price: 199000,
+      originalPrice: 259000,
+      image: '/new-images/Shoes/shoe-3.jpg',
+    },
+    {
+      id: 'shoe-4',
+      title: 'Luxury Platform Heels',
+      price: 229000,
+      originalPrice: 299000,
+      image: '/new-images/Shoes/shoe-4.jpg',
+    },
+    {
+      id: 'shoe-5',
+      title: 'Chic Ankle Boots',
+      price: 249000,
+      originalPrice: 329000,
+      image: '/new-images/Shoes/shoe-5.jpg',
+    },
+    {
+      id: 'shoe-6',
+      title: 'Designer Pumps',
+      price: 179000,
+      originalPrice: 239000,
+      image: '/new-images/Shoes/shoe-6.jpg',
+    },
+    {
+      id: 'shoe-7',
+      title: 'Elegant Wedge Heels',
+      price: 209000,
+      originalPrice: 269000,
+      image: '/new-images/Shoes/shoe-7.jpg',
+    },
+    {
+      id: 'shoe-8',
+      title: 'Stylish Sandals',
+      price: 159000,
+      originalPrice: 199000,
+      image: '/new-images/Shoes/shoe-8.jpg',
+    },
+    {
+      id: 'shoe-9',
+      title: 'Luxury Court Shoes',
+      price: 189000,
+      originalPrice: 249000,
+      image: '/new-images/Shoes/shoe-9.jpg',
+    },
+    {
+      id: 'shoe-10',
+      title: 'Premium Block Heels',
+      price: 199000,
+      originalPrice: 259000,
+      image: '/new-images/Shoes/shoe-10.jpg',
+    },
+    {
+      id: 'shoe-11',
+      title: 'Designer Mules',
+      price: 169000,
+      originalPrice: 219000,
+      image: '/new-images/Shoes/shoe-11.jpg',
+    },
+    {
+      id: 'shoe-12',
+      title: 'Elegant Slingback Heels',
+      price: 219000,
+      originalPrice: 289000,
+      image: '/new-images/Shoes/shoe-12.jpg',
+    },
   ];
 
   const wigs: ShopMockItem[] = [
-    { id: 'wig-1', title: 'Premium Human Hair Wig', price: 349000, originalPrice: 449000, image: '/new-images/wigs/wig-1.jpg' },
-    { id: 'wig-2', title: 'Luxury Synthetic Wig', price: 229000, originalPrice: 299000, image: '/new-images/wigs/wig-2.jpg' },
+    {
+      id: 'wig-1',
+      title: 'Premium Human Hair Wig',
+      price: 349000,
+      originalPrice: 449000,
+      image: '/new-images/wigs/wig-1.jpg',
+    },
+    {
+      id: 'wig-2',
+      title: 'Luxury Synthetic Wig',
+      price: 229000,
+      originalPrice: 299000,
+      image: '/new-images/wigs/wig-2.jpg',
+    },
   ];
 
   let count = 0;
@@ -479,7 +674,7 @@ async function seedShopCollection(categories: Awaited<ReturnType<typeof seedCate
     skuPrefix: string,
     sizes: string[],
     tags: string[],
-    descriptionSuffix: string
+    descriptionSuffix: string,
   ) => {
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
@@ -504,10 +699,38 @@ async function seedShopCollection(categories: Awaited<ReturnType<typeof seedCate
     }
   };
 
-  await seedGroup(bags, categories.bags.id, 'HBG', [], ['handbag', 'accessories'], 'a curated handbag from our accessories collection.');
-  await seedGroup(dresses, categories.dresses.id, 'GWN', DRESS_SIZES, ['dress', 'women'], 'a timeless dress from our women\'s collection.');
-  await seedGroup(shoes, categories.shoes.id, 'SHW', SHOE_SIZES, ['shoes', 'footwear'], 'elegant footwear from our shoe collection.');
-  await seedGroup(wigs, categories.wigs.id, 'WGH', [], ['wig', 'hair'], 'a premium wig from our hair collection.');
+  await seedGroup(
+    bags,
+    categories.bags.id,
+    'HBG',
+    [],
+    ['handbag', 'accessories'],
+    'a curated handbag from our accessories collection.',
+  );
+  await seedGroup(
+    dresses,
+    categories.dresses.id,
+    'GWN',
+    DRESS_SIZES,
+    ['dress', 'women'],
+    "a timeless dress from our women's collection.",
+  );
+  await seedGroup(
+    shoes,
+    categories.shoes.id,
+    'SHW',
+    SHOE_SIZES,
+    ['shoes', 'footwear'],
+    'elegant footwear from our shoe collection.',
+  );
+  await seedGroup(
+    wigs,
+    categories.wigs.id,
+    'WGH',
+    [],
+    ['wig', 'hair'],
+    'a premium wig from our hair collection.',
+  );
 
   console.log(`Seeded ${count} shop collection products (bags, dresses, shoes, wigs)`);
 }

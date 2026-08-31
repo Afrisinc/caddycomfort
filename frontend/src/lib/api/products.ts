@@ -1,10 +1,5 @@
 import apiClient, { handleApiResponse, handleApiError } from '@/lib/api-client';
-import {
-  Product,
-  ProductFilters,
-  PaginationParams,
-  SortParams,
-} from '@/types/api';
+import { Product, ProductFilters, PaginationParams, SortParams } from '@/types/api';
 
 export interface ProductListResult {
   products: Product[];
@@ -23,7 +18,7 @@ export const productsApi = {
   getAll: async (
     filters?: ProductFilters,
     pagination?: PaginationParams,
-    sort?: SortParams
+    sort?: SortParams,
   ): Promise<ProductListResult> => {
     try {
       const params = new URLSearchParams();
@@ -33,11 +28,12 @@ export const productsApi = {
         if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
         if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
         if (filters.search) params.append('search', filters.search);
-        if (filters.isFeatured !== undefined) params.append('isFeatured', filters.isFeatured.toString());
+        if (filters.isFeatured !== undefined)
+          params.append('isFeatured', filters.isFeatured.toString());
         if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString());
-        if (filters.sizes?.length) filters.sizes.forEach(s => params.append('sizes', s));
-        if (filters.colors?.length) filters.colors.forEach(c => params.append('colors', c));
-        if (filters.tags?.length) filters.tags.forEach(t => params.append('tags', t));
+        if (filters.sizes?.length) filters.sizes.forEach((s) => params.append('sizes', s));
+        if (filters.colors?.length) filters.colors.forEach((c) => params.append('colors', c));
+        if (filters.tags?.length) filters.tags.forEach((t) => params.append('tags', t));
       }
 
       if (pagination) {
@@ -114,7 +110,9 @@ export const productsApi = {
    */
   search: async (query: string, limit = 10): Promise<Product[]> => {
     try {
-      const response = await apiClient.get(`/products/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+      const response = await apiClient.get(
+        `/products/search?q=${encodeURIComponent(query)}&limit=${limit}`,
+      );
       const resData = handleApiResponse<any>(response).data;
       return (resData?.products || resData) as Product[];
     } catch (error) {
@@ -158,23 +156,26 @@ export const productsApi = {
   /**
    * Update product (Admin only)
    */
-  update: async (id: string, data: {
-    name?: string;
-    slug?: string;
-    description?: string;
-    price?: number;
-    salePrice?: number;
-    comparePrice?: number;
-    compareAtPrice?: number;
-    sku?: string;
-    categoryId?: string;
-    images?: string[];
-    sizes?: string[];
-    colors?: string[];
-    tags?: string[];
-    isFeatured?: boolean;
-    isActive?: boolean;
-  }): Promise<Product> => {
+  update: async (
+    id: string,
+    data: {
+      name?: string;
+      slug?: string;
+      description?: string;
+      price?: number;
+      salePrice?: number;
+      comparePrice?: number;
+      compareAtPrice?: number;
+      sku?: string;
+      categoryId?: string;
+      images?: string[];
+      sizes?: string[];
+      colors?: string[];
+      tags?: string[];
+      isFeatured?: boolean;
+      isActive?: boolean;
+    },
+  ): Promise<Product> => {
     try {
       const payload = {
         ...data,
@@ -203,14 +204,19 @@ export const productsApi = {
   /**
    * Update product stock (Admin only)
    */
-  updateStock: async (id: string, data: {
-    quantity: number;
-    operation?: 'add' | 'subtract' | 'set';
-    type?: 'ADD' | 'SUBTRACT' | 'SET';
-    reason?: string;
-  }): Promise<Product> => {
+  updateStock: async (
+    id: string,
+    data: {
+      quantity: number;
+      operation?: 'add' | 'subtract' | 'set';
+      type?: 'ADD' | 'SUBTRACT' | 'SET';
+      reason?: string;
+    },
+  ): Promise<Product> => {
     try {
-      const payloadType = data.type || (data.operation ? (data.operation.toUpperCase() as 'ADD' | 'SUBTRACT' | 'SET') : 'SET');
+      const payloadType =
+        data.type ||
+        (data.operation ? (data.operation.toUpperCase() as 'ADD' | 'SUBTRACT' | 'SET') : 'SET');
       const response = await apiClient.patch(`/products/${id}/stock`, {
         quantity: data.quantity,
         type: payloadType,

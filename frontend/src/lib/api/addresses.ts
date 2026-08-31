@@ -41,7 +41,9 @@ export const addressesApi = {
   /**
    * Create new address
    */
-  create: async (data: Omit<Address, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<Address> => {
+  create: async (
+    data: Omit<Address, 'id' | 'userId' | 'createdAt' | 'updatedAt'>,
+  ): Promise<Address> => {
     try {
       const response = await apiClient.post('/addresses', data);
       return handleApiResponse<Address>(response).data!;
@@ -53,7 +55,10 @@ export const addressesApi = {
   /**
    * Update address
    */
-  update: async (id: string, data: Partial<Omit<Address, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>): Promise<Address> => {
+  update: async (
+    id: string,
+    data: Partial<Omit<Address, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>,
+  ): Promise<Address> => {
     try {
       const response = await apiClient.put(`/addresses/${id}`, data);
       return handleApiResponse<Address>(response).data!;

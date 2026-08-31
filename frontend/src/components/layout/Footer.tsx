@@ -1,8 +1,6 @@
-'use client';
-
 import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
+import Link from '@/components/common/Link';
+import Image from '@/components/common/Image';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Facebook, Instagram, Twitter, Mail, Loader2 } from 'lucide-react';
@@ -19,7 +17,7 @@ export function Footer() {
     setIsSubmitting(true);
     try {
       await newsletterApi.subscribe(email);
-      toast.success('You\'re subscribed to our newsletter!');
+      toast.success("You're subscribed to our newsletter!");
       setEmail('');
     } catch (error: any) {
       toast.error(error.message || 'Failed to subscribe');
@@ -34,7 +32,10 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div className="space-y-4">
-            <Link href="/" className="inline-block relative h-12 w-48 md:h-14 md:w-56 hover:opacity-80 transition-opacity">
+            <Link
+              href="/"
+              className="inline-block relative h-12 w-48 md:h-14 md:w-56 hover:opacity-80 transition-opacity"
+            >
               <Image
                 src="/images/logo/logo.png"
                 alt="CaddyComfort"
@@ -44,8 +45,8 @@ export function Footer() {
               />
             </Link>
             <p className="text-sm text-muted-foreground">
-              Timeless elegance meets contemporary style. Discover luxury fashion
-              that defines your unique expression.
+              Timeless elegance meets contemporary style. Discover luxury fashion that defines your
+              unique expression.
             </p>
             <div className="flex space-x-4">
               <Button variant="ghost" size="icon">
@@ -144,7 +145,11 @@ export function Footer() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
-              <Button type="submit" className="bg-accent-rose hover:bg-accent-rose-dark" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                className="bg-accent-rose hover:bg-accent-rose-dark"
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
@@ -161,7 +166,7 @@ export function Footer() {
         {/* Bottom */}
         <div className="pt-8 border-t flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           <p className="text-sm text-muted-foreground">
-             © {new Date().getFullYear()} CaddyComfort. All rights reserved.
+            © {new Date().getFullYear()} CaddyComfort. All rights reserved.
           </p>
           <div className="flex space-x-6">
             <Link

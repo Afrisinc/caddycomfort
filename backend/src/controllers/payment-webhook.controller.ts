@@ -34,7 +34,10 @@ export const handlePaymentEvent = async (req: Request, res: Response): Promise<v
   const result = await PaymentWebhookService.processEvent(payload);
 
   if (!result.success) {
-    logger.error({ event: payload.event, error: result.error }, 'Payment webhook processing failed');
+    logger.error(
+      { event: payload.event, error: result.error },
+      'Payment webhook processing failed',
+    );
     res.status(422).json({ error: result.error });
     return;
   }

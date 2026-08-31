@@ -24,7 +24,11 @@ export const initiatePayment = async (req: Request, res: Response): Promise<void
     const { orderId } = req.params;
     const { email, phoneNumber, customerName } = req.body;
 
-    const result = await PaymentService.initiate(orderId, userId, { email, phoneNumber, customerName });
+    const result = await PaymentService.initiate(orderId, userId, {
+      email,
+      phoneNumber,
+      customerName,
+    });
 
     res.json({ success: true, message: result.message, data: result });
   } catch (error: any) {

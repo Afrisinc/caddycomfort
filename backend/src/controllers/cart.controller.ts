@@ -24,7 +24,9 @@ export class CartController {
       const { productId, quantity, size, color } = req.body;
 
       if (!productId || !quantity) {
-        return res.status(400).json({ success: false, message: 'Product ID and quantity are required' });
+        return res
+          .status(400)
+          .json({ success: false, message: 'Product ID and quantity are required' });
       }
 
       if (quantity < 1) {
@@ -34,10 +36,7 @@ export class CartController {
       const cart = await CartService.addItem(userId, productId, quantity, size, color);
       res.status(201).json({ success: true, data: { cart } });
     } catch (error: any) {
-      if (
-        error.message.includes('not found') ||
-        error.message.includes('not available')
-      ) {
+      if (error.message.includes('not found') || error.message.includes('not available')) {
         return res.status(404).json({ success: false, message: error.message });
       }
       if (error.message.includes('Insufficient stock')) {

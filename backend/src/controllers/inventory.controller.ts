@@ -13,12 +13,7 @@ export class InventoryController {
       const limit = parseInt(req.query.limit as string) || 20;
       const type = req.query.type as InventoryLogType | undefined;
 
-      const result = await InventoryService.getProductInventoryLogs(
-        productId,
-        page,
-        limit,
-        type
-      );
+      const result = await InventoryService.getProductInventoryLogs(productId, page, limit, type);
       res.json({ success: true, data: result });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
@@ -41,7 +36,7 @@ export class InventoryController {
         limit,
         type,
         startDate,
-        endDate
+        endDate,
       );
       res.json({ success: true, data: result });
     } catch (error: any) {
@@ -188,11 +183,7 @@ export class InventoryController {
       const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
 
-      const movement = await InventoryService.getStockMovement(
-        startDate,
-        endDate,
-        productId
-      );
+      const movement = await InventoryService.getStockMovement(startDate, endDate, productId);
       res.json({ success: true, data: movement });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
@@ -243,7 +234,7 @@ export class InventoryController {
 
       const recommendations = await InventoryService.getRestockRecommendations(
         threshold,
-        daysToAnalyze
+        daysToAnalyze,
       );
       res.json({ success: true, data: { recommendations } });
     } catch (error: any) {

@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowRight, Send, Loader2 } from 'lucide-react';
@@ -16,7 +14,7 @@ export function NewsletterSection() {
     setIsSubmitting(true);
     try {
       await newsletterApi.subscribe(email);
-      toast.success('You\'re subscribed to our newsletter!');
+      toast.success("You're subscribed to our newsletter!");
       setEmail('');
     } catch (error: any) {
       toast.error(error.message || 'Failed to subscribe');
@@ -33,9 +31,7 @@ export function NewsletterSection() {
           <span className="inline-block text-sm font-medium text-accent-rose uppercase tracking-wider">
             GET NEWSLETTER
           </span>
-          <h2 className="text-3xl md:text-4xl font-serif">
-            Sign Up to Newsletter
-          </h2>
+          <h2 className="text-3xl md:text-4xl font-serif">Sign Up to Newsletter</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Stay updated with our latest collections, exclusive offers, and fashion insights
           </p>
@@ -76,4 +72,3 @@ export function NewsletterSection() {
     </section>
   );
 }
-

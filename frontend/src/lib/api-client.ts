@@ -1,13 +1,11 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { ApiError, ApiResponse } from '@/types/api';
 
-const isServer = typeof window === 'undefined';
-const serverBaseURL = `${process.env.BACKEND_INTERNAL_URL || 'http://localhost:5000'}/api`;
-const browserBaseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
-  baseURL: isServer ? serverBaseURL : browserBaseURL,
+  baseURL,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -28,7 +26,7 @@ apiClient.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor - Handle errors and token refresh
@@ -36,7 +34,7 @@ apiClient.interceptors.response.use(
   (response) => {
     return response;
   },
-  async (error: AxiosError) => {
+  async (error: AxiosError<{ message?: string; error?: string }>) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
     };
@@ -48,10 +46,7 @@ apiClient.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
-          const response = await axios.post(
-            `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
-            { refreshToken }
-          );
+          const response = await axios.post(`${baseURL}/auth/refresh`, { refreshToken });
 
           const { accessToken } = response.data.data;
           localStorage.setItem('accessToken', accessToken);
@@ -81,7 +76,7 @@ apiClient.interceptors.response.use(
     };
 
     return Promise.reject(apiError);
-  }
+  },
 );
 
 // Helper function to handle API responses

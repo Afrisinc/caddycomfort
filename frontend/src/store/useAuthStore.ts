@@ -24,7 +24,11 @@ interface AuthStore {
     phone?: string;
   }) => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (userData: { firstName?: string; lastName?: string; phone?: string }) => Promise<void>;
+  updateProfile: (userData: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+  }) => Promise<void>;
   checkAuth: () => Promise<boolean>;
   verifyEmail: (email: string, code: string) => Promise<void>;
   resendVerification: (email: string) => Promise<void>;
@@ -41,15 +45,15 @@ export const useAuthStore = create<AuthStore>()(
       login: async (email, password) => {
         try {
           const response = await authApi.login({ email, password });
-          
+
           // Store tokens in localStorage
           localStorage.setItem('accessToken', response.accessToken);
           localStorage.setItem('refreshToken', response.refreshToken);
 
           // Set user data
-          set({ 
-            user: response.user, 
-            isAuthenticated: true 
+          set({
+            user: response.user,
+            isAuthenticated: true,
           });
         } catch (error: any) {
           // Clear any existing auth data on failed login
@@ -63,15 +67,15 @@ export const useAuthStore = create<AuthStore>()(
       register: async (userData) => {
         try {
           const response = await authApi.register(userData);
-          
+
           // Store tokens in localStorage
           localStorage.setItem('accessToken', response.accessToken);
           localStorage.setItem('refreshToken', response.refreshToken);
 
           // Set user data
-          set({ 
-            user: response.user, 
-            isAuthenticated: true 
+          set({
+            user: response.user,
+            isAuthenticated: true,
           });
         } catch (error: any) {
           // Clear any existing auth data on failed registration
@@ -89,7 +93,11 @@ export const useAuthStore = create<AuthStore>()(
         } catch (error: any) {
           // Silently handle logout API errors - local cleanup is more important
           // Only log if it's not a network/auth error
-          if (error?.response?.status && error.response.status !== 401 && error.response.status !== 403) {
+          if (
+            error?.response?.status &&
+            error.response.status !== 401 &&
+            error.response.status !== 403
+          ) {
             console.warn('Logout API warning:', error.message);
           }
         } finally {
@@ -159,6 +167,6 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'auth-storage',
-    }
-  )
+    },
+  ),
 );

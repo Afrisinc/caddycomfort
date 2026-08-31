@@ -118,7 +118,7 @@ export class CartService {
     productId: string,
     quantity: number,
     size?: string,
-    color?: string
+    color?: string,
   ): Promise<CartWithDetails> {
     // Validate product exists and is active
     const product = await prisma.product.findUnique({
@@ -134,9 +134,7 @@ export class CartService {
     }
 
     if (product.stockQuantity < quantity) {
-      throw new Error(
-        `Insufficient stock. Only ${product.stockQuantity} available`
-      );
+      throw new Error(`Insufficient stock. Only ${product.stockQuantity} available`);
     }
 
     if (quantity < 1) {
@@ -158,7 +156,10 @@ export class CartService {
 
     // Check if item already exists in cart
     const existingItem = cart.items.find(
-      (item) => item.productId === productId && item.size === (size ?? null) && item.color === (color ?? null)
+      (item) =>
+        item.productId === productId &&
+        item.size === (size ?? null) &&
+        item.color === (color ?? null),
     );
 
     if (existingItem) {
@@ -169,7 +170,7 @@ export class CartService {
         throw new Error(
           `Cannot add ${quantity} more. Only ${
             product.stockQuantity - existingItem.quantity
-          } additional items available`
+          } additional items available`,
         );
       }
 
@@ -200,7 +201,7 @@ export class CartService {
   static async updateItemQuantity(
     userId: string,
     cartItemId: string,
-    quantity: number
+    quantity: number,
   ): Promise<CartWithDetails> {
     if (quantity < 1) {
       throw new Error('Quantity must be at least 1');
@@ -223,9 +224,7 @@ export class CartService {
     }
 
     if (cartItem.product.stockQuantity < quantity) {
-      throw new Error(
-        `Insufficient stock. Only ${cartItem.product.stockQuantity} available`
-      );
+      throw new Error(`Insufficient stock. Only ${cartItem.product.stockQuantity} available`);
     }
 
     await prisma.cartItem.update({
@@ -239,10 +238,7 @@ export class CartService {
   /**
    * Remove item from cart
    */
-  static async removeItem(
-    userId: string,
-    cartItemId: string
-  ): Promise<CartWithDetails> {
+  static async removeItem(userId: string, cartItemId: string): Promise<CartWithDetails> {
     const cartItem = await prisma.cartItem.findUnique({
       where: { id: cartItemId },
       include: { cart: true },
@@ -289,10 +285,7 @@ export class CartService {
   /**
    * Apply coupon to cart
    */
-  static async applyCoupon(
-    userId: string,
-    couponCode: string
-  ): Promise<CartWithDetails> {
+  static async applyCoupon(userId: string, couponCode: string): Promise<CartWithDetails> {
     const cart = await this.getOrCreateCart(userId);
 
     // Find coupon
@@ -322,9 +315,7 @@ export class CartService {
     }
 
     if (coupon.minPurchaseAmount && cart.subtotal < coupon.minPurchaseAmount) {
-      throw new Error(
-        `Minimum purchase amount of $${coupon.minPurchaseAmount} required`
-      );
+      throw new Error(`Minimum purchase amount of $${coupon.minPurchaseAmount} required`);
     }
 
     // Check if user has already used this coupon
@@ -390,7 +381,7 @@ export class CartService {
 
       if (item.product.stockQuantity < item.quantity) {
         errors.push(
-          `${item.product.name}: Only ${item.product.stockQuantity} available, but ${item.quantity} in cart`
+          `${item.product.name}: Only ${item.product.stockQuantity} available, but ${item.quantity} in cart`,
         );
       }
     }
@@ -415,7 +406,9 @@ export class CartService {
           errors.push('Coupon usage limit reached');
         }
         if (coupon.minPurchaseAmount && cart.subtotal < coupon.minPurchaseAmount) {
-          errors.push(`Minimum purchase amount of $${coupon.minPurchaseAmount} required for coupon`);
+          errors.push(
+            `Minimum purchase amount of $${coupon.minPurchaseAmount} required for coupon`,
+          );
         }
       }
     }
@@ -484,7 +477,7 @@ export class CartService {
    */
   static async mergeGuestCart(
     userId: string,
-    guestCartItems: CartItemInput[]
+    guestCartItems: CartItemInput[],
   ): Promise<CartWithDetails> {
     for (const item of guestCartItems) {
       try {

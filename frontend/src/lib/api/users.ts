@@ -35,10 +35,7 @@ export const usersApi = {
   /**
    * Change password
    */
-  changePassword: async (data: {
-    currentPassword: string;
-    newPassword: string;
-  }): Promise<void> => {
+  changePassword: async (data: { currentPassword: string; newPassword: string }): Promise<void> => {
     try {
       await apiClient.put('/users/change-password', data);
     } catch (error) {
@@ -58,7 +55,13 @@ export const usersApi = {
   }> => {
     try {
       const response = await apiClient.get('/users/stats');
-      return handleApiResponse(response).data!;
+      return handleApiResponse<{
+        orders: { total: number; pending: number; completed: number };
+        totalSpent: number;
+        reviewCount: number;
+        wishlistCount: number;
+        addressCount: number;
+      }>(response).data!;
     } catch (error) {
       throw handleApiError(error);
     }

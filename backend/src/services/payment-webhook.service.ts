@@ -57,11 +57,16 @@ export class PaymentWebhookService {
     return null;
   }
 
-  private static async handlePaymentSucceeded(data: WebhookEventPayload['data']): Promise<WebhookProcessResult> {
+  private static async handlePaymentSucceeded(
+    data: WebhookEventPayload['data'],
+  ): Promise<WebhookProcessResult> {
     const order = await this.findOrder(data);
 
     if (!order) {
-      logger.warn({ ref: data.ref || data.paymentId }, 'Payment succeeded webhook: order not found');
+      logger.warn(
+        { ref: data.ref || data.paymentId },
+        'Payment succeeded webhook: order not found',
+      );
       return { success: false, error: 'Order not found' };
     }
 
@@ -77,12 +82,17 @@ export class PaymentWebhookService {
       },
     });
 
-    logger.info({ orderId: order.id, orderNumber: order.orderNumber }, 'Order payment confirmed via webhook');
+    logger.info(
+      { orderId: order.id, orderNumber: order.orderNumber },
+      'Order payment confirmed via webhook',
+    );
 
     return { success: true };
   }
 
-  private static async handlePaymentFailed(data: WebhookEventPayload['data']): Promise<WebhookProcessResult> {
+  private static async handlePaymentFailed(
+    data: WebhookEventPayload['data'],
+  ): Promise<WebhookProcessResult> {
     const order = await this.findOrder(data);
 
     if (!order) {
@@ -96,7 +106,10 @@ export class PaymentWebhookService {
 
     await prisma.order.update({ where: { id: order.id }, data: { paymentStatus: 'FAILED' } });
 
-    logger.warn({ orderId: order.id, orderNumber: order.orderNumber }, 'Order payment failed via webhook');
+    logger.warn(
+      { orderId: order.id, orderNumber: order.orderNumber },
+      'Order payment failed via webhook',
+    );
 
     return { success: true };
   }

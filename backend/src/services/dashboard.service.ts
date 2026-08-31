@@ -101,15 +101,18 @@ export class DashboardService {
     const totalShipping = orders.reduce((sum, order) => sum + order.shippingCost, 0);
 
     // Group by date
-    const salesByDate = orders.reduce((acc, order) => {
-      const date = order.createdAt.toISOString().split('T')[0];
-      if (!acc[date]) {
-        acc[date] = { date, sales: 0, orders: 0 };
-      }
-      acc[date].sales += order.total;
-      acc[date].orders += 1;
-      return acc;
-    }, {} as Record<string, { date: string; sales: number; orders: number }>);
+    const salesByDate = orders.reduce(
+      (acc, order) => {
+        const date = order.createdAt.toISOString().split('T')[0];
+        if (!acc[date]) {
+          acc[date] = { date, sales: 0, orders: 0 };
+        }
+        acc[date].sales += order.total;
+        acc[date].orders += 1;
+        return acc;
+      },
+      {} as Record<string, { date: string; sales: number; orders: number }>,
+    );
 
     return {
       period,
@@ -231,25 +234,31 @@ export class DashboardService {
       },
     });
 
-    const categoryRevenue = orderItems.reduce((acc, item) => {
-      const categoryId = item.product.category.id;
-      const categoryName = item.product.category.name;
-      const revenue = item.quantity * item.price;
+    const categoryRevenue = orderItems.reduce(
+      (acc, item) => {
+        const categoryId = item.product.category.id;
+        const categoryName = item.product.category.name;
+        const revenue = item.quantity * item.price;
 
-      if (!acc[categoryId]) {
-        acc[categoryId] = {
-          categoryId,
-          categoryName,
-          revenue: 0,
-          itemsSold: 0,
-        };
-      }
+        if (!acc[categoryId]) {
+          acc[categoryId] = {
+            categoryId,
+            categoryName,
+            revenue: 0,
+            itemsSold: 0,
+          };
+        }
 
-      acc[categoryId].revenue += revenue;
-      acc[categoryId].itemsSold += item.quantity;
+        acc[categoryId].revenue += revenue;
+        acc[categoryId].itemsSold += item.quantity;
 
-      return acc;
-    }, {} as Record<string, { categoryId: string; categoryName: string; revenue: number; itemsSold: number }>);
+        return acc;
+      },
+      {} as Record<
+        string,
+        { categoryId: string; categoryName: string; revenue: number; itemsSold: number }
+      >,
+    );
 
     return Object.values(categoryRevenue).sort((a, b) => b.revenue - a.revenue);
   }
@@ -284,11 +293,7 @@ export class DashboardService {
    * Get customer insights
    */
   static async getCustomerInsights() {
-    const [
-      totalCustomers,
-      newCustomersThisMonth,
-      topCustomers,
-    ] = await Promise.all([
+    const [totalCustomers, newCustomersThisMonth, topCustomers] = await Promise.all([
       prisma.user.count({ where: { role: 'CUSTOMER' } }),
       prisma.user.count({
         where: {

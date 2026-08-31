@@ -39,8 +39,12 @@ export const inventoryApi = {
    */
   getRestockRecommendations: async (threshold = 10): Promise<RestockRecommendation[]> => {
     try {
-      const response = await apiClient.get('/inventory/restock-recommendations', { params: { threshold } });
-      const result = handleApiResponse<{ recommendations: RestockRecommendation[] }>(response).data!;
+      const response = await apiClient.get('/inventory/restock-recommendations', {
+        params: { threshold },
+      });
+      const result = handleApiResponse<{ recommendations: RestockRecommendation[] }>(
+        response,
+      ).data!;
       return result.recommendations;
     } catch (error) {
       throw handleApiError(error);
@@ -52,7 +56,9 @@ export const inventoryApi = {
    */
   getProductLogs: async (productId: string, page = 1, limit = 20): Promise<InventoryLogsResult> => {
     try {
-      const response = await apiClient.get(`/inventory/logs/product/${productId}`, { params: { page, limit } });
+      const response = await apiClient.get(`/inventory/logs/product/${productId}`, {
+        params: { page, limit },
+      });
       return handleApiResponse<InventoryLogsResult>(response).data!;
     } catch (error) {
       throw handleApiError(error);

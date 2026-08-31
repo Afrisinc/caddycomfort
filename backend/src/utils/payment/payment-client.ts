@@ -68,7 +68,7 @@ export class PaymentClientError extends Error {
   constructor(
     message: string,
     public readonly code: string,
-    public readonly statusCode?: number
+    public readonly statusCode?: number,
   ) {
     super(message);
     this.name = 'PaymentClientError';
@@ -106,7 +106,7 @@ export class PaymentClient {
       'post',
       '/card/pay',
       { ...request, currency: request.currency ?? 'RWF' },
-      'initiate card payment'
+      'initiate card payment',
     );
     return wrapped.data;
   }
@@ -116,7 +116,7 @@ export class PaymentClient {
       'get',
       `/card/code/${pcode}`,
       undefined,
-      `get card payment: ${pcode}`
+      `get card payment: ${pcode}`,
     );
     return wrapped.data;
   }
@@ -126,7 +126,7 @@ export class PaymentClient {
       'post',
       '/mobile/cashin',
       { ...request, currency: request.currency ?? 'RWF', provider: 'itec' },
-      'mobile cashin'
+      'mobile cashin',
     );
     return wrapped.data;
   }
@@ -136,7 +136,7 @@ export class PaymentClient {
       'get',
       `/mobile/ref/${ref}`,
       undefined,
-      `get mobile payment: ${ref}`
+      `get mobile payment: ${ref}`,
     );
     return wrapped.data;
   }
@@ -146,7 +146,7 @@ export class PaymentClient {
       'get',
       `/payments/ref/${ref}/status`,
       undefined,
-      `get payment status: ${ref}`
+      `get payment status: ${ref}`,
     );
     return wrapped.data;
   }
@@ -155,18 +155,20 @@ export class PaymentClient {
     method: 'get' | 'post',
     path: string,
     body: unknown,
-    operation: string
+    operation: string,
   ): Promise<T> {
     let lastError: unknown;
 
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
-        const response = method === 'get' ? await this.http.get<T>(path) : await this.http.post<T>(path, body);
+        const response =
+          method === 'get' ? await this.http.get<T>(path) : await this.http.post<T>(path, body);
         return response.data;
       } catch (error) {
         lastError = error;
         const statusCode = (error as AxiosError).response?.status;
-        const isRetryable = !statusCode || statusCode >= 500 || statusCode === 429 || statusCode === 408;
+        const isRetryable =
+          !statusCode || statusCode >= 500 || statusCode === 429 || statusCode === 408;
 
         if (!isRetryable) {
           break;
@@ -182,23 +184,28 @@ export class PaymentClient {
   }
 
   private toClientError(error: unknown, operation: string): PaymentClientError {
-    const axiosError = error as AxiosError<{ error?: { code?: string; message?: string }; message?: string }>;
+    const axiosError = error as AxiosError<{
+      error?: { code?: string; message?: string };
+      message?: string;
+    }>;
 
     if (axiosError?.response) {
       const message =
-        axiosError.response.data?.error?.message || axiosError.response.data?.message || axiosError.message;
+        axiosError.response.data?.error?.message ||
+        axiosError.response.data?.message ||
+        axiosError.message;
       logger.error({ err: error, operation }, `[PaymentClient] Failed to ${operation}`);
       return new PaymentClientError(
         message,
         axiosError.response.data?.error?.code || 'HTTP_ERROR',
-        axiosError.response.status
+        axiosError.response.status,
       );
     }
 
     logger.error({ err: error, operation }, `[PaymentClient] Failed to ${operation}`);
     return new PaymentClientError(
       error instanceof Error ? error.message : 'Unknown payment error',
-      'UNKNOWN_ERROR'
+      'UNKNOWN_ERROR',
     );
   }
 

@@ -1,5 +1,3 @@
-'use client';
-
 import { ReactNode, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import {
@@ -58,7 +56,8 @@ export function ConfirmDeleteDialog({
       if (successMessage) toast.success(successMessage);
       onSuccess?.();
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : (error as { message?: string })?.message;
+      const message =
+        error instanceof Error ? error.message : (error as { message?: string })?.message;
       toast.error(message || errorMessage);
     } finally {
       setIsDeleting(false);
@@ -72,9 +71,7 @@ export function ConfirmDeleteDialog({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
-        {warning && (
-          <div className="text-sm text-red-600 font-medium -mt-2">{warning}</div>
-        )}
+        {warning && <div className="text-sm text-red-600 font-medium -mt-2">{warning}</div>}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction

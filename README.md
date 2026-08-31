@@ -5,6 +5,7 @@ E-commerce fashion platform built with Next.js and Node.js.
 ## Tech Stack
 
 ### Frontend
+
 - **Next.js 15** - React framework with App Router
 - **TypeScript** - Type safety
 - **Tailwind CSS** - Utility-first CSS
@@ -12,6 +13,7 @@ E-commerce fashion platform built with Next.js and Node.js.
 - **Framer Motion** - Animations
 
 ### Backend
+
 - **Node.js** - Runtime environment
 - **Express** - Web framework
 - **TypeScript** - Type safety
@@ -36,6 +38,7 @@ caddycomfort/
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 18+ and npm
 
 ### Installation
@@ -68,6 +71,7 @@ npm run dev
 ### Frontend Setup
 
 The frontend is already configured with:
+
 - Tailwind CSS v4
 - shadcn/ui components
 - Framer Motion for animations
@@ -78,11 +82,13 @@ The frontend is already configured with:
 This monorepo is configured for deployment on Render.
 
 ### Build Commands
+
 ```bash
 npm run build
 ```
 
 ### Start Command
+
 ```bash
 npm start
 ```
@@ -99,6 +105,7 @@ The backend serves the built Next.js frontend in production.
 ## Environment Variables
 
 ### Backend (.env)
+
 ```
 PORT=5000
 NODE_ENV=development

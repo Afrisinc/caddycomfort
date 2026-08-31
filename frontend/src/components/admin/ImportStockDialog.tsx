@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { Loader2, Upload, AlertCircle } from 'lucide-react';
 import {
@@ -38,7 +36,10 @@ interface ParsedRow {
 // this import expects — not a general-purpose RFC4180 parser.
 function parseCsv(text: string, items: InventoryValuationItem[]): ParsedRow[] {
   const skuIndex = new Map(items.map((item) => [item.sku.trim().toLowerCase(), item]));
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
   if (lines.length === 0) return [];
 
   const startsWithHeader = /^sku\s*,/i.test(lines[0]);
@@ -50,7 +51,11 @@ function parseCsv(text: string, items: InventoryValuationItem[]): ParsedRow[] {
     const typeText = (typeRaw || '').trim().toUpperCase();
     const quantity = parseInt((quantityRaw || '').trim(), 10);
     const reason = reasonParts.join(',').trim();
-    const row: ParsedRow = { line: idx + (startsWithHeader ? 2 : 1), sku, reason: reason || undefined };
+    const row: ParsedRow = {
+      line: idx + (startsWithHeader ? 2 : 1),
+      sku,
+      reason: reason || undefined,
+    };
 
     if (!sku) {
       row.error = 'Missing SKU';
@@ -84,7 +89,12 @@ function parseCsv(text: string, items: InventoryValuationItem[]): ParsedRow[] {
   });
 }
 
-export function ImportStockDialog({ open, onOpenChange, items, onSuccess }: ImportStockDialogProps) {
+export function ImportStockDialog({
+  open,
+  onOpenChange,
+  items,
+  onSuccess,
+}: ImportStockDialogProps) {
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [fileName, setFileName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -119,9 +129,13 @@ export function ImportStockDialog({ open, onOpenChange, items, onSuccess }: Impo
       setIsSubmitting(true);
       const result = await inventoryApi.bulkAdjustStock(adjustments);
       if (result.summary.failed > 0) {
-        toast.warning(`Imported ${result.summary.successful} of ${result.summary.total} rows — ${result.summary.failed} failed`);
+        toast.warning(
+          `Imported ${result.summary.successful} of ${result.summary.total} rows — ${result.summary.failed} failed`,
+        );
       } else {
-        toast.success(`Imported ${result.summary.successful} stock adjustment${result.summary.successful === 1 ? '' : 's'}`);
+        toast.success(
+          `Imported ${result.summary.successful} stock adjustment${result.summary.successful === 1 ? '' : 's'}`,
+        );
       }
       onOpenChange(false);
       reset();
@@ -134,12 +148,21 @@ export function ImportStockDialog({ open, onOpenChange, items, onSuccess }: Impo
   };
 
   return (
-    <Dialog open={open} onOpenChange={(next) => { if (!isSubmitting) { onOpenChange(next); if (!next) reset(); } }}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!isSubmitting) {
+          onOpenChange(next);
+          if (!next) reset();
+        }
+      }}
+    >
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Import Stock</DialogTitle>
           <DialogDescription>
-            Upload a CSV with columns <code className="text-xs bg-muted px-1 py-0.5 rounded">sku,type,quantity,reason</code>.
+            Upload a CSV with columns{' '}
+            <code className="text-xs bg-muted px-1 py-0.5 rounded">sku,type,quantity,reason</code>.
             Type must be one of RESTOCK, SALE, RETURN, DAMAGED, ADJUSTMENT.
           </DialogDescription>
         </DialogHeader>
@@ -153,7 +176,13 @@ export function ImportStockDialog({ open, onOpenChange, items, onSuccess }: Impo
             <span className="text-sm text-muted-foreground">
               {fileName || 'Click to choose a CSV file'}
             </span>
-            <input id="stock-csv" type="file" accept=".csv,text/csv" className="hidden" onChange={handleFileChange} />
+            <input
+              id="stock-csv"
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={handleFileChange}
+            />
           </label>
 
           {rows.length > 0 && (
@@ -170,7 +199,9 @@ export function ImportStockDialog({ open, onOpenChange, items, onSuccess }: Impo
                   {invalidRows.map((r) => (
                     <div key={r.line} className="flex items-start gap-1.5 text-xs text-red-600">
                       <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                      <span>Line {r.line} ({r.sku || 'blank'}): {r.error}</span>
+                      <span>
+                        Line {r.line} ({r.sku || 'blank'}): {r.error}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -180,7 +211,12 @@ export function ImportStockDialog({ open, onOpenChange, items, onSuccess }: Impo
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
           <Button

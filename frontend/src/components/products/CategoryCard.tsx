@@ -1,9 +1,7 @@
-'use client';
-
 import { Card } from '@/components/ui/card';
 import { ArrowRight } from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
+import Link from '@/components/common/Link';
+import Image from '@/components/common/Image';
 
 interface CategoryCardProps {
   title: string;
@@ -12,15 +10,12 @@ interface CategoryCardProps {
   className?: string;
 }
 
-export function CategoryCard({
-  title,
-  image,
-  href = '#',
-  className = '',
-}: CategoryCardProps) {
+export function CategoryCard({ title, image, href = '#', className = '' }: CategoryCardProps) {
   return (
     <Link href={href}>
-      <Card className={`group relative overflow-hidden border-0 shadow-sm hover:shadow-luxury transition-luxury cursor-pointer bg-card hover:bg-gradient-to-r hover:from-accent-rose-subtle hover:to-accent-rose-muted/50 !py-0 ${className}`}>
+      <Card
+        className={`group relative overflow-hidden border-0 shadow-sm hover:shadow-luxury transition-luxury cursor-pointer bg-card hover:bg-gradient-to-r hover:from-accent-rose-subtle hover:to-accent-rose-muted/50 !py-0 ${className}`}
+      >
         <div className="flex items-center gap-3 px-3 py-2">
           {/* Small Rounded Image on Left */}
           <div className="relative w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-full overflow-hidden bg-gradient-to-br from-accent-rose-subtle to-accent-rose-muted">
@@ -57,4 +52,3 @@ export function CategoryCard({
     </Link>
   );
 }
-

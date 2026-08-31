@@ -10,15 +10,24 @@
     "build:frontend": "cd frontend && npm run build",
     "build": "npm run install:all && npm run build:frontend && npm run build:backend",
     "start": "cd backend && NODE_ENV=production npm start",
-    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:frontend": "cd frontend && npm run lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
-  "keywords": ["ecommerce", "fashion"],
+  "keywords": [
+    "ecommerce",
+    "fashion"
+  ],
   "author": "",
   "license": "ISC",
   "engines": {
     "node": "20.11.1"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "prettier": "^3.4.2"
   }
 }

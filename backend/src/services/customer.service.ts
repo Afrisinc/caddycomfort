@@ -28,7 +28,7 @@ function computeStatus(isActive: boolean, ordersCount: number, totalSpent: numbe
 
 function summarizeOrders(orders: CustomerOrderSummary[]) {
   const revenueOrders = orders.filter((o) =>
-    (REVENUE_ORDER_STATUSES as readonly string[]).includes(o.status)
+    (REVENUE_ORDER_STATUSES as readonly string[]).includes(o.status),
   );
 
   const ordersCount = revenueOrders.length;
@@ -79,7 +79,9 @@ export class CustomerService {
     });
 
     const customers = users.map((user) => {
-      const { ordersCount, totalSpent, lastOrderAt } = summarizeOrders(user.orders as CustomerOrderSummary[]);
+      const { ordersCount, totalSpent, lastOrderAt } = summarizeOrders(
+        user.orders as CustomerOrderSummary[],
+      );
       const computedStatus = computeStatus(user.isActive, ordersCount, totalSpent);
 
       return {
@@ -130,7 +132,8 @@ export class CustomerService {
       totalRevenueOrders += ordersCount;
     }
 
-    const avgOrdersPerCustomer = totalCustomers > 0 ? totalOrdersAcrossCustomers / totalCustomers : 0;
+    const avgOrdersPerCustomer =
+      totalCustomers > 0 ? totalOrdersAcrossCustomers / totalCustomers : 0;
     const avgOrderValue = totalRevenueOrders > 0 ? totalRevenue / totalRevenueOrders : 0;
 
     return {
@@ -177,7 +180,9 @@ export class CustomerService {
       throw new Error('Customer not found');
     }
 
-    const { ordersCount, totalSpent, lastOrderAt } = summarizeOrders(user.orders as CustomerOrderSummary[]);
+    const { ordersCount, totalSpent, lastOrderAt } = summarizeOrders(
+      user.orders as CustomerOrderSummary[],
+    );
     const computedStatus = computeStatus(user.isActive, ordersCount, totalSpent);
 
     return {

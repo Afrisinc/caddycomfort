@@ -82,7 +82,8 @@ export class AddressController {
       if (!fullName || !phone || !addressLine1 || !city || !state || !postalCode || !country) {
         return res.status(400).json({
           success: false,
-          message: 'Required fields: fullName, phone, addressLine1, city, state, postalCode, country',
+          message:
+            'Required fields: fullName, phone, addressLine1, city, state, postalCode, country',
         });
       }
 
@@ -98,7 +99,9 @@ export class AddressController {
         isDefault,
       });
 
-      res.status(201).json({ success: true, message: 'Address created successfully', data: address });
+      res
+        .status(201)
+        .json({ success: true, message: 'Address created successfully', data: address });
     } catch (error) {
       res.status(500).json({
         success: false,

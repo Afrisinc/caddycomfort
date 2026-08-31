@@ -24,7 +24,7 @@ export class InventoryService {
     productId: string,
     page = 1,
     limit = 20,
-    type?: InventoryLogType
+    type?: InventoryLogType,
   ) {
     const skip = (page - 1) * limit;
 
@@ -70,7 +70,7 @@ export class InventoryService {
     limit = 50,
     type?: InventoryLogType,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ) {
     const skip = (page - 1) * limit;
 
@@ -140,7 +140,7 @@ export class InventoryService {
     // ADJUSTMENT can be positive or negative
 
     // Calculate new stock quantity
-    let newQuantity = product.stockQuantity + quantity;
+    const newQuantity = product.stockQuantity + quantity;
     if (newQuantity < 0) {
       throw new Error('Insufficient stock for this adjustment');
     }
@@ -205,9 +205,7 @@ export class InventoryService {
   /**
    * Get inventory alerts (low stock and out of stock)
    */
-  static async getInventoryAlerts(
-    lowStockThreshold = 10
-  ): Promise<InventoryAlert[]> {
+  static async getInventoryAlerts(lowStockThreshold = 10): Promise<InventoryAlert[]> {
     const products = await prisma.product.findMany({
       where: {
         isActive: true,
@@ -285,7 +283,7 @@ export class InventoryService {
 
     const totalValue = products.reduce(
       (sum, product) => sum + product.price * product.stockQuantity,
-      0
+      0,
     );
 
     return {
@@ -330,7 +328,7 @@ export class InventoryService {
       _max: { createdAt: true },
     });
     const lastRestockedByProduct = new Map(
-      lastRestocks.map((r) => [r.productId, r._max.createdAt])
+      lastRestocks.map((r) => [r.productId, r._max.createdAt]),
     );
 
     const valuation = products.map((product) => ({
@@ -402,14 +400,12 @@ export class InventoryService {
         acc[productId].salesCount += 1;
         return acc;
       },
-      {} as Record<string, any>
+      {} as Record<string, any>,
     );
 
     const turnoverData = Object.values(productSales).map((data: any) => {
-      const averageStock =
-        data.product.stockQuantity + data.totalSold / 2;
-      const turnoverRate =
-        averageStock > 0 ? (data.totalSold / averageStock) * (365 / days) : 0;
+      const averageStock = data.product.stockQuantity + data.totalSold / 2;
+      const turnoverRate = averageStock > 0 ? (data.totalSold / averageStock) * (365 / days) : 0;
 
       return {
         productId: data.product.id,
@@ -432,8 +428,7 @@ export class InventoryService {
       summary: {
         totalProducts: turnoverData.length,
         averageTurnoverRate:
-          turnoverData.reduce((sum, item) => sum + item.turnoverRate, 0) /
-          turnoverData.length,
+          turnoverData.reduce((sum, item) => sum + item.turnoverRate, 0) / turnoverData.length,
         totalRevenue: turnoverData.reduce((sum, item) => sum + item.revenue, 0),
       },
     };
@@ -442,11 +437,7 @@ export class InventoryService {
   /**
    * Get stock movement report
    */
-  static async getStockMovement(
-    startDate?: Date,
-    endDate?: Date,
-    productId?: string
-  ) {
+  static async getStockMovement(startDate?: Date, endDate?: Date, productId?: string) {
     const where: Prisma.InventoryLogWhereInput = {};
 
     if (productId) {
@@ -488,7 +479,7 @@ export class InventoryService {
         acc[log.type].totalQuantity += Math.abs(log.quantity);
         return acc;
       },
-      {} as Record<string, any>
+      {} as Record<string, any>,
     );
 
     return {
@@ -503,9 +494,7 @@ export class InventoryService {
   /**
    * Reconcile inventory (compare system stock with actual count)
    */
-  static async reconcileInventory(
-    actualCounts: Array<{ productId: string; actualCount: number }>
-  ) {
+  static async reconcileInventory(actualCounts: Array<{ productId: string; actualCount: number }>) {
     const discrepancies = [];
 
     for (const { productId, actualCount } of actualCounts) {
@@ -561,10 +550,7 @@ export class InventoryService {
   /**
    * Get products requiring restock
    */
-  static async getRestockRecommendations(
-    threshold = 10,
-    daysToAnalyze = 30
-  ) {
+  static async getRestockRecommendations(threshold = 10, daysToAnalyze = 30) {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - daysToAnalyze);
 
@@ -602,15 +588,17 @@ export class InventoryService {
 
     const soldByProduct = new Map<string, number>();
     for (const log of salesLogs) {
-      soldByProduct.set(log.productId, (soldByProduct.get(log.productId) || 0) + Math.abs(log.quantity));
+      soldByProduct.set(
+        log.productId,
+        (soldByProduct.get(log.productId) || 0) + Math.abs(log.quantity),
+      );
     }
 
     const recommendations = lowStockProducts.map((product) => {
       const totalSold = soldByProduct.get(product.id) || 0;
       const averageDailySales = totalSold / daysToAnalyze;
-      const daysOfStockLeft = averageDailySales > 0
-        ? Math.floor(product.stockQuantity / averageDailySales)
-        : 999;
+      const daysOfStockLeft =
+        averageDailySales > 0 ? Math.floor(product.stockQuantity / averageDailySales) : 999;
 
       // Recommend restock quantity (30 days worth of stock)
       const recommendedQuantity = Math.ceil(averageDailySales * 30);

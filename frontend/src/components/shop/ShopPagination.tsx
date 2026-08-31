@@ -1,10 +1,14 @@
-'use client';
-
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from '@/router/compat';
 import { Button } from '@/components/ui/button';
 import { buildSearchUrl } from '@/lib/searchParamsUtil';
 
-export function ShopPagination({ currentPage, totalPages }: { currentPage: number; totalPages: number }) {
+export function ShopPagination({
+  currentPage,
+  totalPages,
+}: {
+  currentPage: number;
+  totalPages: number;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -12,13 +16,20 @@ export function ShopPagination({ currentPage, totalPages }: { currentPage: numbe
   if (totalPages <= 1) return null;
 
   const goToPage = (page: number) => {
-    router.push(buildSearchUrl(pathname, searchParams, { page: page > 1 ? page.toString() : null }));
+    router.push(
+      buildSearchUrl(pathname, searchParams, { page: page > 1 ? page.toString() : null }),
+    );
   };
 
   return (
     <div className="mt-12 flex justify-center">
       <nav className="flex items-center gap-2">
-        <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => goToPage(currentPage - 1)}>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={currentPage === 1}
+          onClick={() => goToPage(currentPage - 1)}
+        >
           Previous
         </Button>
         {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (

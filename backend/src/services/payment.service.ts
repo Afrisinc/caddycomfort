@@ -26,7 +26,7 @@ export class PaymentService {
   static async initiate(
     orderId: string,
     userId: string,
-    input: InitiatePaymentInput
+    input: InitiatePaymentInput,
   ): Promise<InitiatePaymentResult> {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
@@ -49,7 +49,11 @@ export class PaymentService {
       return { method: 'NONE', message: 'Cash on delivery — no online payment required' };
     }
 
-    if (order.paymentMethod !== 'CREDIT_CARD' && order.paymentMethod !== 'DEBIT_CARD' && order.paymentMethod !== 'MOBILE_MONEY') {
+    if (
+      order.paymentMethod !== 'CREDIT_CARD' &&
+      order.paymentMethod !== 'DEBIT_CARD' &&
+      order.paymentMethod !== 'MOBILE_MONEY'
+    ) {
       throw new Error(`${order.paymentMethod} is not supported for online payment`);
     }
 
@@ -58,7 +62,9 @@ export class PaymentService {
     }
 
     const customerName =
-      input.customerName || [order.user.firstName, order.user.lastName].filter(Boolean).join(' ') || undefined;
+      input.customerName ||
+      [order.user.firstName, order.user.lastName].filter(Boolean).join(' ') ||
+      undefined;
     const description = `Order ${order.orderNumber}`;
 
     if (order.paymentMethod === 'MOBILE_MONEY') {
@@ -77,7 +83,10 @@ export class PaymentService {
 
       await prisma.order.update({ where: { id: order.id }, data: { paymentIntentId: mobile.ref } });
 
-      logger.info({ orderId: order.id, orderNumber: order.orderNumber, ref: mobile.ref }, 'Mobile money payment initiated');
+      logger.info(
+        { orderId: order.id, orderNumber: order.orderNumber, ref: mobile.ref },
+        'Mobile money payment initiated',
+      );
 
       return {
         method: 'MOBILE_MONEY',
@@ -103,7 +112,10 @@ export class PaymentService {
 
     await prisma.order.update({ where: { id: order.id }, data: { paymentIntentId: card.ref } });
 
-    logger.info({ orderId: order.id, orderNumber: order.orderNumber, ref: card.ref }, 'Card payment initiated');
+    logger.info(
+      { orderId: order.id, orderNumber: order.orderNumber, ref: card.ref },
+      'Card payment initiated',
+    );
 
     return {
       method: 'CARD',
@@ -139,7 +151,11 @@ export class PaymentService {
     status: OrderStatus;
   }): Promise<PaymentStatusResult> {
     if (order.paymentStatus === 'PAID') {
-      return { status: 'SUCCESSFUL', paymentStatus: order.paymentStatus, orderStatus: order.status };
+      return {
+        status: 'SUCCESSFUL',
+        paymentStatus: order.paymentStatus,
+        orderStatus: order.status,
+      };
     }
 
     if (!order.paymentIntentId) {
@@ -163,7 +179,11 @@ export class PaymentService {
 
       logger.info({ orderId: order.id, orderNumber: order.orderNumber }, 'Order payment confirmed');
 
-      return { status: gatewayStatus.status, paymentStatus: updated.paymentStatus, orderStatus: updated.status };
+      return {
+        status: gatewayStatus.status,
+        paymentStatus: updated.paymentStatus,
+        orderStatus: updated.status,
+      };
     }
 
     if (gatewayStatus.status === 'FAILED' && order.paymentStatus !== 'FAILED') {
@@ -172,10 +192,18 @@ export class PaymentService {
         data: { paymentStatus: 'FAILED' },
       });
 
-      return { status: gatewayStatus.status, paymentStatus: updated.paymentStatus, orderStatus: updated.status };
+      return {
+        status: gatewayStatus.status,
+        paymentStatus: updated.paymentStatus,
+        orderStatus: updated.status,
+      };
     }
 
-    return { status: gatewayStatus.status, paymentStatus: order.paymentStatus, orderStatus: order.status };
+    return {
+      status: gatewayStatus.status,
+      paymentStatus: order.paymentStatus,
+      orderStatus: order.status,
+    };
   }
 
   /**
@@ -184,6 +212,9 @@ export class PaymentService {
    */
   static async markStale(order: { id: string; orderNumber: string }): Promise<void> {
     await prisma.order.update({ where: { id: order.id }, data: { paymentStatus: 'FAILED' } });
-    logger.warn({ orderId: order.id, orderNumber: order.orderNumber }, 'Order payment marked failed after timing out');
+    logger.warn(
+      { orderId: order.id, orderNumber: order.orderNumber },
+      'Order payment marked failed after timing out',
+    );
   }
 }

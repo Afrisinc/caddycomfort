@@ -25,7 +25,9 @@ export const dashboardApi = {
   /**
    * Get sales analytics over a period (Admin only)
    */
-  getSalesAnalytics: async (period: 'week' | 'month' | 'year' = 'month'): Promise<SalesAnalytics> => {
+  getSalesAnalytics: async (
+    period: 'week' | 'month' | 'year' = 'month',
+  ): Promise<SalesAnalytics> => {
     try {
       const response = await apiClient.get('/dashboard/sales', { params: { period } });
       return handleApiResponse<SalesAnalytics>(response).data!;

@@ -21,7 +21,7 @@ declare global {
 export const authenticateToken = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     // Get token from Authorization header
@@ -96,7 +96,7 @@ export const requireSuperAdmin = requireRole(UserRole.SUPER_ADMIN);
 export const optionalAuth = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;

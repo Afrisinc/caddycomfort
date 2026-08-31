@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 
 interface CountdownTimerProps {
@@ -59,4 +57,3 @@ export function CountdownTimer({ targetDate, className = '' }: CountdownTimerPro
     </div>
   );
 }
-

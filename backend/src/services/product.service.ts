@@ -1,5 +1,10 @@
 import { Product, Prisma } from '@prisma/client';
-import { uploadBase64Image, uploadMultipleBase64Images, deleteMultipleImages, isValidBase64Image } from '../utils/cloudinary';
+import {
+  uploadBase64Image,
+  uploadMultipleBase64Images,
+  deleteMultipleImages,
+  isValidBase64Image,
+} from '../utils/cloudinary';
 import prisma from '../config/database';
 
 interface CreateProductData {
@@ -93,8 +98,8 @@ export class ProductService {
     // Upload images to Cloudinary if provided
     let imageUrls: string[] = [];
     if (data.images && data.images.length > 0) {
-      const base64Images = data.images.filter(img => isValidBase64Image(img));
-      const urlImages = data.images.filter(img => img.startsWith('http'));
+      const base64Images = data.images.filter((img) => isValidBase64Image(img));
+      const urlImages = data.images.filter((img) => img.startsWith('http'));
 
       if (base64Images.length > 0) {
         try {
@@ -115,7 +120,8 @@ export class ProductService {
       }
     }
 
-    const resolvedComparePrice = data.comparePrice !== undefined ? data.comparePrice : (data as any).compareAtPrice;
+    const resolvedComparePrice =
+      data.comparePrice !== undefined ? data.comparePrice : (data as any).compareAtPrice;
 
     // Create product
     const product = await prisma.product.create({
@@ -171,12 +177,7 @@ export class ProductService {
       inStock,
     } = filters || {};
 
-    const {
-      page = 1,
-      limit = 20,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
-    } = pagination || {};
+    const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc' } = pagination || {};
 
     // A parent category (e.g. "Women") should also surface products filed
     // under its children (e.g. "Dresses") — most products live one level
@@ -205,15 +206,18 @@ export class ProductService {
           { sku: { contains: search, mode: 'insensitive' } },
         ],
       }),
-      ...(tags && tags.length > 0 && {
-        tags: { hasSome: tags },
-      }),
-      ...(sizes && sizes.length > 0 && {
-        sizes: { hasSome: sizes },
-      }),
-      ...(colors && colors.length > 0 && {
-        colors: { hasSome: colors },
-      }),
+      ...(tags &&
+        tags.length > 0 && {
+          tags: { hasSome: tags },
+        }),
+      ...(sizes &&
+        sizes.length > 0 && {
+          sizes: { hasSome: sizes },
+        }),
+      ...(colors &&
+        colors.length > 0 && {
+          colors: { hasSome: colors },
+        }),
     };
 
     // "popularity" isn't a real column — it's how often a product has been
@@ -378,8 +382,8 @@ export class ProductService {
     // Handle image updates
     let imageUrls: string[] | undefined = data.images;
     if (data.images && data.images.length > 0) {
-      const base64Images = data.images.filter(img => isValidBase64Image(img));
-      const urlImages = data.images.filter(img => img.startsWith('http'));
+      const base64Images = data.images.filter((img) => isValidBase64Image(img));
+      const urlImages = data.images.filter((img) => img.startsWith('http'));
 
       if (base64Images.length > 0) {
         try {
@@ -396,7 +400,7 @@ export class ProductService {
 
           // Delete old images from Cloudinary if they're not in the new list
           const oldCloudinaryImages = product.images.filter(
-            img => img.includes('cloudinary.com') && !urlImages.includes(img)
+            (img) => img.includes('cloudinary.com') && !urlImages.includes(img),
           );
           if (oldCloudinaryImages.length > 0) {
             try {
@@ -411,7 +415,8 @@ export class ProductService {
       }
     }
 
-    const resolvedComparePrice = data.comparePrice !== undefined ? data.comparePrice : (data as any).compareAtPrice;
+    const resolvedComparePrice =
+      data.comparePrice !== undefined ? data.comparePrice : (data as any).compareAtPrice;
 
     // Update product
     const updateData: Prisma.ProductUpdateInput = {
@@ -473,7 +478,7 @@ export class ProductService {
     }
 
     // Delete product images from Cloudinary
-    const cloudinaryImages = product.images.filter(img => img.includes('cloudinary.com'));
+    const cloudinaryImages = product.images.filter((img) => img.includes('cloudinary.com'));
     if (cloudinaryImages.length > 0) {
       try {
         await deleteMultipleImages(cloudinaryImages);
@@ -495,7 +500,7 @@ export class ProductService {
     productId: string,
     quantity: number,
     type: 'RESTOCK' | 'SALE' | 'RETURN' | 'DAMAGED' | 'ADJUSTMENT',
-    reason?: string
+    reason?: string,
   ) {
     const product = await prisma.product.findUnique({
       where: { id: productId },
@@ -506,9 +511,10 @@ export class ProductService {
     }
 
     const previousQty = product.stockQuantity;
-    const newQty = type === 'RESTOCK' || type === 'RETURN' || type === 'ADJUSTMENT'
-      ? previousQty + quantity
-      : previousQty - quantity;
+    const newQty =
+      type === 'RESTOCK' || type === 'RETURN' || type === 'ADJUSTMENT'
+        ? previousQty + quantity
+        : previousQty - quantity;
 
     if (newQty < 0) {
       throw new Error('Insufficient stock');
@@ -598,14 +604,7 @@ export class ProductService {
    * Get product statistics
    */
   static async getStats() {
-    const [
-      total,
-      active,
-      featured,
-      inStock,
-      lowStock,
-      outOfStock,
-    ] = await Promise.all([
+    const [total, active, featured, inStock, lowStock, outOfStock] = await Promise.all([
       prisma.product.count(),
       prisma.product.count({ where: { isActive: true } }),
       prisma.product.count({ where: { isFeatured: true } }),

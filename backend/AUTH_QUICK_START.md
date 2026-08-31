@@ -16,13 +16,16 @@ All authentication features have been successfully implemented:
 ## 🚀 Quick Start
 
 ### 1. Install Dependencies
+
 ```bash
 cd backend
 npm install
 ```
 
 ### 2. Setup Database
+
 Make sure your `.env` file has the correct `DATABASE_URL`:
+
 ```env
 DATABASE_URL="postgresql://user:password@host:5432/database"
 JWT_SECRET=your-super-secret-jwt-key-change-in-production
@@ -32,6 +35,7 @@ REFRESH_TOKEN_EXPIRES_IN=7d
 ```
 
 ### 3. Run Migration
+
 ```bash
 npx prisma migrate dev --name add_refresh_token
 # or
@@ -39,11 +43,13 @@ npx prisma db push
 ```
 
 ### 4. Generate Prisma Client
+
 ```bash
 npx prisma generate
 ```
 
 ### 5. Start Server
+
 ```bash
 npm run dev
 ```
@@ -51,6 +57,7 @@ npm run dev
 ## 📝 Quick Test
 
 ### Register a User
+
 ```bash
 curl -X POST http://localhost:5000/api/auth/register \
   -H "Content-Type: application/json" \
@@ -63,6 +70,7 @@ curl -X POST http://localhost:5000/api/auth/register \
 ```
 
 ### Login
+
 ```bash
 curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
@@ -75,6 +83,7 @@ curl -X POST http://localhost:5000/api/auth/login \
 Save the `accessToken` and `refreshToken` from the response.
 
 ### Access Protected Route
+
 ```bash
 curl -X GET http://localhost:5000/api/auth/me \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
@@ -89,6 +98,7 @@ curl -X GET http://localhost:5000/api/auth/me \
 ## 🔑 Key Features
 
 ### Security
+
 - **bcrypt** password hashing (12 rounds)
 - **JWT** tokens with expiration
 - **Token rotation** on refresh
@@ -96,12 +106,14 @@ curl -X GET http://localhost:5000/api/auth/me \
 - **Role-based access control**
 
 ### Token Strategy
+
 - **Access Token**: 15 minutes (short-lived, stateless)
 - **Refresh Token**: 7 days (long-lived, stored in DB)
 - **Rotation**: Old refresh token revoked when refreshing
 - **Revocation**: All tokens revoked on password change
 
 ### Available Roles
+
 - `CUSTOMER` - Default role for regular users
 - `ADMIN` - Admin users with elevated permissions
 - `SUPER_ADMIN` - Super admins with full access
@@ -109,6 +121,7 @@ curl -X GET http://localhost:5000/api/auth/me \
 ## 🛠️ Middleware Usage
 
 ### Require Authentication
+
 ```typescript
 import { authenticateToken } from '../middleware/auth.middleware';
 
@@ -116,6 +129,7 @@ router.get('/protected', authenticateToken, controller);
 ```
 
 ### Require Specific Role
+
 ```typescript
 import { requireRole } from '../middleware/auth.middleware';
 import { UserRole } from '@prisma/client';
@@ -124,6 +138,7 @@ router.post('/admin', authenticateToken, requireRole(UserRole.ADMIN), controller
 ```
 
 ### Require Admin (ADMIN or SUPER_ADMIN)
+
 ```typescript
 import { requireAdmin } from '../middleware/auth.middleware';
 
@@ -131,6 +146,7 @@ router.delete('/users/:id', authenticateToken, requireAdmin, controller);
 ```
 
 ### Optional Authentication
+
 ```typescript
 import { optionalAuth } from '../middleware/auth.middleware';
 
@@ -162,12 +178,14 @@ backend/
 ## 🧪 Testing
 
 ### Using Postman
+
 1. Import `Clementine_Auth_API.postman_collection.json`
 2. Set `baseUrl` variable to `http://localhost:5000`
 3. Run requests in order (Register → Login → Get Profile, etc.)
 4. Access and refresh tokens are automatically stored
 
 ### Using Test Script
+
 ```bash
 # Install axios if not already installed
 npm install axios
@@ -177,6 +195,7 @@ npx ts-node test-auth.ts
 ```
 
 ### Using cURL
+
 See examples in `AUTH_SYSTEM.md`
 
 ## 🔄 Token Flow
@@ -190,6 +209,7 @@ See examples in `AUTH_SYSTEM.md`
 ## ⚠️ Important Notes
 
 ### Production Checklist
+
 - [ ] Change `JWT_SECRET` and `REFRESH_TOKEN_SECRET` to strong random strings
 - [ ] Use HTTPS only
 - [ ] Store refresh tokens in httpOnly cookies (not localStorage)
@@ -199,6 +219,7 @@ See examples in `AUTH_SYSTEM.md`
 - [ ] Add logging for security events
 
 ### Token Storage (Client-side)
+
 - **Access Token**: Memory or sessionStorage (short-lived)
 - **Refresh Token**: httpOnly cookie (more secure)
 - **Never**: localStorage (vulnerable to XSS)
@@ -206,21 +227,27 @@ See examples in `AUTH_SYSTEM.md`
 ## 🐛 Troubleshooting
 
 ### Database Connection Error
+
 ```
 Error: Can't reach database server
 ```
+
 **Solution**: Check your `DATABASE_URL` in `.env` and ensure database is running
 
 ### Token Verification Failed
+
 ```
 Invalid or expired access token
 ```
+
 **Solution**: Use refresh token endpoint to get new access token
 
 ### User Already Exists
+
 ```
 User with this email already exists
 ```
+
 **Solution**: Use login endpoint instead, or use different email
 
 ## 📖 Next Steps

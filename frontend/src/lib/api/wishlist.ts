@@ -78,7 +78,7 @@ export const wishlistApi = {
   moveToCart: async (): Promise<{ addedCount: number; failedCount: number }> => {
     try {
       const response = await apiClient.post('/wishlist/move-to-cart');
-      return handleApiResponse(response).data!;
+      return handleApiResponse<{ addedCount: number; failedCount: number }>(response).data!;
     } catch (error) {
       throw handleApiError(error);
     }

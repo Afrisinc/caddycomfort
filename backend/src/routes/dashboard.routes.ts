@@ -19,7 +19,12 @@ router.get('/top-products', authenticateToken, requireAdmin, DashboardController
 router.get('/recent-orders', authenticateToken, requireAdmin, DashboardController.getRecentOrders);
 
 // Get revenue by category
-router.get('/revenue-by-category', authenticateToken, requireAdmin, DashboardController.getRevenueByCategory);
+router.get(
+  '/revenue-by-category',
+  authenticateToken,
+  requireAdmin,
+  DashboardController.getRevenueByCategory,
+);
 
 // Get low stock alert
 router.get('/low-stock', authenticateToken, requireAdmin, DashboardController.getLowStockAlert);

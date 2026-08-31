@@ -6,7 +6,9 @@ export interface SignatureVerificationResult {
   error?: string;
 }
 
-export function parseSignatureHeader(header: string): { timestamp: string; signature: string } | null {
+export function parseSignatureHeader(
+  header: string,
+): { timestamp: string; signature: string } | null {
   if (!header) return null;
 
   try {
@@ -26,7 +28,7 @@ export function verifyAfrisincSignature(
   secret: string,
   rawBody: string,
   header: string | undefined,
-  toleranceSeconds = 300
+  toleranceSeconds = 300,
 ): SignatureVerificationResult {
   if (!header) {
     return { valid: false, error: 'Missing signature header' };
@@ -53,7 +55,10 @@ export function verifyAfrisincSignature(
   const expectedSignature = crypto.createHmac('sha256', secret).update(signedPayload).digest('hex');
 
   try {
-    const signaturesMatch = crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
+    const signaturesMatch = crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expectedSignature),
+    );
 
     if (!signaturesMatch) {
       return { valid: false, error: 'Signature mismatch', timestamp: timestampNum };

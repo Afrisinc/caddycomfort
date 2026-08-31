@@ -162,11 +162,7 @@ export class UserService {
   /**
    * Admin: Get all users
    */
-  static async getAllUsers(filters?: {
-    role?: string;
-    isVerified?: boolean;
-    search?: string;
-  }) {
+  static async getAllUsers(filters?: { role?: string; isVerified?: boolean; search?: string }) {
     const { role, isVerified, search } = filters || {};
 
     const where: any = {};

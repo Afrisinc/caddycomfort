@@ -1,7 +1,5 @@
-'use client';
-
 import { useState } from 'react';
-import Image from 'next/image';
+import Image from '@/components/common/Image';
 import { Badge } from '@/components/ui/badge';
 
 interface ProductGalleryProps {
@@ -20,7 +18,9 @@ export function ProductGallery({ images, name, hasDiscount, discountPct }: Produ
         {images[selectedImage] && (
           <Image src={images[selectedImage]} alt={name} fill className="object-cover" priority />
         )}
-        {hasDiscount && <Badge className="absolute top-4 right-4 bg-accent-rose">-{discountPct}%</Badge>}
+        {hasDiscount && (
+          <Badge className="absolute top-4 right-4 bg-accent-rose">-{discountPct}%</Badge>
+        )}
       </div>
       {images.length > 1 && (
         <div className="grid grid-cols-4 gap-4">
@@ -30,7 +30,9 @@ export function ProductGallery({ images, name, hasDiscount, discountPct }: Produ
               type="button"
               onClick={() => setSelectedImage(index)}
               className={`relative aspect-square overflow-hidden rounded-lg border-2 transition-all ${
-                selectedImage === index ? 'border-accent-rose' : 'border-transparent hover:border-muted-foreground/30'
+                selectedImage === index
+                  ? 'border-accent-rose'
+                  : 'border-transparent hover:border-muted-foreground/30'
               }`}
             >
               <Image src={image} alt={`${name} ${index + 1}`} fill className="object-cover" />

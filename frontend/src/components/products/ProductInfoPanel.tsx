@@ -1,11 +1,20 @@
-'use client';
-
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/router/compat';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Heart, Share2, Truck, Shield, RotateCcw, Star, Minus, Plus, Check, Loader2 } from 'lucide-react';
+import {
+  Heart,
+  Share2,
+  Truck,
+  Shield,
+  RotateCcw,
+  Star,
+  Minus,
+  Plus,
+  Check,
+  Loader2,
+} from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { wishlistApi } from '@/lib/api';
@@ -53,7 +62,10 @@ export function ProductInfoPanel({ product, averageRating, reviewCount }: Produc
       setIsWishlisted(false);
       return;
     }
-    wishlistApi.checkProduct(product.id).then(setIsWishlisted).catch(() => {});
+    wishlistApi
+      .checkProduct(product.id)
+      .then(setIsWishlisted)
+      .catch(() => {});
   }, [isAuthenticated, product.id]);
 
   const hasDiscount = product.comparePrice != null && product.comparePrice > product.price;
@@ -177,7 +189,9 @@ export function ProductInfoPanel({ product, averageRating, reviewCount }: Produc
                 type="button"
                 onClick={() => setSelectedColor(color)}
                 className={`w-12 h-12 rounded-full border-2 transition-all ${
-                  selectedColor === color ? 'border-accent-rose scale-110' : 'border-gray-300 hover:border-accent-rose'
+                  selectedColor === color
+                    ? 'border-accent-rose scale-110'
+                    : 'border-gray-300 hover:border-accent-rose'
                 }`}
                 style={{ backgroundColor: colorHex(color) }}
                 title={color}
@@ -212,11 +226,21 @@ export function ProductInfoPanel({ product, averageRating, reviewCount }: Produc
       <div>
         <label className="text-sm font-semibold mb-3 block">Quantity</label>
         <div className="flex items-center gap-3">
-          <Button type="button" variant="outline" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))}>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+          >
             <Minus className="h-4 w-4" />
           </Button>
           <span className="text-lg font-semibold w-12 text-center">{quantity}</span>
-          <Button type="button" variant="outline" size="icon" onClick={() => setQuantity(quantity + 1)}>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => setQuantity(quantity + 1)}
+          >
             <Plus className="h-4 w-4" />
           </Button>
         </div>
@@ -231,11 +255,18 @@ export function ProductInfoPanel({ product, averageRating, reviewCount }: Produc
         >
           Add to Cart
         </Button>
-        <Button size="lg" variant="outline" onClick={handleToggleWishlist} disabled={isTogglingWishlist}>
+        <Button
+          size="lg"
+          variant="outline"
+          onClick={handleToggleWishlist}
+          disabled={isTogglingWishlist}
+        >
           {isTogglingWishlist ? (
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            <Heart className={`h-5 w-5 ${isWishlisted ? 'fill-accent-rose text-accent-rose' : ''}`} />
+            <Heart
+              className={`h-5 w-5 ${isWishlisted ? 'fill-accent-rose text-accent-rose' : ''}`}
+            />
           )}
         </Button>
         <Button size="lg" variant="outline" onClick={handleShare}>

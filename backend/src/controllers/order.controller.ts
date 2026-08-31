@@ -15,10 +15,17 @@ export class OrderController {
         return res.status(400).json({ success: false, message: 'Shipping address is required' });
       }
 
-      if (!shippingAddress.street || !shippingAddress.city || !shippingAddress.state || !shippingAddress.postalCode || !shippingAddress.country) {
+      if (
+        !shippingAddress.street ||
+        !shippingAddress.city ||
+        !shippingAddress.state ||
+        !shippingAddress.postalCode ||
+        !shippingAddress.country
+      ) {
         return res.status(400).json({
           success: false,
-          message: 'Complete shipping address is required (street, city, state, postalCode, country)',
+          message:
+            'Complete shipping address is required (street, city, state, postalCode, country)',
         });
       }
 
@@ -26,7 +33,14 @@ export class OrderController {
         return res.status(400).json({ success: false, message: 'Payment method is required' });
       }
 
-      const validPaymentMethods = ['CREDIT_CARD', 'DEBIT_CARD', 'PAYPAL', 'BANK_TRANSFER', 'MOBILE_MONEY', 'CASH_ON_DELIVERY'];
+      const validPaymentMethods = [
+        'CREDIT_CARD',
+        'DEBIT_CARD',
+        'PAYPAL',
+        'BANK_TRANSFER',
+        'MOBILE_MONEY',
+        'CASH_ON_DELIVERY',
+      ];
       if (!validPaymentMethods.includes(paymentMethod)) {
         return res.status(400).json({ success: false, message: 'Invalid payment method' });
       }
@@ -56,9 +70,10 @@ export class OrderController {
   static async getOrderById(req: Request, res: Response) {
     try {
       const { orderId } = req.params;
-      const userId = req.user!.role === 'ADMIN' || req.user!.role === 'SUPER_ADMIN'
-        ? undefined
-        : req.user!.userId;
+      const userId =
+        req.user!.role === 'ADMIN' || req.user!.role === 'SUPER_ADMIN'
+          ? undefined
+          : req.user!.userId;
 
       const order = await OrderService.getOrderById(orderId, userId);
       res.json({ success: true, data: order });
@@ -79,9 +94,10 @@ export class OrderController {
   static async getOrderByNumber(req: Request, res: Response) {
     try {
       const { orderNumber } = req.params;
-      const userId = req.user!.role === 'ADMIN' || req.user!.role === 'SUPER_ADMIN'
-        ? undefined
-        : req.user!.userId;
+      const userId =
+        req.user!.role === 'ADMIN' || req.user!.role === 'SUPER_ADMIN'
+          ? undefined
+          : req.user!.userId;
 
       const order = await OrderService.getOrderByNumber(orderNumber, userId);
       res.json({ success: true, data: order });
@@ -131,7 +147,7 @@ export class OrderController {
         status,
         paymentStatus,
         startDate,
-        endDate
+        endDate,
       );
       res.json({ success: true, data: result });
     } catch (error: any) {
@@ -213,10 +229,7 @@ export class OrderController {
       if (error.message === 'Unauthorized') {
         return res.status(403).json({ success: false, message: error.message });
       }
-      if (
-        error.message.includes('already cancelled') ||
-        error.message.includes('Cannot cancel')
-      ) {
+      if (error.message.includes('already cancelled') || error.message.includes('Cannot cancel')) {
         return res.status(400).json({ success: false, message: error.message });
       }
       res.status(500).json({ success: false, message: error.message });

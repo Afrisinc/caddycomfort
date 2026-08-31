@@ -74,13 +74,16 @@ export const categoriesApi = {
   /**
    * Update category (Admin only)
    */
-  update: async (id: string, data: {
-    name?: string;
-    slug?: string;
-    description?: string;
-    parentId?: string;
-    image?: string;
-  }): Promise<Category> => {
+  update: async (
+    id: string,
+    data: {
+      name?: string;
+      slug?: string;
+      description?: string;
+      parentId?: string;
+      image?: string;
+    },
+  ): Promise<Category> => {
     try {
       const response = await apiClient.put(`/categories/${id}`, data);
       return handleApiResponse<Category>(response).data!;
@@ -111,7 +114,11 @@ export const categoriesApi = {
   }> => {
     try {
       const response = await apiClient.get('/categories/admin/stats');
-      return handleApiResponse(response).data!;
+      return handleApiResponse<{
+        totalCategories: number;
+        categoriesWithProducts: number;
+        topCategories: Array<{ category: string; productCount: number }>;
+      }>(response).data!;
     } catch (error) {
       throw handleApiError(error);
     }

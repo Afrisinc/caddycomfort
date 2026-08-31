@@ -300,9 +300,7 @@ export const deactivateExpiredCoupons = async (req: Request, res: Response): Pro
 export const getTopPerformingCoupons = async (req: Request, res: Response): Promise<void> => {
   try {
     const { limit } = req.query;
-    const coupons = await CouponService.getTopPerforming(
-      limit ? parseInt(limit as string) : 10
-    );
+    const coupons = await CouponService.getTopPerforming(limit ? parseInt(limit as string) : 10);
 
     res.json({
       success: true,

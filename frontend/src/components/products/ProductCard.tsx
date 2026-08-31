@@ -1,10 +1,8 @@
-'use client';
-
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Heart, ShoppingBag, Eye, Star, TrendingUp } from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
+import Link from '@/components/common/Link';
+import Image from '@/components/common/Image';
 
 interface ProductCardProps {
   id: string;
@@ -86,7 +84,7 @@ export function ProductCard({
             <div className="relative w-full h-full overflow-hidden rounded-lg bg-gradient-to-br from-muted to-muted/50">
               {/* Hover overlay gradient */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
-              
+
               {image ? (
                 <Image
                   src={image}
@@ -100,7 +98,7 @@ export function ProductCard({
                   <span className="text-4xl opacity-50">📦</span>
                 </div>
               )}
-              
+
               {/* Quick view badge on hover */}
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
                 <div className="bg-card/95 backdrop-blur-md px-4 py-2 rounded-full shadow-lg border border-border/50">
@@ -151,16 +149,12 @@ export function ProductCard({
                 <Star
                   key={i}
                   className={`h-3.5 w-3.5 ${
-                    i < rating
-                      ? 'fill-yellow-400 text-yellow-400'
-                      : 'text-muted-foreground/30'
+                    i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'
                   }`}
                 />
               ))}
               {rating > 0 && (
-                <span className="ml-1 text-xs text-muted-foreground">
-                  ({rating.toFixed(1)})
-                </span>
+                <span className="ml-1 text-xs text-muted-foreground">({rating.toFixed(1)})</span>
               )}
             </div>
           )}
@@ -170,7 +164,7 @@ export function ProductCard({
               {title}
             </h4>
           </Link>
-          
+
           <div className="flex items-center justify-between pt-1">
             <Link href={`/shop?category=${categorySlug || category.toLowerCase()}`}>
               <h5 className="text-xs font-medium text-muted-foreground hover:text-accent-rose transition-colors uppercase tracking-wide">
@@ -183,4 +177,3 @@ export function ProductCard({
     </div>
   );
 }
-

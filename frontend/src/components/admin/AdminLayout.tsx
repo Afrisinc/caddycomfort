@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 
@@ -22,9 +20,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     <AdminLayoutContext.Provider value={{ toggleSidebar, isSidebarOpen }}>
       <div className="flex min-h-screen">
         <AdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-        <main className="flex-1 overflow-x-hidden lg:ml-0">
-          {children}
-        </main>
+        <main className="flex-1 overflow-x-hidden lg:ml-0">{children}</main>
       </div>
     </AdminLayoutContext.Provider>
   );

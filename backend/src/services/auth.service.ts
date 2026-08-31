@@ -27,7 +27,11 @@ interface AuthTokens {
 
 type PublicUser = Omit<
   User,
-  'password' | 'verificationCode' | 'verificationCodeExpiry' | 'passwordResetToken' | 'passwordResetExpiry'
+  | 'password'
+  | 'verificationCode'
+  | 'verificationCodeExpiry'
+  | 'passwordResetToken'
+  | 'passwordResetExpiry'
 >;
 
 const toPublicUser = (user: User): PublicUser => {
@@ -44,9 +48,11 @@ const toPublicUser = (user: User): PublicUser => {
 
 export class AuthService {
   private static readonly ACCESS_TOKEN_SECRET: string = process.env.JWT_SECRET || 'your-secret-key';
-  private static readonly REFRESH_TOKEN_SECRET: string = process.env.REFRESH_TOKEN_SECRET || 'your-refresh-secret';
+  private static readonly REFRESH_TOKEN_SECRET: string =
+    process.env.REFRESH_TOKEN_SECRET || 'your-refresh-secret';
   private static readonly ACCESS_TOKEN_EXPIRY: string = process.env.JWT_EXPIRES_IN || '15m';
-  private static readonly REFRESH_TOKEN_EXPIRY: string = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
+  private static readonly REFRESH_TOKEN_EXPIRY: string =
+    process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
 
   /**
    * Hash password using bcrypt
@@ -203,10 +209,7 @@ export class AuthService {
   static async cleanupExpiredTokens(): Promise<void> {
     await prisma.refreshToken.deleteMany({
       where: {
-        OR: [
-          { expiresAt: { lt: new Date() } },
-          { isRevoked: true },
-        ],
+        OR: [{ expiresAt: { lt: new Date() } }, { isRevoked: true }],
       },
     });
   }
@@ -396,7 +399,7 @@ export class AuthService {
    */
   static async login(
     email: string,
-    password: string
+    password: string,
   ): Promise<{ user: PublicUser; tokens: AuthTokens }> {
     // Find user
     const user = await prisma.user.findUnique({
@@ -453,7 +456,7 @@ export class AuthService {
       lastName?: string;
       phone?: string;
       avatar?: string;
-    }
+    },
   ): Promise<PublicUser> {
     const user = await prisma.user.update({
       where: { id: userId },
@@ -470,7 +473,7 @@ export class AuthService {
   static async changePassword(
     userId: string,
     oldPassword: string,
-    newPassword: string
+    newPassword: string,
   ): Promise<void> {
     const user = await prisma.user.findUnique({
       where: { id: userId },

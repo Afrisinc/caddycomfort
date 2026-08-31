@@ -59,7 +59,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error) {
     console.error('Register error:', error);
-    
+
     if (error instanceof Error) {
       if (error.message.includes('already exists')) {
         res.status(409).json({
@@ -108,7 +108,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    
+
     if (error instanceof Error) {
       if (error.message.includes('Invalid')) {
         res.status(401).json({
@@ -163,7 +163,7 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error) {
     console.error('Refresh token error:', error);
-    
+
     if (error instanceof Error) {
       res.status(401).json({
         success: false,
@@ -357,7 +357,7 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
     });
   } catch (error) {
     console.error('Change password error:', error);
-    
+
     if (error instanceof Error) {
       if (error.message.includes('Invalid old password')) {
         res.status(401).json({

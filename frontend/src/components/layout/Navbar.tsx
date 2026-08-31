@@ -1,8 +1,6 @@
-'use client';
-
 import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
+import Link from '@/components/common/Link';
+import Image from '@/components/common/Image';
 import { ShoppingBag, User, Heart, Menu, X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -25,7 +23,10 @@ export function Navbar() {
       setWishlistCount(0);
       return;
     }
-    wishlistApi.getCount().then(setWishlistCount).catch(() => {});
+    wishlistApi
+      .getCount()
+      .then(setWishlistCount)
+      .catch(() => {});
   }, [isAuthenticated]);
 
   React.useEffect(() => {
@@ -37,15 +38,16 @@ export function Navbar() {
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-luxury ${
-        isScrolled
-          ? 'bg-background/95 backdrop-blur-md shadow-md'
-          : 'bg-transparent'
+        isScrolled ? 'bg-background/95 backdrop-blur-md shadow-md' : 'bg-transparent'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link href="/" className="flex-shrink-0 relative h-12 w-48 md:h-14 md:w-56 hover:opacity-80 transition-opacity">
+          <Link
+            href="/"
+            className="flex-shrink-0 relative h-12 w-48 md:h-14 md:w-56 hover:opacity-80 transition-opacity"
+          >
             <Image
               src="/images/logo/logo.png"
               alt="CaddyComfort"
@@ -58,10 +60,7 @@ export function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8 absolute left-1/2 -translate-x-1/2">
-            <Link
-              href="/"
-              className="text-sm font-medium hover:text-accent-rose transition-luxury"
-            >
+            <Link href="/" className="text-sm font-medium hover:text-accent-rose transition-luxury">
               HOME
             </Link>
             <Link
@@ -112,8 +111,8 @@ export function Navbar() {
 
           {/* Actions */}
           <div className="flex items-center space-x-4 ml-auto">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="icon"
               onClick={() => setSearchOpen(true)}
               className="hidden md:flex"
@@ -156,7 +155,10 @@ export function Navbar() {
               <SheetContent side="right" className="w-[320px] sm:w-[380px]">
                 <SheetHeader className="border-b border-border/50 pb-6">
                   <SheetTitle className="text-left">
-                    <Link href="/" className="inline-block relative h-12 w-48 hover:opacity-80 transition-opacity">
+                    <Link
+                      href="/"
+                      className="inline-block relative h-12 w-48 hover:opacity-80 transition-opacity"
+                    >
                       <Image
                         src="/images/logo/logo.png"
                         alt="CaddyComfort"
@@ -170,8 +172,8 @@ export function Navbar() {
 
                 {/* Search Button */}
                 <div className="py-6">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full justify-start gap-3"
                     onClick={() => {
                       setSearchOpen(true);
@@ -189,42 +191,54 @@ export function Navbar() {
                     className="group flex items-center justify-between px-4 py-3 rounded-lg hover:bg-accent-rose-subtle/30 transition-all"
                   >
                     <span className="text-base font-medium">Shop</span>
-                    <span className="text-accent-rose opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                    <span className="text-accent-rose opacity-0 group-hover:opacity-100 transition-opacity">
+                      →
+                    </span>
                   </Link>
                   <Link
                     href="/shop?category=womans-cloth"
                     className="group flex items-center justify-between px-4 py-3 rounded-lg hover:bg-accent-rose-subtle/30 transition-all"
                   >
                     <span className="text-base font-medium">Women</span>
-                    <span className="text-accent-rose opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                    <span className="text-accent-rose opacity-0 group-hover:opacity-100 transition-opacity">
+                      →
+                    </span>
                   </Link>
                   <Link
                     href="/shop?category=men"
                     className="group flex items-center justify-between px-4 py-3 rounded-lg hover:bg-accent-rose-subtle/30 transition-all"
                   >
                     <span className="text-base font-medium">Men</span>
-                    <span className="text-accent-rose opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                    <span className="text-accent-rose opacity-0 group-hover:opacity-100 transition-opacity">
+                      →
+                    </span>
                   </Link>
                   <Link
                     href="/shop?category=kids"
                     className="group flex items-center justify-between px-4 py-3 rounded-lg hover:bg-accent-rose-subtle/30 transition-all"
                   >
                     <span className="text-base font-medium">Kids</span>
-                    <span className="text-accent-rose opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                    <span className="text-accent-rose opacity-0 group-hover:opacity-100 transition-opacity">
+                      →
+                    </span>
                   </Link>
                   <Link
                     href="/contact"
                     className="group flex items-center justify-between px-4 py-3 rounded-lg hover:bg-accent-rose-subtle/30 transition-all"
                   >
                     <span className="text-base font-medium">Contact Us</span>
-                    <span className="text-accent-rose opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                    <span className="text-accent-rose opacity-0 group-hover:opacity-100 transition-opacity">
+                      →
+                    </span>
                   </Link>
                   <Link
                     href="/about"
                     className="group flex items-center justify-between px-4 py-3 rounded-lg hover:bg-accent-rose-subtle/30 transition-all"
                   >
                     <span className="text-base font-medium">About</span>
-                    <span className="text-accent-rose opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                    <span className="text-accent-rose opacity-0 group-hover:opacity-100 transition-opacity">
+                      →
+                    </span>
                   </Link>
                   {isAdmin && (
                     <Link
@@ -232,7 +246,9 @@ export function Navbar() {
                       className="group flex items-center justify-between px-4 py-3 rounded-lg hover:bg-accent-rose-subtle/30 transition-all"
                     >
                       <span className="text-base font-medium">Admin Dashboard</span>
-                      <span className="text-accent-rose opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                      <span className="text-accent-rose opacity-0 group-hover:opacity-100 transition-opacity">
+                        →
+                      </span>
                     </Link>
                   )}
                 </nav>
@@ -250,8 +266,12 @@ export function Navbar() {
                       <User className="h-5 w-5 text-accent-rose" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">{isAdmin ? 'Admin Dashboard' : 'My Account'}</p>
-                      <p className="text-xs text-muted-foreground">{isAdmin ? 'Manage Store' : 'Profile & Orders'}</p>
+                      <p className="text-sm font-medium">
+                        {isAdmin ? 'Admin Dashboard' : 'My Account'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {isAdmin ? 'Manage Store' : 'Profile & Orders'}
+                      </p>
                     </div>
                   </Link>
                   <Link

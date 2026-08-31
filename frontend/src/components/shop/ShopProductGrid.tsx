@@ -1,7 +1,5 @@
-'use client';
-
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/router/compat';
 import { ProductCard } from '@/components/products/ProductCard';
 import { toProductCardProps } from '@/lib/productCard';
 import { wishlistApi } from '@/lib/api';

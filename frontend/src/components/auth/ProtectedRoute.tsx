@@ -1,7 +1,5 @@
-'use client';
-
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/router/compat';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'sonner';
 
@@ -11,10 +9,10 @@ interface ProtectedRouteProps {
   requireAdmin?: boolean;
 }
 
-export function ProtectedRoute({ 
-  children, 
-  requiredRole, 
-  requireAdmin = false 
+export function ProtectedRoute({
+  children,
+  requiredRole,
+  requireAdmin = false,
 }: ProtectedRouteProps) {
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();

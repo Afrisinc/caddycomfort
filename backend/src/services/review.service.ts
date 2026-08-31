@@ -104,7 +104,7 @@ export class ReviewService {
         acc[r.rating] = (acc[r.rating] || 0) + 1;
         return acc;
       },
-      { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } as Record<number, number>
+      { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } as Record<number, number>,
     );
 
     return {
@@ -164,10 +164,7 @@ export class ReviewService {
   /**
    * Create review
    */
-  static async create(
-    userId: string,
-    data: CreateReviewData
-  ): Promise<Review> {
+  static async create(userId: string, data: CreateReviewData): Promise<Review> {
     const { productId, rating, title, comment, images } = data;
 
     // Validate rating
@@ -225,11 +222,7 @@ export class ReviewService {
   /**
    * Update review
    */
-  static async update(
-    reviewId: string,
-    userId: string,
-    data: UpdateReviewData
-  ): Promise<Review> {
+  static async update(reviewId: string, userId: string, data: UpdateReviewData): Promise<Review> {
     // Verify review exists and belongs to user
     const review = await prisma.review.findFirst({
       where: {

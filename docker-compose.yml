@@ -12,7 +12,7 @@ services:
     restart: unless-stopped
     init: true
     expose:
-      - "5000"
+      - '5000'
     env_file: .env
     environment:
       - TZ=UTC
@@ -23,10 +23,10 @@ services:
     # healthcheck inherited from the image
     logging:
       driver: json-file
-      options: { max-size: "10m", max-file: "3" }
+      options: { max-size: '10m', max-file: '3' }
     deploy:
       resources:
-        limits: { memory: 512M, cpus: "1.0" }
+        limits: { memory: 512M, cpus: '1.0' }
 
     networks:
       - caddycomfort_internal
@@ -39,34 +39,30 @@ services:
     build:
       context: ./frontend
       args:
-        # Relative path -> the browser calls this container, which rewrites
-        # /api/* to the API over caddycomfort_internal.
-        NEXT_PUBLIC_API_URL: /api
-        NEXT_PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:3000}
-        # Baked into the rewrite at build time; must match the API's
-        # container_name, which is how docker DNS resolves it.
+        # Relative path -> the browser calls this container, which nginx
+        # proxies to the API over caddycomfort_internal.
+        VITE_API_URL: /api
+        VITE_APP_URL: ${PUBLIC_APP_URL:-http://localhost:3000}
+        # Baked into the nginx proxy_pass target at build time; must match
+        # the API's container_name, which is how docker DNS resolves it.
         BACKEND_INTERNAL_URL: http://caddycomfort-backend:5000
     restart: unless-stopped
     init: true
     ports:
-      - "127.0.0.1:${FRONTEND_PORT:-5001}:3000"
+      - '127.0.0.1:${FRONTEND_PORT:-5001}:3000'
     env_file: .env
     environment:
       - TZ=UTC
-      - NODE_ENV=production
-      - PORT=3000
-      - HOSTNAME=0.0.0.0
-      - BACKEND_INTERNAL_URL=http://caddycomfort-backend:5000
     depends_on:
       caddycomfort-backend:
         condition: service_healthy
     # healthcheck inherited from the image
     logging:
       driver: json-file
-      options: { max-size: "10m", max-file: "3" }
+      options: { max-size: '10m', max-file: '3' }
     deploy:
       resources:
-        limits: { memory: 768M, cpus: "1.0" }
+        limits: { memory: 768M, cpus: '1.0' }
 
     networks:
       - caddycomfort_internal
@@ -77,16 +73,16 @@ services:
     image: ghcr.io/${GHCR_OWNER:-afrisinc}/caddycomfort-backend:${IMAGE_TAG:-main}
     build:
       context: ./backend
-    profiles: ["migrate"]
-    restart: "no"
+    profiles: ['migrate']
+    restart: 'no'
     init: true
     env_file: .env
     environment:
       - TZ=UTC
-    command: ["npx", "prisma", "migrate", "deploy"]
+    command: ['npx', 'prisma', 'migrate', 'deploy']
     logging:
       driver: json-file
-      options: { max-size: "10m", max-file: "3" }
+      options: { max-size: '10m', max-file: '3' }
     networks:
       - caddycomfort_internal
 

@@ -1,7 +1,5 @@
-'use client';
-
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/router/compat';
 import { Save, X, Percent, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -72,7 +70,14 @@ interface CouponFormProps {
   onSubmit: (data: CreateCouponData) => Promise<void>;
 }
 
-export function CouponForm({ title, description, initialValues, submitLabel, isSubmitting, onSubmit }: CouponFormProps) {
+export function CouponForm({
+  title,
+  description,
+  initialValues,
+  submitLabel,
+  isSubmitting,
+  onSubmit,
+}: CouponFormProps) {
   const router = useRouter();
   const [form, setForm] = useState<CouponFormValues>(initialValues);
 
@@ -88,7 +93,10 @@ export function CouponForm({ title, description, initialValues, submitLabel, isS
     }
 
     const discountValue = parseFloat(form.discountValue);
-    if (form.discountType !== 'FREE_SHIPPING' && (!form.discountValue || isNaN(discountValue) || discountValue <= 0)) {
+    if (
+      form.discountType !== 'FREE_SHIPPING' &&
+      (!form.discountValue || isNaN(discountValue) || discountValue <= 0)
+    ) {
       toast.error('Enter a valid discount value');
       return;
     }
@@ -97,7 +105,11 @@ export function CouponForm({ title, description, initialValues, submitLabel, isS
       return;
     }
 
-    if (form.validFrom && form.validUntil && new Date(form.validFrom) >= new Date(form.validUntil)) {
+    if (
+      form.validFrom &&
+      form.validUntil &&
+      new Date(form.validFrom) >= new Date(form.validUntil)
+    ) {
       toast.error('Start date must be before end date');
       return;
     }
@@ -125,17 +137,26 @@ export function CouponForm({ title, description, initialValues, submitLabel, isS
     form.discountType === 'FREE_SHIPPING'
       ? 'Free shipping'
       : form.discountType === 'PERCENTAGE'
-      ? `${form.discountValue || 0}%${form.maxDiscountAmount ? ` (max Rwf ${Number(form.maxDiscountAmount).toLocaleString()})` : ''}`
-      : `Rwf ${Number(form.discountValue || 0).toLocaleString()}`;
+        ? `${form.discountValue || 0}%${form.maxDiscountAmount ? ` (max Rwf ${Number(form.maxDiscountAmount).toLocaleString()})` : ''}`
+        : `Rwf ${Number(form.discountValue || 0).toLocaleString()}`;
 
   return (
     <form onSubmit={handleSubmit} className="min-h-screen bg-muted/30">
       <AdminHeader title={title} description={description}>
-        <Button type="button" variant="outline" onClick={() => router.push('/admin/coupons')} disabled={isSubmitting}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.push('/admin/coupons')}
+          disabled={isSubmitting}
+        >
           <X className="h-4 w-4 mr-2" />
           Cancel
         </Button>
-        <Button type="submit" className="bg-accent-rose hover:bg-accent-rose-dark" disabled={isSubmitting}>
+        <Button
+          type="submit"
+          className="bg-accent-rose hover:bg-accent-rose-dark"
+          disabled={isSubmitting}
+        >
           <Save className="h-4 w-4 mr-2" />
           {isSubmitting ? 'Saving...' : submitLabel}
         </Button>
@@ -164,7 +185,12 @@ export function CouponForm({ title, description, initialValues, submitLabel, isS
                         disabled={isSubmitting}
                         required
                       />
-                      <Button type="button" variant="outline" onClick={() => set('code', generateCode())} disabled={isSubmitting}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => set('code', generateCode())}
+                        disabled={isSubmitting}
+                      >
                         Generate
                       </Button>
                     </div>
@@ -200,7 +226,9 @@ export function CouponForm({ title, description, initialValues, submitLabel, isS
                     <Label htmlFor="discountType">Discount Type *</Label>
                     <Select
                       value={form.discountType}
-                      onValueChange={(v) => set('discountType', v as CouponFormValues['discountType'])}
+                      onValueChange={(v) =>
+                        set('discountType', v as CouponFormValues['discountType'])
+                      }
                       disabled={isSubmitting}
                     >
                       <SelectTrigger id="discountType">
@@ -361,7 +389,9 @@ export function CouponForm({ title, description, initialValues, submitLabel, isS
                       onChange={(e) => set('validFrom', e.target.value)}
                       disabled={isSubmitting}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">Leave empty to start immediately</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Leave empty to start immediately
+                    </p>
                   </div>
 
                   <div>
@@ -396,7 +426,11 @@ export function CouponForm({ title, description, initialValues, submitLabel, isS
                         Inactive coupons can&apos;t be redeemed
                       </p>
                     </div>
-                    <Switch checked={form.isActive} onCheckedChange={(v) => set('isActive', v)} disabled={isSubmitting} />
+                    <Switch
+                      checked={form.isActive}
+                      onCheckedChange={(v) => set('isActive', v)}
+                      disabled={isSubmitting}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -417,7 +451,9 @@ export function CouponForm({ title, description, initialValues, submitLabel, isS
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Status:</span>
-                    <span className={`font-medium ${form.isActive ? 'text-green-600' : 'text-muted-foreground'}`}>
+                    <span
+                      className={`font-medium ${form.isActive ? 'text-green-600' : 'text-muted-foreground'}`}
+                    >
                       {form.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
@@ -426,7 +462,9 @@ export function CouponForm({ title, description, initialValues, submitLabel, isS
                     <span className="font-medium text-right">
                       {form.validFrom || form.validUntil
                         ? `${form.validFrom ? new Date(form.validFrom).toLocaleDateString() : 'now'} – ${
-                            form.validUntil ? new Date(form.validUntil).toLocaleDateString() : 'no expiry'
+                            form.validUntil
+                              ? new Date(form.validUntil).toLocaleDateString()
+                              : 'no expiry'
                           }`
                         : 'Always'}
                     </span>

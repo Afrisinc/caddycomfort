@@ -1,6 +1,7 @@
 # JWT Authentication System Documentation
 
 ## Overview
+
 This is a complete JWT-based authentication system with access and refresh tokens, token rotation, password hashing using bcrypt, and role-based access control.
 
 ## Features
@@ -26,6 +27,7 @@ This is a complete JWT-based authentication system with access and refresh token
 ## Database Schema
 
 ### User Model
+
 ```prisma
 model User {
   id            String    @id @default(cuid())
@@ -44,6 +46,7 @@ model User {
 ```
 
 ### RefreshToken Model
+
 ```prisma
 model RefreshToken {
   id          String   @id @default(cuid())
@@ -62,9 +65,11 @@ model RefreshToken {
 ### Public Endpoints (No Authentication Required)
 
 #### 1. Register User
+
 **POST** `/api/auth/register`
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -77,6 +82,7 @@ model RefreshToken {
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -100,6 +106,7 @@ model RefreshToken {
 ```
 
 **Validation Rules:**
+
 - Email is required and must be valid format
 - Password is required and must be at least 8 characters
 - Role defaults to CUSTOMER if not provided
@@ -107,9 +114,11 @@ model RefreshToken {
 ---
 
 #### 2. Login User
+
 **POST** `/api/auth/login`
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -118,6 +127,7 @@ model RefreshToken {
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -139,9 +149,11 @@ model RefreshToken {
 ---
 
 #### 3. Refresh Token
+
 **POST** `/api/auth/refresh`
 
 **Request Body:**
+
 ```json
 {
   "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -149,6 +161,7 @@ model RefreshToken {
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -165,9 +178,11 @@ model RefreshToken {
 ---
 
 #### 4. Logout User
+
 **POST** `/api/auth/logout`
 
 **Request Body:**
+
 ```json
 {
   "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -175,6 +190,7 @@ model RefreshToken {
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -187,14 +203,17 @@ model RefreshToken {
 ### Protected Endpoints (Authentication Required)
 
 **Authorization Header Required:**
+
 ```
 Authorization: Bearer <accessToken>
 ```
 
 #### 5. Get Current User Profile
+
 **GET** `/api/auth/me`
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -218,9 +237,11 @@ Authorization: Bearer <accessToken>
 ---
 
 #### 6. Update Profile
+
 **PATCH** `/api/auth/profile`
 
 **Request Body:**
+
 ```json
 {
   "firstName": "John",
@@ -231,6 +252,7 @@ Authorization: Bearer <accessToken>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -252,9 +274,11 @@ Authorization: Bearer <accessToken>
 ---
 
 #### 7. Change Password
+
 **POST** `/api/auth/change-password`
 
 **Request Body:**
+
 ```json
 {
   "oldPassword": "SecurePass123",
@@ -263,6 +287,7 @@ Authorization: Bearer <accessToken>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -275,9 +300,11 @@ Authorization: Bearer <accessToken>
 ---
 
 #### 8. Logout from All Devices
+
 **POST** `/api/auth/logout-all`
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -290,9 +317,11 @@ Authorization: Bearer <accessToken>
 ---
 
 #### 9. Verify Token (Testing)
+
 **GET** `/api/auth/verify`
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -312,9 +341,11 @@ Authorization: Bearer <accessToken>
 ## Middleware
 
 ### 1. authenticateToken
+
 Verifies JWT access token from Authorization header.
 
 **Usage:**
+
 ```typescript
 import { authenticateToken } from '../middleware/auth.middleware';
 
@@ -322,9 +353,11 @@ router.get('/protected', authenticateToken, controller);
 ```
 
 ### 2. requireRole
+
 Checks if user has required role(s).
 
 **Usage:**
+
 ```typescript
 import { requireRole } from '../middleware/auth.middleware';
 import { UserRole } from '@prisma/client';
@@ -333,13 +366,20 @@ import { UserRole } from '@prisma/client';
 router.post('/admin-only', authenticateToken, requireRole(UserRole.ADMIN), controller);
 
 // Multiple roles
-router.post('/admin-or-super', authenticateToken, requireRole(UserRole.ADMIN, UserRole.SUPER_ADMIN), controller);
+router.post(
+  '/admin-or-super',
+  authenticateToken,
+  requireRole(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  controller,
+);
 ```
 
 ### 3. requireAdmin
+
 Shorthand for admin and super admin roles.
 
 **Usage:**
+
 ```typescript
 import { requireAdmin } from '../middleware/auth.middleware';
 
@@ -347,9 +387,11 @@ router.delete('/users/:id', authenticateToken, requireAdmin, controller);
 ```
 
 ### 4. requireSuperAdmin
+
 Restricts access to super admins only.
 
 **Usage:**
+
 ```typescript
 import { requireSuperAdmin } from '../middleware/auth.middleware';
 
@@ -357,9 +399,11 @@ router.post('/system-settings', authenticateToken, requireSuperAdmin, controller
 ```
 
 ### 5. optionalAuth
+
 Attaches user if token is valid, but doesn't fail if not authenticated.
 
 **Usage:**
+
 ```typescript
 import { optionalAuth } from '../middleware/auth.middleware';
 
@@ -372,11 +416,13 @@ router.get('/products', optionalAuth, controller);
 ## Security Features
 
 ### Password Hashing
+
 - **Algorithm:** bcrypt
 - **Salt Rounds:** 12
 - **Password Requirements:** Minimum 8 characters
 
 ### Token Configuration
+
 - **Access Token:**
   - Expiry: 15 minutes (configurable via `JWT_EXPIRES_IN`)
   - Secret: `JWT_SECRET` environment variable
@@ -389,13 +435,16 @@ router.get('/products', optionalAuth, controller);
   - Can be revoked
 
 ### Token Rotation
+
 When refreshing tokens:
+
 1. Old refresh token is verified
 2. Old refresh token is revoked in database
 3. New access token is generated
 4. New refresh token is generated and stored
 
 ### Token Blacklisting Strategy
+
 - Refresh tokens are stored in database
 - Each token has `isRevoked` flag
 - Expired and revoked tokens can be cleaned up periodically
@@ -420,6 +469,7 @@ DATABASE_URL=postgresql://user:password@host:5432/database
 ## Error Responses
 
 ### 400 Bad Request
+
 ```json
 {
   "success": false,
@@ -428,6 +478,7 @@ DATABASE_URL=postgresql://user:password@host:5432/database
 ```
 
 ### 401 Unauthorized
+
 ```json
 {
   "success": false,
@@ -436,6 +487,7 @@ DATABASE_URL=postgresql://user:password@host:5432/database
 ```
 
 ### 403 Forbidden
+
 ```json
 {
   "success": false,
@@ -444,6 +496,7 @@ DATABASE_URL=postgresql://user:password@host:5432/database
 ```
 
 ### 404 Not Found
+
 ```json
 {
   "success": false,
@@ -452,6 +505,7 @@ DATABASE_URL=postgresql://user:password@host:5432/database
 ```
 
 ### 409 Conflict
+
 ```json
 {
   "success": false,
@@ -460,6 +514,7 @@ DATABASE_URL=postgresql://user:password@host:5432/database
 ```
 
 ### 500 Internal Server Error
+
 ```json
 {
   "success": false,
@@ -472,6 +527,7 @@ DATABASE_URL=postgresql://user:password@host:5432/database
 ## Testing with cURL
 
 ### Register a new user
+
 ```bash
 curl -X POST http://localhost:5000/api/auth/register \
   -H "Content-Type: application/json" \
@@ -484,6 +540,7 @@ curl -X POST http://localhost:5000/api/auth/register \
 ```
 
 ### Login
+
 ```bash
 curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
@@ -494,12 +551,14 @@ curl -X POST http://localhost:5000/api/auth/login \
 ```
 
 ### Get Profile (Protected)
+
 ```bash
 curl -X GET http://localhost:5000/api/auth/me \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 ### Refresh Token
+
 ```bash
 curl -X POST http://localhost:5000/api/auth/refresh \
   -H "Content-Type: application/json" \
@@ -509,6 +568,7 @@ curl -X POST http://localhost:5000/api/auth/refresh \
 ```
 
 ### Logout
+
 ```bash
 curl -X POST http://localhost:5000/api/auth/logout \
   -H "Content-Type: application/json" \
@@ -531,6 +591,7 @@ npx prisma db push
 ```
 
 Generate Prisma client:
+
 ```bash
 npx prisma generate
 ```
@@ -633,6 +694,7 @@ backend/
 ## Support
 
 For issues or questions, please refer to:
+
 - JWT Documentation: https://jwt.io/introduction
 - Prisma Documentation: https://www.prisma.io/docs
 - bcrypt Documentation: https://github.com/kelektiv/node.bcrypt.js

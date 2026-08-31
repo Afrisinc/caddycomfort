@@ -1,9 +1,7 @@
-'use client';
-
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
+import Link from '@/components/common/Link';
+import Image from '@/components/common/Image';
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -72,11 +70,14 @@ export function HeroBanner({ slides = defaultSlides, autoPlayInterval = 5000 }: 
     setSlideCount((prev) => prev + 1);
   }, [slides.length]);
 
-  const goToSlide = useCallback((index: number) => {
-    setDirection(index > currentIndex ? 1 : -1);
-    setCurrentIndex(index);
-    setSlideCount((prev) => prev + 1);
-  }, [currentIndex]);
+  const goToSlide = useCallback(
+    (index: number) => {
+      setDirection(index > currentIndex ? 1 : -1);
+      setCurrentIndex(index);
+      setSlideCount((prev) => prev + 1);
+    },
+    [currentIndex],
+  );
 
   // Swap layout every 2 slides
   const isSwapped = Math.floor(slideCount / 2) % 2 === 1;
@@ -95,7 +96,7 @@ export function HeroBanner({ slides = defaultSlides, autoPlayInterval = 5000 }: 
     setTypedText('');
     setShowCursor(true);
     let currentCharIndex = 0;
-    
+
     const typingInterval = setInterval(() => {
       if (currentCharIndex < currentSlide.title.length) {
         setTypedText(currentSlide.title.slice(0, currentCharIndex + 1));
@@ -179,7 +180,9 @@ export function HeroBanner({ slides = defaultSlides, autoPlayInterval = 5000 }: 
                     priority
                   />
                 ) : (
-                  <div className={`absolute inset-0 bg-gradient-to-br ${currentSlide.gradient || 'from-accent-rose-subtle via-accent-rose-muted to-accent-rose-subtle'}`}></div>
+                  <div
+                    className={`absolute inset-0 bg-gradient-to-br ${currentSlide.gradient || 'from-accent-rose-subtle via-accent-rose-muted to-accent-rose-subtle'}`}
+                  ></div>
                 )}
               </motion.div>
             </AnimatePresence>
@@ -209,18 +212,18 @@ export function HeroBanner({ slides = defaultSlides, autoPlayInterval = 5000 }: 
                     <span className="bg-gradient-to-r from-amber-200 via-rose-200 via-pink-200 to-amber-200 bg-clip-text text-transparent animate-gradient bg-[length:200%_auto]">
                       {typedText}
                       {showCursor && (
-                        <span className="inline-block w-0.5 h-full bg-gradient-to-b from-amber-300 to-rose-400 ml-1 animate-pulse">|</span>
+                        <span className="inline-block w-0.5 h-full bg-gradient-to-b from-amber-300 to-rose-400 ml-1 animate-pulse">
+                          |
+                        </span>
                       )}
                     </span>
                   </h1>
 
-                
-
                   {/* CTA Button */}
                   <div className="pt-2">
                     <Link href={currentSlide.ctaLink}>
-                      <Button 
-                        size="lg" 
+                      <Button
+                        size="lg"
                         className="bg-white text-foreground hover:bg-white/90 shadow-xl font-semibold"
                       >
                         {currentSlide.ctaText}
@@ -253,39 +256,39 @@ export function HeroBanner({ slides = defaultSlides, autoPlayInterval = 5000 }: 
               </div>
             )}
 
-              {/* Bottom Controls - Inside main slide */}
-              {slides.length > 1 && (
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-4">
-                  {/* Dots Indicator */}
-                  <div className="flex gap-2 bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/30">
-                    {slides.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => goToSlide(index)}
-                        className={`transition-all duration-300 rounded-full ${
-                          index === currentIndex
-                            ? 'w-8 h-2 bg-white'
-                            : 'w-2 h-2 bg-white/50 hover:bg-white/70'
-                        }`}
-                        aria-label={`Go to slide ${index + 1}`}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Play/Pause Button */}
-                  <button
-                    onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-                    className="bg-white/20 backdrop-blur-md hover:bg-white/30 p-2 rounded-full border border-white/30 transition-all hover:scale-110"
-                    aria-label={isAutoPlaying ? 'Pause autoplay' : 'Start autoplay'}
-                  >
-                    {isAutoPlaying ? (
-                      <Pause className="h-4 w-4 text-white" />
-                    ) : (
-                      <Play className="h-4 w-4 text-white" />
-                    )}
-                  </button>
+            {/* Bottom Controls - Inside main slide */}
+            {slides.length > 1 && (
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-4">
+                {/* Dots Indicator */}
+                <div className="flex gap-2 bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/30">
+                  {slides.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => goToSlide(index)}
+                      className={`transition-all duration-300 rounded-full ${
+                        index === currentIndex
+                          ? 'w-8 h-2 bg-white'
+                          : 'w-2 h-2 bg-white/50 hover:bg-white/70'
+                      }`}
+                      aria-label={`Go to slide ${index + 1}`}
+                    />
+                  ))}
                 </div>
-              )}
+
+                {/* Play/Pause Button */}
+                <button
+                  onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+                  className="bg-white/20 backdrop-blur-md hover:bg-white/30 p-2 rounded-full border border-white/30 transition-all hover:scale-110"
+                  aria-label={isAutoPlaying ? 'Pause autoplay' : 'Start autoplay'}
+                >
+                  {isAutoPlaying ? (
+                    <Pause className="h-4 w-4 text-white" />
+                  ) : (
+                    <Play className="h-4 w-4 text-white" />
+                  )}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Side Preview Slides - 30% on desktop, hidden on mobile */}
@@ -293,8 +296,8 @@ export function HeroBanner({ slides = defaultSlides, autoPlayInterval = 5000 }: 
             <div className="hidden lg:flex gap-4 w-[30%]">
               {/* First Preview - Swaps between 20% and 10% width */}
               <motion.div
-                animate={{ 
-                  width: isSwapped ? '33.33%' : '66.67%'
+                animate={{
+                  width: isSwapped ? '33.33%' : '66.67%',
                 }}
                 transition={{ duration: 0.5, ease: 'easeInOut' }}
                 onClick={() => nextSlide()}
@@ -318,13 +321,15 @@ export function HeroBanner({ slides = defaultSlides, autoPlayInterval = 5000 }: 
                         sizes="20vw"
                       />
                     ) : (
-                      <div className={`absolute inset-0 bg-gradient-to-br ${slides[getNextIndex(1)].gradient}`}></div>
+                      <div
+                        className={`absolute inset-0 bg-gradient-to-br ${slides[getNextIndex(1)].gradient}`}
+                      ></div>
                     )}
                   </motion.div>
                 </AnimatePresence>
-                
+
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
-                
+
                 {/* Overlay Label */}
                 {!isSwapped && (
                   <div className="absolute bottom-4 left-4 right-4">
@@ -340,8 +345,8 @@ export function HeroBanner({ slides = defaultSlides, autoPlayInterval = 5000 }: 
 
               {/* Second Preview - Swaps between 10% and 20% width */}
               <motion.div
-                animate={{ 
-                  width: isSwapped ? '66.67%' : '33.33%'
+                animate={{
+                  width: isSwapped ? '66.67%' : '33.33%',
                 }}
                 transition={{ duration: 0.5, ease: 'easeInOut' }}
                 onClick={() => goToSlide(getNextIndex(2))}
@@ -365,13 +370,15 @@ export function HeroBanner({ slides = defaultSlides, autoPlayInterval = 5000 }: 
                         sizes="20vw"
                       />
                     ) : (
-                      <div className={`absolute inset-0 bg-gradient-to-br ${slides[getNextIndex(2)].gradient}`}></div>
+                      <div
+                        className={`absolute inset-0 bg-gradient-to-br ${slides[getNextIndex(2)].gradient}`}
+                      ></div>
                     )}
                   </motion.div>
                 </AnimatePresence>
-                
+
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
-                
+
                 {/* Overlay Label */}
                 {isSwapped && (
                   <div className="absolute bottom-4 left-4 right-4">
@@ -391,4 +398,3 @@ export function HeroBanner({ slides = defaultSlides, autoPlayInterval = 5000 }: 
     </section>
   );
 }
-

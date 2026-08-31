@@ -1,13 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../config/logger';
 
-export const requestLogger = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const requestLogger = (req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
-  
+
   // Log incoming request
   const requestInfo: any = {
     method: req.method,
@@ -29,20 +25,23 @@ export const requestLogger = (
     requestInfo.query = req.query;
   }
 
-  console.log(`\n🔵 ${req.method} ${req.url}`, req.query ? `Query: ${JSON.stringify(req.query)}` : '');
-  
+  console.log(
+    `\n🔵 ${req.method} ${req.url}`,
+    req.query ? `Query: ${JSON.stringify(req.query)}` : '',
+  );
+
   res.on('finish', () => {
     const duration = Date.now() - start;
     const statusColor = res.statusCode >= 500 ? '🔴' : res.statusCode >= 400 ? '🟠' : '🟢';
-    
+
     console.log(`${statusColor} ${req.method} ${req.url} - ${res.statusCode} - ${duration}ms\n`);
-    
+
     logger.info({
       ...requestInfo,
       status: res.statusCode,
       duration: `${duration}ms`,
     });
   });
-  
+
   next();
 };

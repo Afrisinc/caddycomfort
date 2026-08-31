@@ -5,7 +5,10 @@ export const customersApi = {
   /**
    * Get all customers (Admin only)
    */
-  getAll: async (params?: { search?: string; status?: CustomerStatus | 'all' }): Promise<Customer[]> => {
+  getAll: async (params?: {
+    search?: string;
+    status?: CustomerStatus | 'all';
+  }): Promise<Customer[]> => {
     try {
       const response = await apiClient.get('/customers', { params });
       const result = handleApiResponse<{ customers: Customer[] }>(response).data!;

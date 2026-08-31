@@ -1,11 +1,5 @@
 import apiClient, { handleApiResponse, handleApiError } from '@/lib/api-client';
-import {
-  ApiResponse,
-  AuthResponse,
-  LoginCredentials,
-  RegisterData,
-  User,
-} from '@/types/api';
+import { ApiResponse, AuthResponse, LoginCredentials, RegisterData, User } from '@/types/api';
 
 export const authApi = {
   /**
@@ -65,7 +59,7 @@ export const authApi = {
     try {
       const response = await apiClient.get('/users/profile');
       const data = handleApiResponse<User>(response);
-      return data.data || data;
+      return data.data!;
     } catch (error) {
       throw handleApiError(error);
     }

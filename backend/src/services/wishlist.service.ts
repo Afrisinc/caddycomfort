@@ -48,10 +48,7 @@ export class WishlistService {
   /**
    * Add product to wishlist
    */
-  static async addToWishlist(
-    userId: string,
-    productId: string
-  ): Promise<WishlistItem> {
+  static async addToWishlist(userId: string, productId: string): Promise<WishlistItem> {
     // Check if product exists
     const product = await prisma.product.findUnique({
       where: { id: productId },
@@ -86,10 +83,7 @@ export class WishlistService {
   /**
    * Remove product from wishlist
    */
-  static async removeFromWishlist(
-    userId: string,
-    wishlistItemId: string
-  ): Promise<void> {
+  static async removeFromWishlist(userId: string, wishlistItemId: string): Promise<void> {
     const item = await prisma.wishlistItem.findFirst({
       where: {
         id: wishlistItemId,
@@ -109,10 +103,7 @@ export class WishlistService {
   /**
    * Remove product from wishlist by product ID
    */
-  static async removeByProductId(
-    userId: string,
-    productId: string
-  ): Promise<void> {
+  static async removeByProductId(userId: string, productId: string): Promise<void> {
     const item = await prisma.wishlistItem.findUnique({
       where: {
         userId_productId: {
@@ -139,10 +130,7 @@ export class WishlistService {
   /**
    * Check if product is in wishlist
    */
-  static async isInWishlist(
-    userId: string,
-    productId: string
-  ): Promise<boolean> {
+  static async isInWishlist(userId: string, productId: string): Promise<boolean> {
     const item = await prisma.wishlistItem.findUnique({
       where: {
         userId_productId: {

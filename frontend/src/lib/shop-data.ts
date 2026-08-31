@@ -25,7 +25,7 @@ export interface ShopProductsResult {
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
   try {
-    return await fetchApi<Category>(`/categories/slug/${slug}`, 300);
+    return await fetchApi<Category>(`/categories/slug/${slug}`);
   } catch {
     return null;
   }
@@ -45,30 +45,32 @@ export async function getShopProducts(filters: ShopFilters): Promise<ShopProduct
   if (filters.sortBy) params.append('sortBy', filters.sortBy);
   if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
 
-  return fetchApi<ShopProductsResult>(`/products?${params.toString()}`, 60);
+  return fetchApi<ShopProductsResult>(`/products?${params.toString()}`);
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
   try {
-    const data = await fetchApi<any>(`/products/${id}`, 60);
+    const data = await fetchApi<any>(`/products/${id}`);
     return (data?.product || data) as Product;
   } catch {
     return null;
   }
 }
 
-export async function getRelatedProducts(categoryId: string | undefined, excludeId: string): Promise<Product[]> {
+export async function getRelatedProducts(
+  categoryId: string | undefined,
+  excludeId: string,
+): Promise<Product[]> {
   if (!categoryId) return [];
   const { products } = await fetchApi<{ products: Product[] }>(
     `/products?categoryId=${categoryId}&isActive=true&limit=5`,
-    60
   );
   return products.filter((p) => p.id !== excludeId).slice(0, 4);
 }
 
 export async function getProductReviews(productId: string): Promise<ProductReviewStats | null> {
   try {
-    return await fetchApi<ProductReviewStats>(`/reviews/products/${productId}`, 60);
+    return await fetchApi<ProductReviewStats>(`/reviews/products/${productId}`);
   } catch {
     return null;
   }

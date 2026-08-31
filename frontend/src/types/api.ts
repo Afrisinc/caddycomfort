@@ -234,23 +234,12 @@ export interface Address {
 
 // Order Types
 export type OrderStatus =
-  | 'PENDING'
-  | 'PROCESSING'
-  | 'CONFIRMED'
-  | 'SHIPPED'
-  | 'DELIVERED'
-  | 'CANCELLED'
-  | 'REFUNDED';
+  'PENDING' | 'PROCESSING' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED';
 
 export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
 
 export type PaymentMethod =
-  | 'CREDIT_CARD'
-  | 'DEBIT_CARD'
-  | 'PAYPAL'
-  | 'BANK_TRANSFER'
-  | 'MOBILE_MONEY'
-  | 'CASH_ON_DELIVERY';
+  'CREDIT_CARD' | 'DEBIT_CARD' | 'PAYPAL' | 'BANK_TRANSFER' | 'MOBILE_MONEY' | 'CASH_ON_DELIVERY';
 
 export interface OrderItem {
   id: string;
@@ -385,7 +374,13 @@ export interface DashboardRecentOrder {
   status: OrderStatus;
   total: number;
   createdAt: string;
-  user: { id: string; email: string; firstName: string | null; lastName: string | null; name: string | null };
+  user: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    name: string | null;
+  };
   items: { productName: string; quantity: number; price: number }[];
 }
 
@@ -528,7 +523,11 @@ export interface StockAdjustmentInput {
 }
 
 export interface BulkAdjustResult {
-  successful: Array<{ productId: string; success: true; result: { product: Product; log: InventoryLogEntry } }>;
+  successful: Array<{
+    productId: string;
+    success: true;
+    result: { product: Product; log: InventoryLogEntry };
+  }>;
   failed: Array<{ productId: string; success: false; error: string }>;
   summary: { total: number; successful: number; failed: number };
 }

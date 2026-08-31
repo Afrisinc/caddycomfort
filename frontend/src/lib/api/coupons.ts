@@ -74,7 +74,11 @@ export const couponsApi = {
   /**
    * Get all coupons (Admin only)
    */
-  getAll: async (filters?: { isActive?: boolean; discountType?: string; isExpired?: boolean }): Promise<Coupon[]> => {
+  getAll: async (filters?: {
+    isActive?: boolean;
+    discountType?: string;
+    isExpired?: boolean;
+  }): Promise<Coupon[]> => {
     try {
       const response = await apiClient.get('/coupons', { params: filters });
       const result = handleApiResponse<{ coupons: Coupon[] }>(response).data!;

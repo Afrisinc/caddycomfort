@@ -215,10 +215,7 @@ export const getProductInventoryLogs = async (req: Request, res: Response): Prom
     const { id } = req.params;
     const { limit } = req.query;
 
-    const logs = await ProductService.getInventoryLogs(
-      id,
-      limit ? parseInt(limit as string) : 50
-    );
+    const logs = await ProductService.getInventoryLogs(id, limit ? parseInt(limit as string) : 50);
 
     res.json({
       success: true,
@@ -238,9 +235,7 @@ export const getProductInventoryLogs = async (req: Request, res: Response): Prom
 export const getFeaturedProducts = async (req: Request, res: Response): Promise<void> => {
   try {
     const { limit } = req.query;
-    const products = await ProductService.getFeatured(
-      limit ? parseInt(limit as string) : 10
-    );
+    const products = await ProductService.getFeatured(limit ? parseInt(limit as string) : 10);
 
     res.json({
       success: true,
@@ -261,7 +256,7 @@ export const getLowStockProducts = async (req: Request, res: Response): Promise<
   try {
     const { threshold } = req.query;
     const products = await ProductService.getLowStock(
-      threshold ? parseInt(threshold as string) : 10
+      threshold ? parseInt(threshold as string) : 10,
     );
 
     res.json({
@@ -361,7 +356,7 @@ export const searchProducts = async (req: Request, res: Response): Promise<void>
 
     const products = await ProductService.search(
       q as string,
-      limit ? parseInt(limit as string) : 20
+      limit ? parseInt(limit as string) : 20,
     );
 
     res.json({

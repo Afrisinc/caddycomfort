@@ -20,7 +20,7 @@ interface UploadOptions {
  */
 export const uploadBase64Image = async (
   base64String: string,
-  options?: UploadOptions
+  options?: UploadOptions,
 ): Promise<string> => {
   try {
     const result = await cloudinary.uploader.upload(base64String, {
@@ -42,12 +42,10 @@ export const uploadBase64Image = async (
  */
 export const uploadMultipleBase64Images = async (
   base64Strings: string[],
-  options?: UploadOptions
+  options?: UploadOptions,
 ): Promise<string[]> => {
   try {
-    const uploadPromises = base64Strings.map((base64) =>
-      uploadBase64Image(base64, options)
-    );
+    const uploadPromises = base64Strings.map((base64) => uploadBase64Image(base64, options));
 
     return await Promise.all(uploadPromises);
   } catch (error: any) {
@@ -61,7 +59,7 @@ export const uploadMultipleBase64Images = async (
  */
 export const uploadBufferImage = async (
   buffer: Buffer,
-  options?: UploadOptions
+  options?: UploadOptions,
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
@@ -78,7 +76,7 @@ export const uploadBufferImage = async (
         } else {
           resolve(result!.secure_url);
         }
-      }
+      },
     );
 
     const readableStream = new Readable();
@@ -129,7 +127,7 @@ export const getOptimizedImageUrl = (
     height?: number;
     quality?: number | 'auto';
     format?: string;
-  }
+  },
 ): string => {
   if (!imageUrl.includes('cloudinary.com')) {
     return imageUrl;

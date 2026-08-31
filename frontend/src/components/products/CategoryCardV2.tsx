@@ -1,9 +1,7 @@
-'use client';
-
 import { Card } from '@/components/ui/card';
 import { ArrowRight } from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
+import Link from '@/components/common/Link';
+import Image from '@/components/common/Image';
 import { motion } from 'framer-motion';
 
 interface CategoryCardProps {
@@ -13,15 +11,12 @@ interface CategoryCardProps {
   className?: string;
 }
 
-export function CategoryCardV2({
-  title,
-  image,
-  href = '#',
-  className = '',
-}: CategoryCardProps) {
+export function CategoryCardV2({ title, image, href = '#', className = '' }: CategoryCardProps) {
   return (
     <Link href={href}>
-      <Card className={`group relative overflow-hidden border-0 shadow-md hover:shadow-2xl transition-all duration-500 cursor-pointer bg-gradient-to-br from-background to-muted/30 h-[160px] md:h-[180px] ${className}`}>
+      <Card
+        className={`group relative overflow-hidden border-0 shadow-md hover:shadow-2xl transition-all duration-500 cursor-pointer bg-gradient-to-br from-background to-muted/30 h-[160px] md:h-[180px] ${className}`}
+      >
         {/* Background Image with Overlay */}
         <div className="absolute inset-0">
           {image ? (
@@ -82,4 +77,3 @@ export function CategoryCardV2({
     </Link>
   );
 }
-

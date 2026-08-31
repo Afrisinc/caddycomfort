@@ -7,12 +7,14 @@ Use this checklist to verify all features are working correctly.
 ## ✅ Homepage Tests
 
 ### Hero Carousel
+
 - [ ] Images slide automatically (5-second interval)
 - [ ] Navigation dots work
 - [ ] Previous/Next arrows function
 - [ ] Carousel is responsive on mobile
 
 ### Sections
+
 - [ ] Featured categories display correctly
 - [ ] Featured products load
 - [ ] Flash sale countdown works
@@ -23,6 +25,7 @@ Use this checklist to verify all features are working correctly.
 ## ✅ Navigation Tests
 
 ### Desktop Navbar
+
 - [ ] Logo links to homepage
 - [ ] All navigation links work (Shop, Collections, New Arrivals, About)
 - [ ] Search bar appears and accepts input
@@ -33,12 +36,14 @@ Use this checklist to verify all features are working correctly.
 - [ ] Cart count updates when items added/removed
 
 ### Mobile Navbar
+
 - [ ] Hamburger menu opens sidebar
 - [ ] Search bar works in mobile menu
 - [ ] All navigation links accessible
 - [ ] Sidebar closes after navigation
 
 ### Footer
+
 - [ ] All shop category links work
 - [ ] Help section links (Contact, Shipping, Returns, FAQ) work
 - [ ] Privacy Policy link works
@@ -51,6 +56,7 @@ Use this checklist to verify all features are working correctly.
 ## ✅ Search Tests
 
 ### Search Bar
+
 - [ ] Input accepts text
 - [ ] Suggestions appear after 2 characters
 - [ ] Debouncing works (300ms delay)
@@ -64,6 +70,7 @@ Use this checklist to verify all features are working correctly.
 - [ ] Clicking outside closes dropdown
 
 ### Search Results Page (`/search?q=...`)
+
 - [ ] Results display correctly
 - [ ] "No results" message shows when applicable
 - [ ] Price filter slider works
@@ -79,6 +86,7 @@ Use this checklist to verify all features are working correctly.
 ## ✅ Shop & Products Tests
 
 ### Shop Page (`/shop`)
+
 - [ ] Products display in grid
 - [ ] Price filter slider adjusts range
 - [ ] Size checkboxes filter products
@@ -89,6 +97,7 @@ Use this checklist to verify all features are working correctly.
 - [ ] Mobile filter sheet accessible
 
 ### Product Detail Page (`/shop/[id]`)
+
 - [ ] Main image displays
 - [ ] Thumbnail gallery works
 - [ ] Size selector functions
@@ -105,6 +114,7 @@ Use this checklist to verify all features are working correctly.
 ## ✅ Cart Tests
 
 ### Cart Page (`/cart`)
+
 - [ ] Cart items display with thumbnails
 - [ ] Quantity can be increased
 - [ ] Quantity can be decreased
@@ -126,6 +136,7 @@ Use this checklist to verify all features are working correctly.
 ## ✅ Checkout Tests
 
 ### Checkout Page (`/checkout`)
+
 - [ ] Progress stepper shows current step
 - [ ] Step 1: Shipping form displays
   - [ ] All fields accept input
@@ -150,6 +161,7 @@ Use this checklist to verify all features are working correctly.
 ## ✅ Authentication Tests
 
 ### Login Page (`/login`)
+
 - [ ] Login tab displays form
 - [ ] Register tab displays form
 - [ ] Email field accepts input
@@ -166,6 +178,7 @@ Use this checklist to verify all features are working correctly.
 ## ✅ Account Tests
 
 ### Account Dashboard (`/account`)
+
 - [ ] Welcome message displays with username
 - [ ] Stats cards show correct numbers
   - [ ] Total Orders
@@ -180,6 +193,7 @@ Use this checklist to verify all features are working correctly.
 - [ ] Navigation tabs work (Profile, Orders, Wishlist)
 
 ### Profile Page (`/account/profile`)
+
 - [ ] Form pre-filled with user data
 - [ ] All fields editable
 - [ ] "Save Changes" button works
@@ -187,6 +201,7 @@ Use this checklist to verify all features are working correctly.
 - [ ] Avatar upload works (if implemented)
 
 ### Orders Page (`/account/orders`)
+
 - [ ] Order list displays
 - [ ] Order cards show correct info
   - [ ] Order number
@@ -199,6 +214,7 @@ Use this checklist to verify all features are working correctly.
 - [ ] Empty state displays if no orders
 
 ### Wishlist Page (`/account/wishlist`)
+
 - [ ] Wishlist items display
 - [ ] Remove from wishlist works
 - [ ] Add to cart from wishlist works
@@ -210,6 +226,7 @@ Use this checklist to verify all features are working correctly.
 ## ✅ CMS Pages Tests
 
 ### About Page (`/about`)
+
 - [ ] Brand story section displays
 - [ ] Mission statement visible
 - [ ] Values section displays
@@ -217,6 +234,7 @@ Use this checklist to verify all features are working correctly.
 - [ ] All apostrophes display correctly (not &apos;)
 
 ### Contact Page (`/contact`)
+
 - [ ] Contact form displays
 - [ ] Name field accepts input
 - [ ] Email field validates format
@@ -232,6 +250,7 @@ Use this checklist to verify all features are working correctly.
 ## ✅ Legal Pages Tests (NEW)
 
 ### Shipping & Returns Page (`/shipping`)
+
 - [ ] Page loads without errors
 - [ ] Domestic shipping section displays
 - [ ] International shipping section displays
@@ -243,6 +262,7 @@ Use this checklist to verify all features are working correctly.
 - [ ] Icons render correctly
 
 ### FAQ Page (`/faq`)
+
 - [ ] Page loads without errors
 - [ ] Accordion sections work
   - [ ] Orders & Payments section expands/collapses
@@ -255,6 +275,7 @@ Use this checklist to verify all features are working correctly.
 - [ ] Only one section open at a time
 
 ### Privacy Policy Page (`/privacy`)
+
 - [ ] Page loads without errors
 - [ ] All sections display
   - [ ] Data collection
@@ -270,6 +291,7 @@ Use this checklist to verify all features are working correctly.
 - [ ] Shield icon displays
 
 ### Terms & Conditions Page (`/terms`)
+
 - [ ] Page loads without errors
 - [ ] All sections display
   - [ ] Agreement to terms
@@ -288,6 +310,7 @@ Use this checklist to verify all features are working correctly.
 - [ ] FileText icon displays
 
 ### 404 Not Found Page (`/not-found`)
+
 - [ ] Custom 404 page displays
 - [ ] "404" heading visible
 - [ ] "Page Not Found" message displays
@@ -300,6 +323,7 @@ Use this checklist to verify all features are working correctly.
 ## ✅ Responsive Design Tests
 
 ### Mobile (< 768px)
+
 - [ ] Navigation collapses to hamburger menu
 - [ ] Search bar works in mobile menu
 - [ ] Product grids stack (1 column)
@@ -311,6 +335,7 @@ Use this checklist to verify all features are working correctly.
 - [ ] Filters open in sheet/modal
 
 ### Tablet (768px - 1024px)
+
 - [ ] Navigation displays correctly
 - [ ] Product grids show 2 columns
 - [ ] Sidebar filters collapse to drawer
@@ -318,6 +343,7 @@ Use this checklist to verify all features are working correctly.
 - [ ] Forms fit screen width
 
 ### Desktop (> 1024px)
+
 - [ ] Full navigation bar displays
 - [ ] Search bar in navbar
 - [ ] Product grids show 3-4 columns
@@ -330,6 +356,7 @@ Use this checklist to verify all features are working correctly.
 ## ✅ Performance Tests
 
 ### Loading Times
+
 - [ ] Homepage loads in < 3 seconds
 - [ ] Product pages load in < 2 seconds
 - [ ] Search results appear in < 1 second
@@ -337,6 +364,7 @@ Use this checklist to verify all features are working correctly.
 - [ ] No layout shift during page load
 
 ### Interactions
+
 - [ ] Search debouncing prevents excessive requests
 - [ ] Cart updates smoothly
 - [ ] Page transitions are smooth
@@ -348,21 +376,25 @@ Use this checklist to verify all features are working correctly.
 ## ✅ Browser Compatibility
 
 ### Chromium (Chrome, Edge)
+
 - [ ] All features work
 - [ ] Styling correct
 - [ ] Animations smooth
 
 ### Firefox
+
 - [ ] All features work
 - [ ] Styling correct
 - [ ] Animations smooth
 
 ### Safari
+
 - [ ] All features work
 - [ ] Styling correct
 - [ ] Animations smooth
 
 ### Mobile Browsers
+
 - [ ] iOS Safari works
 - [ ] Android Chrome works
 - [ ] Touch gestures supported
@@ -372,12 +404,14 @@ Use this checklist to verify all features are working correctly.
 ## ✅ Data Persistence
 
 ### LocalStorage
+
 - [ ] Cart persists after page reload
 - [ ] Recent searches persist
 - [ ] Auth token persists (if logged in)
 - [ ] Theme preference persists (if implemented)
 
 ### State Management
+
 - [ ] Zustand cart store works
 - [ ] Zustand auth store works
 - [ ] State updates trigger re-renders
@@ -388,6 +422,7 @@ Use this checklist to verify all features are working correctly.
 ## ✅ Accessibility
 
 ### Keyboard Navigation
+
 - [ ] Tab order is logical
 - [ ] All interactive elements focusable
 - [ ] Focus visible (outline/ring)
@@ -395,12 +430,14 @@ Use this checklist to verify all features are working correctly.
 - [ ] Arrow keys work in dropdowns
 
 ### Screen Readers
+
 - [ ] Alt text on all images
 - [ ] ARIA labels on buttons
 - [ ] Form labels associated
 - [ ] Error messages announced
 
 ### Visual
+
 - [ ] Color contrast meets WCAG AA
 - [ ] Text is resizable
 - [ ] No content lost at 200% zoom
@@ -411,12 +448,14 @@ Use this checklist to verify all features are working correctly.
 ## ✅ SEO
 
 ### Meta Tags
+
 - [ ] Title tags on all pages
 - [ ] Meta descriptions on all pages
 - [ ] Open Graph tags (if implemented)
 - [ ] Canonical URLs set
 
 ### Content
+
 - [ ] Semantic HTML (h1, h2, etc.)
 - [ ] Descriptive link text
 - [ ] Image alt attributes
@@ -457,6 +496,7 @@ Use this checklist to verify all features are working correctly.
 ## ✅ Sign-off
 
 All critical tests passing:
+
 - [ ] Homepage
 - [ ] Shop & Products
 - [ ] Cart & Checkout

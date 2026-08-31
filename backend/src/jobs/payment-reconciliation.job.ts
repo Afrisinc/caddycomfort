@@ -20,7 +20,7 @@ export function initializePaymentReconciliationJob(): void {
     },
     null,
     true,
-    'UTC'
+    'UTC',
   );
 
   logger.info({ schedule: CRON_SCHEDULE }, 'Payment reconciliation job initialized');
@@ -31,7 +31,12 @@ export function stopPaymentReconciliationJob(): void {
   job = null;
 }
 
-export async function runPaymentReconciliation(): Promise<{ checked: number; confirmed: number; failed: number; staled: number }> {
+export async function runPaymentReconciliation(): Promise<{
+  checked: number;
+  confirmed: number;
+  failed: number;
+  staled: number;
+}> {
   const stats = { checked: 0, confirmed: 0, failed: 0, staled: 0 };
 
   if (!paymentClient) {
@@ -52,7 +57,14 @@ export async function runPaymentReconciliation(): Promise<{ checked: number; con
         paymentIntentId: { not: null },
         paymentMethod: { in: ['CREDIT_CARD', 'DEBIT_CARD', 'MOBILE_MONEY'] },
       },
-      select: { id: true, orderNumber: true, paymentStatus: true, paymentIntentId: true, status: true, createdAt: true },
+      select: {
+        id: true,
+        orderNumber: true,
+        paymentStatus: true,
+        paymentIntentId: true,
+        status: true,
+        createdAt: true,
+      },
     });
 
     if (pendingOrders.length === 0) {

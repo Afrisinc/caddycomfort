@@ -1,7 +1,5 @@
-'use client';
-
 import { useState } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from '@/router/compat';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -12,7 +10,15 @@ import {
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { SlidersHorizontal, X } from 'lucide-react';
-import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { SIZES, COLORS, MAX_PRICE } from '@/lib/shopFilters';
 import { buildSearchUrl } from '@/lib/searchParamsUtil';
 
@@ -47,12 +53,16 @@ export function ShopFilters({ categoryName, totalCount, children }: ShopFiltersP
   };
 
   const toggleSize = (size: string) => {
-    const next = selectedSizes.includes(size) ? selectedSizes.filter((s) => s !== size) : [...selectedSizes, size];
+    const next = selectedSizes.includes(size)
+      ? selectedSizes.filter((s) => s !== size)
+      : [...selectedSizes, size];
     navigate({ sizes: next.length ? next : null });
   };
 
   const toggleColor = (color: string) => {
-    const next = selectedColors.includes(color) ? selectedColors.filter((c) => c !== color) : [...selectedColors, color];
+    const next = selectedColors.includes(color)
+      ? selectedColors.filter((c) => c !== color)
+      : [...selectedColors, color];
     navigate({ colors: next.length ? next : null });
   };
 
@@ -65,7 +75,8 @@ export function ShopFilters({ categoryName, totalCount, children }: ShopFiltersP
     router.push('/shop');
   };
 
-  const activeFiltersCount = selectedSizes.length + selectedColors.length + (minPrice > 0 || maxPrice < MAX_PRICE ? 1 : 0);
+  const activeFiltersCount =
+    selectedSizes.length + selectedColors.length + (minPrice > 0 || maxPrice < MAX_PRICE ? 1 : 0);
 
   const filterSectionContent = (
     <div className="space-y-8">
@@ -96,7 +107,9 @@ export function ShopFilters({ categoryName, totalCount, children }: ShopFiltersP
               variant={selectedSizes.includes(size) ? 'default' : 'outline'}
               size="sm"
               onClick={() => toggleSize(size)}
-              className={selectedSizes.includes(size) ? 'bg-accent-rose hover:bg-accent-rose-dark' : ''}
+              className={
+                selectedSizes.includes(size) ? 'bg-accent-rose hover:bg-accent-rose-dark' : ''
+              }
             >
               {size}
             </Button>
@@ -138,7 +151,9 @@ export function ShopFilters({ categoryName, totalCount, children }: ShopFiltersP
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-serif">Filters</h2>
             {activeFiltersCount > 0 && (
-              <span className="text-sm text-accent-rose font-medium">{activeFiltersCount} active</span>
+              <span className="text-sm text-accent-rose font-medium">
+                {activeFiltersCount} active
+              </span>
             )}
           </div>
           {filterSectionContent}
@@ -182,7 +197,10 @@ export function ShopFilters({ categoryName, totalCount, children }: ShopFiltersP
 
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Sort by:</span>
-            <Select value={sort} onValueChange={(value) => navigate({ sort: value === 'featured' ? null : value })}>
+            <Select
+              value={sort}
+              onValueChange={(value) => navigate({ sort: value === 'featured' ? null : value })}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Featured" />
               </SelectTrigger>

@@ -39,12 +39,12 @@ async function testRegister() {
     console.log('User ID:', response.data.data.user.id);
     console.log('Email:', response.data.data.user.email);
     console.log('Role:', response.data.data.user.role);
-    
+
     // Store tokens
     accessToken = response.data.data.accessToken;
     refreshToken = response.data.data.refreshToken;
     userId = response.data.data.user.id;
-    
+
     console.log('Access Token:', accessToken.substring(0, 50) + '...');
     console.log('Refresh Token:', refreshToken.substring(0, 50) + '...');
     return true;
@@ -71,12 +71,12 @@ async function testLogin() {
     console.log('✅ Login successful!');
     console.log('User:', response.data.data.user.email);
     console.log('Role:', response.data.data.user.role);
-    
+
     // Store tokens
     accessToken = response.data.data.accessToken;
     refreshToken = response.data.data.refreshToken;
     userId = response.data.data.user.id;
-    
+
     console.log('Access Token received');
     console.log('Refresh Token received');
     return true;
@@ -126,7 +126,7 @@ async function testUpdateProfile() {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-      }
+      },
     );
     console.log('✅ Profile updated successfully!');
     console.log('New Name:', response.data.data.user.firstName, response.data.data.user.lastName);
@@ -191,21 +191,21 @@ async function testRefreshToken() {
   console.log('\n🔄 Test 7: Refresh access token...');
   const oldAccessToken = accessToken;
   const oldRefreshToken = refreshToken;
-  
+
   try {
     const response = await axios.post(`${API_URL}/refresh`, {
       refreshToken: refreshToken,
     });
     console.log('✅ Token refreshed successfully!');
-    
+
     // Store new tokens
     accessToken = response.data.data.accessToken;
     refreshToken = response.data.data.refreshToken;
-    
+
     console.log('New Access Token received');
     console.log('New Refresh Token received');
     console.log('Old tokens are now invalid (token rotation)');
-    
+
     // Verify old refresh token is revoked
     console.log('\n   Testing if old refresh token is revoked...');
     try {
@@ -218,7 +218,7 @@ async function testRefreshToken() {
         console.log('   ✅ Old refresh token correctly revoked');
       }
     }
-    
+
     return true;
   } catch (error: any) {
     console.error('❌ Token refresh failed:', error.response?.data || error.message);
@@ -232,7 +232,7 @@ async function testRefreshToken() {
 async function testChangePassword() {
   console.log('\n🔑 Test 8: Change password...');
   const newPassword = 'NewSecurePass456!';
-  
+
   try {
     const response = await axios.post(
       `${API_URL}/change-password`,
@@ -244,14 +244,14 @@ async function testChangePassword() {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-      }
+      },
     );
     console.log('✅ Password changed successfully!');
     console.log('Message:', response.data.message);
-    
+
     // Update test user password for next login
     testUser.password = newPassword;
-    
+
     // Old refresh token should be invalid now
     console.log('\n   Testing if all tokens are revoked after password change...');
     try {
@@ -264,11 +264,11 @@ async function testChangePassword() {
         console.log('   ✅ All tokens correctly revoked after password change');
       }
     }
-    
+
     // Need to login again
     console.log('\n   Logging in with new password...');
     await testLogin();
-    
+
     return true;
   } catch (error: any) {
     console.error('❌ Change password failed:', error.response?.data || error.message);
@@ -309,7 +309,7 @@ async function testLogout() {
     });
     console.log('✅ Logout successful!');
     console.log('Message:', response.data.message);
-    
+
     // Try to use revoked token
     console.log('\n   Testing if refresh token is revoked...');
     try {
@@ -322,7 +322,7 @@ async function testLogout() {
         console.log('   ✅ Refresh token correctly revoked');
       }
     }
-    
+
     return true;
   } catch (error: any) {
     console.error('❌ Logout failed:', error.response?.data || error.message);
@@ -335,19 +335,19 @@ async function testLogout() {
  */
 async function testLogoutAll() {
   console.log('\n🚪 Test 11: Logout from all devices...');
-  
+
   // First login to get tokens
   await testLogin();
-  
+
   // Create another session (simulate another device)
   const response2 = await axios.post(`${API_URL}/login`, {
     email: testUser.email,
     password: testUser.password,
   });
   const refreshToken2 = response2.data.data.refreshToken;
-  
+
   console.log('Created 2 sessions (2 refresh tokens)');
-  
+
   try {
     const response = await axios.post(
       `${API_URL}/logout-all`,
@@ -356,11 +356,11 @@ async function testLogoutAll() {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-      }
+      },
     );
     console.log('✅ Logged out from all devices!');
     console.log('Message:', response.data.message);
-    
+
     // Try to use both refresh tokens
     console.log('\n   Testing if all refresh tokens are revoked...');
     try {
@@ -373,7 +373,7 @@ async function testLogoutAll() {
         console.log('   ✅ First refresh token correctly revoked');
       }
     }
-    
+
     try {
       await axios.post(`${API_URL}/refresh`, {
         refreshToken: refreshToken2,
@@ -384,7 +384,7 @@ async function testLogoutAll() {
         console.log('   ✅ Second refresh token correctly revoked');
       }
     }
-    
+
     return true;
   } catch (error: any) {
     console.error('❌ Logout all failed:', error.response?.data || error.message);
@@ -399,12 +399,12 @@ async function runTests() {
   console.log('🧪 Starting Authentication System Tests...');
   console.log('API URL:', API_URL);
   console.log('='.repeat(60));
-  
+
   const results = {
     passed: 0,
     failed: 0,
   };
-  
+
   // Run tests sequentially
   const tests = [
     { name: 'Register', fn: testRegister },
@@ -419,7 +419,7 @@ async function runTests() {
     { name: 'Logout', fn: testLogout },
     { name: 'Logout All', fn: testLogoutAll },
   ];
-  
+
   for (const test of tests) {
     try {
       const result = await test.fn();
@@ -432,11 +432,11 @@ async function runTests() {
       console.error(`\n❌ Test "${test.name}" threw an error:`, error);
       results.failed++;
     }
-    
+
     // Wait a bit between tests
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
-  
+
   // Print summary
   console.log('\n' + '='.repeat(60));
   console.log('📊 Test Summary:');
@@ -444,7 +444,7 @@ async function runTests() {
   console.log(`❌ Failed: ${results.failed}`);
   console.log(`📈 Total: ${results.passed + results.failed}`);
   console.log('='.repeat(60));
-  
+
   if (results.failed === 0) {
     console.log('\n🎉 All tests passed! Authentication system is working correctly.');
   } else {

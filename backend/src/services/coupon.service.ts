@@ -243,7 +243,9 @@ export class CouponService {
 
     // Check if coupon has been used in orders
     if (coupon.orders.length > 0) {
-      throw new Error('Cannot delete coupon that has been used in orders. Consider deactivating instead.');
+      throw new Error(
+        'Cannot delete coupon that has been used in orders. Consider deactivating instead.',
+      );
     }
 
     await prisma.coupon.delete({
@@ -257,7 +259,7 @@ export class CouponService {
   static async validate(
     code: string,
     userId: string,
-    orderTotal: number
+    orderTotal: number,
   ): Promise<ValidateCouponResult> {
     const coupon = await prisma.coupon.findUnique({
       where: { code: code.toUpperCase() },

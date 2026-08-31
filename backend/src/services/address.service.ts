@@ -32,10 +32,7 @@ export class AddressService {
   static async getUserAddresses(userId: string): Promise<Address[]> {
     return prisma.address.findMany({
       where: { userId },
-      orderBy: [
-        { isDefault: 'desc' },
-        { createdAt: 'desc' }
-      ],
+      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
     });
   }
 
@@ -72,10 +69,7 @@ export class AddressService {
   /**
    * Create new address
    */
-  static async create(
-    userId: string,
-    data: CreateAddressData
-  ): Promise<Address> {
+  static async create(userId: string, data: CreateAddressData): Promise<Address> {
     // If this is set as default, unset other defaults
     if (data.isDefault) {
       await prisma.address.updateMany({
@@ -106,7 +100,7 @@ export class AddressService {
   static async update(
     addressId: string,
     userId: string,
-    data: UpdateAddressData
+    data: UpdateAddressData,
   ): Promise<Address> {
     // Verify address exists and belongs to user
     await this.getById(addressId, userId);

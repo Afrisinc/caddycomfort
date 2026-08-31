@@ -38,45 +38,54 @@ backend/src/
 ## Next Steps for Development
 
 ### 1. Authentication
+
 - Create `auth.controller.ts`, `auth.service.ts`, `auth.routes.ts`
 - Implement JWT token generation and validation
 - Add `auth.middleware.ts` for protected routes
 
 ### 2. Products
+
 - Create `product.controller.ts`, `product.service.ts`, `product.routes.ts`
 - Implement CRUD operations
 - Add filtering, pagination, and search
 
 ### 3. Categories
+
 - Create category management endpoints
 - Implement category hierarchy
 
 ### 4. Cart & Wishlist
+
 - Cart management endpoints
 - Wishlist functionality
 
 ### 5. Orders
+
 - Order creation and management
 - Order status updates
 - Payment integration
 
 ### 6. Reviews
+
 - Product review system
 - Rating calculations
 
 ## Database Setup
 
 1. Update `.env` with your PostgreSQL connection:
+
    ```
    DATABASE_URL="postgresql://user:password@localhost:5432/clementine_shop"
    ```
 
 2. Run Prisma migrations:
+
    ```bash
    npm run prisma:migrate
    ```
 
 3. Generate Prisma client:
+
    ```bash
    npm run prisma:generate
    ```

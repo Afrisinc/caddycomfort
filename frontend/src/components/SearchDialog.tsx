@@ -1,8 +1,6 @@
-'use client';
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import { useRouter } from '@/router/compat';
+import Image from '@/components/common/Image';
 import { Search, Clock, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -53,7 +51,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
   }, [debouncedQuery, fetchSuggestions]);
 
   const saveRecentSearch = (searchTerm: string) => {
-    const updated = [searchTerm, ...recentSearches.filter(s => s !== searchTerm)].slice(0, 5);
+    const updated = [searchTerm, ...recentSearches.filter((s) => s !== searchTerm)].slice(0, 5);
     setRecentSearches(updated);
     localStorage.setItem('recentSearches', JSON.stringify(updated));
   };
@@ -79,13 +77,11 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedIndex(prev =>
-          prev < suggestions.length - 1 ? prev + 1 : prev
-        );
+        setSelectedIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : prev));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setSelectedIndex(prev => (prev > 0 ? prev - 1 : -1));
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
         break;
       case 'Enter':
         e.preventDefault();
@@ -103,7 +99,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
 
   const clearRecent = (term: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const updated = recentSearches.filter(s => s !== term);
+    const updated = recentSearches.filter((s) => s !== term);
     setRecentSearches(updated);
     localStorage.setItem('recentSearches', JSON.stringify(updated));
   };
@@ -197,9 +193,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
                         <div
                           key={product.id}
                           className={`flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-colors ${
-                            index === selectedIndex
-                              ? 'bg-accent-rose/10'
-                              : 'hover:bg-muted'
+                            index === selectedIndex ? 'bg-accent-rose/10' : 'hover:bg-muted'
                           }`}
                           onClick={() => goToProduct(product)}
                         >

@@ -26,10 +26,14 @@ export class DashboardController {
       const validPeriods = ['week', 'month', 'year'];
 
       if (!validPeriods.includes(period as string)) {
-        return res.status(400).json({ success: false, message: 'Invalid period. Must be week, month, or year' });
+        return res
+          .status(400)
+          .json({ success: false, message: 'Invalid period. Must be week, month, or year' });
       }
 
-      const analytics = await DashboardService.getSalesAnalytics(period as 'week' | 'month' | 'year');
+      const analytics = await DashboardService.getSalesAnalytics(
+        period as 'week' | 'month' | 'year',
+      );
       res.json({ success: true, data: analytics });
     } catch (error) {
       res.status(500).json({

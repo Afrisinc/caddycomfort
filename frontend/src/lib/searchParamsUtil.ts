@@ -1,7 +1,7 @@
 export function buildSearchUrl(
   pathname: string,
   current: URLSearchParams,
-  updates: Record<string, string | string[] | null>
+  updates: Record<string, string | string[] | null>,
 ): string {
   const next = new URLSearchParams(current.toString());
 

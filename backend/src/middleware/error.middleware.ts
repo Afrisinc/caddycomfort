@@ -1,14 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../config/logger';
 
-export const errorHandler = (
-  err: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
   const statusCode = res.statusCode !== 200 ? res.statusCode : 500;
-  
+
   // Console log for better visibility in development
   console.error('\n🔴 ERROR OCCURRED:');
   console.error(`Method: ${req.method} ${req.url}`);
@@ -18,7 +13,7 @@ export const errorHandler = (
     console.error('Stack:', err.stack);
   }
   console.error('');
-  
+
   logger.error({
     err,
     req: {
@@ -28,7 +23,7 @@ export const errorHandler = (
       query: req.query,
     },
   });
-  
+
   res.status(statusCode).json({
     success: false,
     message: err.message,
