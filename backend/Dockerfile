@@ -5,7 +5,7 @@ FROM node:20.11.1-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache openssl
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci
 
 # ----- Build (prisma client + tsc) ---------------------------------------
 FROM node:20.11.1-alpine AS builder
@@ -29,10 +29,13 @@ ENV PORT=5000
 ENV SERVE_FRONTEND=false
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev
 
+# Reuse the client generated in the builder stage instead of running
+# `prisma generate` a second time (saves a full engine-resolve + codegen pass).
 COPY prisma ./prisma
-RUN npx prisma generate
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 COPY --from=builder /app/dist ./dist
 

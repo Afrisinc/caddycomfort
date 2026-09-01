@@ -4,7 +4,7 @@
 FROM node:20.11.1-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci
 
 # ----- Build (static Vite bundle) -----------------------------------------
 FROM node:20.11.1-alpine AS builder
