@@ -20,6 +20,7 @@ import { getProductById, getRelatedProducts, getProductReviews } from '@/lib/sho
 import { toProductCardProps } from '@/lib/productCard';
 import { Product, ProductReviewStats } from '@/types/api';
 import NotFoundPage from '@/pages/NotFoundPage';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ShopProductPage() {
   const { id } = useParams<{ id: string }>();
@@ -62,7 +63,29 @@ export default function ShopProductPage() {
     };
   }, [id]);
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-background pt-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <Skeleton className="h-5 w-64 mb-6" />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-16">
+              <Skeleton className="aspect-square w-full rounded-lg" />
+              <div className="space-y-4">
+                <Skeleton className="h-8 w-3/4" />
+                <Skeleton className="h-5 w-1/3" />
+                <Skeleton className="h-6 w-1/4" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-11 w-40" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
   if (!product) return <NotFoundPage />;
 
   const images =

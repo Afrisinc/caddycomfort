@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -rnoE \"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}\" frontend/src --include=\"*.tsx\" --include=\"*.ts\")",
+      "Bash(sips -g pixelWidth -g pixelHeight ../logo/logo.png)",
+      "Read(//tmp/**)",
+      "Read(//private/tmp/**)"
+    ]
+  }
+}

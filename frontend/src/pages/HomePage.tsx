@@ -27,18 +27,31 @@ export default function HomePage() {
   const [flashSaleProducts, setFlashSaleProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    getHomeCategories()
-      .then(setCategories)
-      .catch(() => setCategories([]));
-    getFeaturedProducts()
-      .then(setFeaturedProducts)
-      .catch(() => setFeaturedProducts([]));
-    getMostSellingProducts()
-      .then(setMostSellingProducts)
-      .catch(() => setMostSellingProducts([]));
-    getFlashSaleProducts()
-      .then(setFlashSaleProducts)
-      .catch(() => setFlashSaleProducts([]));
+    let cancelled = false;
+
+    // Each request is independent, so each fires immediately and updates
+    // its own section as soon as it lands — sections reveal progressively
+    // rather than all waiting on whichever request is slowest.
+    getHomeCategories().then(
+      (data) => !cancelled && setCategories(data),
+      () => !cancelled && setCategories([]),
+    );
+    getFeaturedProducts().then(
+      (data) => !cancelled && setFeaturedProducts(data),
+      () => !cancelled && setFeaturedProducts([]),
+    );
+    getMostSellingProducts().then(
+      (data) => !cancelled && setMostSellingProducts(data),
+      () => !cancelled && setMostSellingProducts([]),
+    );
+    getFlashSaleProducts().then(
+      (data) => !cancelled && setFlashSaleProducts(data),
+      () => !cancelled && setFlashSaleProducts([]),
+    );
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const flashSaleEndDate = useMemo(() => {

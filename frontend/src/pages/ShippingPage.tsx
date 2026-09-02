@@ -153,7 +153,7 @@ export default function ShippingPage() {
                   <li className="flex gap-3">
                     <span className="font-semibold text-accent-rose shrink-0">1.</span>
                     <span>
-                      Contact our customer service team at support@clementineshop.rw to initiate a
+                      Contact our customer service team at caddyumutoniwase@gmail.com to initiate a
                       return
                     </span>
                   </li>
@@ -216,17 +216,17 @@ export default function ShippingPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
-                href="mailto:support@clementineshop.rw"
+                href="mailto:caddyumutoniwase@gmail.com"
                 className="text-accent-rose hover:underline font-semibold"
               >
-                support@clementineshop.rw
+                caddyumutoniwase@gmail.com
               </a>
               <span className="hidden sm:inline text-muted-foreground">|</span>
               <a
-                href="tel:+250788888888"
+                href="tel:+250786763654"
                 className="text-accent-rose hover:underline font-semibold"
               >
-                +250 788 888 888
+                +250 786 763 654
               </a>
             </div>
           </div>

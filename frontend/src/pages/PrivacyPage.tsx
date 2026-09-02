@@ -193,10 +193,10 @@ export default function PrivacyPage() {
               </p>
               <div className="bg-card border rounded-lg p-6">
                 <p className="mb-2">
-                  <strong className="text-foreground">Email:</strong> privacy@clementineshop.rw
+                  <strong className="text-foreground">Email:</strong> caddyumutoniwase@gmail.com
                 </p>
                 <p className="mb-2">
-                  <strong className="text-foreground">Phone:</strong> +250 788 888 888
+                  <strong className="text-foreground">Phone:</strong> +250 786 763 654
                 </p>
                 <p>
                   <strong className="text-foreground">Address:</strong> KN 4 Ave, Kigali, Rwanda

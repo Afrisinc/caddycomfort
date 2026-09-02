@@ -3,6 +3,7 @@ import { Category, Product, ProductReviewStats } from '@/types/api';
 
 export interface ShopFilters {
   categoryId?: string;
+  categorySlug?: string;
   minPrice?: number;
   maxPrice?: number;
   sizes?: string[];
@@ -21,6 +22,7 @@ export interface ShopProductsResult {
     total: number;
     totalPages: number;
   };
+  category?: Category | null;
 }
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
@@ -31,10 +33,15 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
   }
 }
 
+// Accepts categorySlug directly so the backend can resolve slug -> id and
+// return the matching category alongside the products in a single request,
+// instead of the caller needing to resolve it first in a separate round trip.
 export async function getShopProducts(filters: ShopFilters): Promise<ShopProductsResult> {
   const params = new URLSearchParams();
 
   if (filters.categoryId) params.append('categoryId', filters.categoryId);
+  if (!filters.categoryId && filters.categorySlug)
+    params.append('categorySlug', filters.categorySlug);
   if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
   if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
   filters.sizes?.forEach((s) => params.append('sizes', s));

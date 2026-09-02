@@ -45,6 +45,7 @@ interface UpdateProductData {
 
 interface ProductFilters {
   categoryId?: string;
+  categorySlug?: string;
   minPrice?: number;
   maxPrice?: number;
   isActive?: boolean;
@@ -166,6 +167,7 @@ export class ProductService {
   static async getAll(filters?: ProductFilters, pagination?: PaginationOptions) {
     const {
       categoryId,
+      categorySlug,
       minPrice,
       maxPrice,
       isActive,
@@ -179,16 +181,30 @@ export class ProductService {
 
     const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc' } = pagination || {};
 
+    let resolvedCategory = null as Awaited<ReturnType<typeof prisma.category.findUnique>> | null;
+    let effectiveCategoryId = categoryId;
+    if (!effectiveCategoryId && categorySlug) {
+      resolvedCategory = await prisma.category.findUnique({ where: { slug: categorySlug } });
+      if (!resolvedCategory) {
+        return {
+          products: [],
+          pagination: { total: 0, page, limit, totalPages: 0 },
+          category: null,
+        };
+      }
+      effectiveCategoryId = resolvedCategory.id;
+    }
+
     // A parent category (e.g. "Women") should also surface products filed
     // under its children (e.g. "Dresses") — most products live one level
     // down, not directly on the parent.
     let categoryIds: string[] | undefined;
-    if (categoryId) {
+    if (effectiveCategoryId) {
       const children = await prisma.category.findMany({
-        where: { parentId: categoryId },
+        where: { parentId: effectiveCategoryId },
         select: { id: true },
       });
-      categoryIds = [categoryId, ...children.map((c) => c.id)];
+      categoryIds = [effectiveCategoryId, ...children.map((c) => c.id)];
     }
 
     // Build where clause
@@ -251,6 +267,7 @@ export class ProductService {
         limit,
         totalPages: Math.ceil(total / limit),
       },
+      ...(categorySlug && { category: resolvedCategory }),
     };
   }
 

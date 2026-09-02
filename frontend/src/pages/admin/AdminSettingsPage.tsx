@@ -80,11 +80,15 @@ function Settings() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="storeEmail">Email</Label>
-                        <Input id="storeEmail" type="email" defaultValue="info@clementine.rw" />
+                        <Input
+                          id="storeEmail"
+                          type="email"
+                          defaultValue="caddyumutoniwase@gmail.com"
+                        />
                       </div>
                       <div>
                         <Label htmlFor="storePhone">Phone</Label>
-                        <Input id="storePhone" defaultValue="+250 788 000 000" />
+                        <Input id="storePhone" defaultValue="+250 786 763 654" />
                       </div>
                     </div>
                     <div>

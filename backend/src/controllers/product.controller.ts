@@ -37,6 +37,7 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
   try {
     const {
       categoryId,
+      categorySlug,
       minPrice,
       maxPrice,
       isActive,
@@ -62,6 +63,7 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
 
     const filters = {
       categoryId: categoryId as string,
+      categorySlug: categorySlug as string,
       minPrice: minPrice ? parseFloat(minPrice as string) : undefined,
       maxPrice: maxPrice ? parseFloat(maxPrice as string) : undefined,
       isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,

@@ -71,7 +71,7 @@ export default function FAQPage() {
         {
           question: 'How do I initiate a return?',
           answer:
-            'Contact our customer service at support@clementineshop.rw with your order number. We&apos;ll provide a return authorization number and shipping instructions.',
+            'Contact our customer service at caddyumutoniwase@gmail.com with your order number. We&apos;ll provide a return authorization number and shipping instructions.',
         },
         {
           question: 'When will I receive my refund?',
@@ -195,10 +195,10 @@ export default function FAQPage() {
               </a>
               <span className="text-muted-foreground">or call</span>
               <a
-                href="tel:+250788888888"
+                href="tel:+250786763654"
                 className="text-accent-rose hover:underline font-semibold"
               >
-                +250 788 888 888
+                +250 786 763 654
               </a>
             </div>
           </div>
