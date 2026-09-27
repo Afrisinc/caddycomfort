@@ -95,7 +95,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     // Login user
-    const result = await AuthService.login(email.toLowerCase(), password);
+    const result = await AuthService.login(email.toLowerCase().trim(), password, {
+      ipAddress: req.get('cf-connecting-ip') || req.ip,
+      userAgent: req.get('user-agent'),
+    });
 
     res.status(200).json({
       success: true,

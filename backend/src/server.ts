@@ -10,6 +10,7 @@ import { requestLogger } from './middleware/logger.middleware';
 import { errorHandler, notFound } from './middleware/error.middleware';
 import routes from './routes';
 import { initializePaymentReconciliationJob } from './jobs/payment-reconciliation.job';
+import { initializeLoginAttemptCleanupJob } from './jobs/login-attempt-cleanup.job';
 
 dotenv.config();
 
@@ -71,6 +72,7 @@ const server = app.listen(PORT, () => {
   logger.info(`🔒 CORS enabled for: ${process.env.CORS_ORIGIN || 'http://localhost:3000'}`);
 
   initializePaymentReconciliationJob();
+  initializeLoginAttemptCleanupJob();
 });
 
 const shutdown = (signal: string) => {

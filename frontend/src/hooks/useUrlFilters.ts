@@ -6,7 +6,7 @@ export const ALL = 'all';
 
 const SEARCH_KEY = 'q';
 
-export function useUrlFilters() {
+export function useUrlFilters({ keep = [] }: { readonly keep?: readonly string[] } = {}) {
   const [params, setParams] = useSearchParams();
   const [search, setSearch] = useState(params.get(SEARCH_KEY) ?? '');
   const debouncedSearch = useDebounce(search.trim(), 350);
@@ -36,10 +36,18 @@ export function useUrlFilters() {
     [setFilter],
   );
 
+  const keepKey = keep.join(',');
   const clearFilters = useCallback(() => {
     setSearch('');
-    setParams(new URLSearchParams());
-  }, [setParams]);
+    setParams((current) => {
+      const next = new URLSearchParams();
+      for (const key of keepKey ? keepKey.split(',') : []) {
+        const value = current.get(key);
+        if (value) next.set(key, value);
+      }
+      return next;
+    });
+  }, [setParams, keepKey]);
 
   return {
     params,
@@ -51,6 +59,6 @@ export function useUrlFilters() {
     page: Math.max(1, Number(params.get('page')) || 1),
     setPage,
     clearFilters,
-    hasFilters: [...params.keys()].some((key) => key !== 'page') || !!search,
+    hasFilters: [...params.keys()].some((key) => key !== 'page' && !keep.includes(key)) || !!search,
   };
 }

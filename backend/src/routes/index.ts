@@ -18,6 +18,7 @@ import paymentRoutes from './payment.routes';
 import webhookRoutes from './webhook.routes';
 import sitemapRoutes from './sitemap.routes';
 import settingsRoutes from './settings.routes';
+import securityRoutes from './security.routes';
 
 const router = Router();
 
@@ -41,5 +42,6 @@ router.use('/payments', paymentRoutes);
 router.use('/webhooks', webhookRoutes);
 router.use('/sitemap.xml', sitemapRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/security', securityRoutes);
 
 export default router;

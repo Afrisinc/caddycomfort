@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { User, UserRole } from '@prisma/client';
 import prisma from '../config/database';
+import { LoginAttemptService, type AttemptContext } from './login-attempt.service';
 import { cache } from '../utils/cache';
 import {
   sendVerificationEmail,
@@ -403,34 +404,41 @@ export class AuthService {
   static async login(
     email: string,
     password: string,
+    context: AttemptContext = {},
   ): Promise<{ user: PublicUser; tokens: AuthTokens }> {
-    // Find user
     const user = await prisma.user.findUnique({
       where: { email },
     });
 
     if (!user) {
+      await LoginAttemptService.record(email, { success: false, reason: 'UNKNOWN_EMAIL' }, context);
       throw new Error('Invalid email or password');
     }
 
-    // Verify password
     const isValidPassword = await this.comparePassword(password, user.password);
 
     if (!isValidPassword) {
+      await LoginAttemptService.record(
+        email,
+        { userId: user.id, success: false, reason: 'WRONG_PASSWORD' },
+        context,
+      );
       throw new Error('Invalid email or password');
     }
 
     if (!user.isActive) {
+      await LoginAttemptService.record(
+        email,
+        { userId: user.id, success: false, reason: 'SUSPENDED' },
+        context,
+      );
       throw new Error('Your account has been suspended. Please contact support.');
     }
 
-    // Generate tokens
     const tokens = await this.generateTokens(user);
+    await LoginAttemptService.record(email, { userId: user.id, success: true }, context);
 
-    // Remove password from response
-    const userWithoutPassword = toPublicUser(user);
-
-    return { user: userWithoutPassword, tokens };
+    return { user: toPublicUser(user), tokens };
   }
 
   /**

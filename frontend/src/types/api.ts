@@ -194,6 +194,7 @@ export interface Customer {
   ordersCount: number;
   totalSpent: number;
   lastOrderAt: string | null;
+  lastLoginAt: string | null;
   status: CustomerStatus;
 }
 
@@ -571,3 +572,40 @@ export type ApiError = {
   error?: string;
   statusCode?: number;
 };
+
+export type LoginRange = '24h' | '7d' | '30d';
+export type LoginFailureReason = 'UNKNOWN_EMAIL' | 'WRONG_PASSWORD' | 'SUSPENDED';
+
+export interface LoginAttempt {
+  id: string;
+  email: string;
+  success: boolean;
+  reason: LoginFailureReason | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    role: User['role'];
+  } | null;
+}
+
+export interface FlaggedLoginSource {
+  kind: 'ip' | 'email';
+  value: string;
+  failures: number;
+  lastAttemptAt: string | null;
+}
+
+export interface LoginAttemptStats {
+  range: LoginRange;
+  total: number;
+  successful: number;
+  failed: number;
+  uniqueAccounts: number;
+  flagThreshold: number;
+  flagged: FlaggedLoginSource[];
+}

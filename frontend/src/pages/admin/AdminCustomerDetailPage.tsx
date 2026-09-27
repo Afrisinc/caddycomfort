@@ -6,6 +6,7 @@ import {
   Mail,
   Phone,
   Calendar,
+  LogIn,
   ShoppingBag,
   Wallet,
   Ban,
@@ -152,6 +153,14 @@ function CustomerDetailView({ id }: { id: string }) {
                     day: 'numeric',
                     year: 'numeric',
                   })}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <LogIn className="h-4 w-4" />
+                <span className="text-foreground">
+                  {customer.lastLoginAt
+                    ? `Last login ${formatRelativeTime(customer.lastLoginAt)}`
+                    : 'Has not logged in yet'}
                 </span>
               </div>
               {defaultAddress && (

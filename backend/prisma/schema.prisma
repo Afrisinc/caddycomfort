@@ -28,6 +28,7 @@ model User {
   verificationCodeExpiry DateTime?
   passwordResetToken     String?   @unique
   passwordResetExpiry    DateTime?
+  lastLoginAt   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
@@ -40,6 +41,7 @@ model User {
   wishlist      WishlistItem[]
   couponsUsed   CouponUsage[]
   refreshTokens RefreshToken[]
+  loginAttempts LoginAttempt[]
 }
 
 enum UserRole {
@@ -342,4 +344,28 @@ model StoreSettings {
   taxRate               Float    @default(18)
   codDepositPercent     Float    @default(50)
   updatedAt             DateTime @updatedAt
+}
+
+enum LoginFailureReason {
+  UNKNOWN_EMAIL
+  WRONG_PASSWORD
+  SUSPENDED
+}
+
+model LoginAttempt {
+  id        String              @id @default(cuid())
+  email     String
+  userId    String?
+  success   Boolean
+  reason    LoginFailureReason?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime            @default(now())
+
+  user      User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([email, createdAt])
+  @@index([ipAddress, createdAt])
+  @@index([userId])
 }

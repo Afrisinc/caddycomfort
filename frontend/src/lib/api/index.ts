@@ -15,3 +15,4 @@ export * from './dashboard';
 export * from './contact';
 export * from './payment';
 export * from './settings';
+export * from './security';

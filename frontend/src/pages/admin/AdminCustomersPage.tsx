@@ -50,6 +50,7 @@ const COLUMNS = [
   { key: 'phone', label: 'Phone' },
   { key: 'orders', label: 'Orders', align: 'right' },
   { key: 'spent', label: 'Total spent', align: 'right' },
+  { key: 'login', label: 'Last login' },
   { key: 'status', label: 'Status' },
   { key: 'actions', label: 'Actions', hideLabel: true },
 ] as const;
@@ -137,6 +138,24 @@ function CustomersManagement() {
           </DataCell>
           <DataCell align="right" numeric strong>
             {formatRwf(customer.totalSpent)}
+          </DataCell>
+          <DataCell>
+            {customer.lastLoginAt ? (
+              <>
+                <CellTitle className="font-normal">
+                  {formatRelativeTime(customer.lastLoginAt)}
+                </CellTitle>
+                <CellMeta>
+                  {new Date(customer.lastLoginAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </CellMeta>
+              </>
+            ) : (
+              <span className="text-muted-foreground">Never</span>
+            )}
           </DataCell>
           <DataCell>
             <CustomerStatusBadge status={customer.status} />
@@ -228,7 +247,7 @@ function CustomersManagement() {
       );
     }
     return (
-      <DataTable columns={COLUMNS} label="Customers" loading={loading} minWidth="min-w-208">
+      <DataTable columns={COLUMNS} label="Customers" loading={loading} minWidth="min-w-240">
         {renderRows()}
       </DataTable>
     );
