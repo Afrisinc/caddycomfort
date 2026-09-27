@@ -21,6 +21,7 @@ import {
 } from 'recharts';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
+import { StatCard, StatGrid, type StatCardProps } from '@/components/admin/StatCard';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { dashboardApi } from '@/lib/api';
 import { DashboardStats, SalesAnalytics, TopProduct, RevenueByCategory } from '@/types/api';
@@ -108,7 +109,7 @@ function Analytics() {
 
   const totalCategoryRevenue = topCategories.reduce((sum, c) => sum + c.revenue, 0);
 
-  const statCards = overallStats
+  const statCards: StatCardProps[] = overallStats
     ? [
         {
           title: 'Total Revenue',
@@ -177,39 +178,11 @@ function Analytics() {
       </AdminHeader>
 
       <div className="px-4 sm:px-8 py-8">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {isLoading
-            ? Array.from({ length: 4 }, (_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-10 w-10 rounded-full" />
-                    </div>
-                    <Skeleton className="h-7 w-20" />
-                  </CardContent>
-                </Card>
-              ))
-            : statCards.map((stat) => (
-                <Card key={stat.title}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <p className="text-sm text-muted-foreground">{stat.title}</p>
-                      <div className="h-10 w-10 rounded-full bg-accent-rose/10 flex items-center justify-center">
-                        <stat.icon className="h-5 w-5 text-accent-rose" />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{stat.value}</p>
-                      {stat.hint && (
-                        <p className="text-sm text-muted-foreground mt-1">{stat.hint}</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-        </div>
+        <StatGrid columns={4} loading={isLoading}>
+          {statCards.map((stat) => (
+            <StatCard key={stat.title} {...stat} />
+          ))}
+        </StatGrid>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Top Products */}

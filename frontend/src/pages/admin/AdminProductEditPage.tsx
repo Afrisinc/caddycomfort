@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { useRouter } from '@/router/compat';
 import Link from '@/components/common/Link';
 import Image from '@/components/common/Image';
+import { ImageLightbox, ImageZoomTrigger } from '@/components/common/ImageLightbox';
+import { useImageLightbox } from '@/hooks/useImageLightbox';
 import {
   Save,
   X,
@@ -90,6 +92,7 @@ function EditProductForm({ slug }: { slug: string }) {
 
   // ─── Image gallery preview state ──────────────────────────────────────────
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const lightbox = useImageLightbox();
   const [isUploadingImages, setIsUploadingImages] = useState(false);
 
   // ─── Submit state ────────────────────────────────────────────────────────
@@ -646,6 +649,7 @@ function EditProductForm({ slug }: { slug: string }) {
                       className="object-cover"
                       sizes="(max-width: 1024px) 100vw, 33vw"
                     />
+                    <ImageZoomTrigger onClick={() => lightbox.openAt(activeImageIndex)} />
                     {images.length > 1 && (
                       <>
                         <button
@@ -697,6 +701,18 @@ function EditProductForm({ slug }: { slug: string }) {
                     </div>
                   </div>
                 )}
+
+                <ImageLightbox
+                  images={images}
+                  open={lightbox.open}
+                  index={lightbox.index}
+                  onOpenChange={lightbox.onOpenChange}
+                  onIndexChange={(i) => {
+                    lightbox.setIndex(i);
+                    setActiveImageIndex(i);
+                  }}
+                  alt="Product image"
+                />
 
                 {/* Thumbnail strip */}
                 {images.length > 1 && (

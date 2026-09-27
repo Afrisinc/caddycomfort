@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from '@/router/compat';
 import Image from '@/components/common/Image';
+import { ImageLightbox, ImageZoomTrigger } from '@/components/common/ImageLightbox';
+import { useImageLightbox } from '@/hooks/useImageLightbox';
 import { Save, X, Upload, Plus, Trash2, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,6 +49,7 @@ function AddProduct() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const lightbox = useImageLightbox();
 
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
@@ -690,11 +693,13 @@ function AddProduct() {
                           fill
                           className="object-cover"
                         />
+                        <ImageZoomTrigger onClick={() => lightbox.openAt(index)} />
                         <Button
                           type="button"
                           variant="destructive"
                           size="icon"
-                          className="absolute top-2 right-2 h-8 w-8"
+                          aria-label="Remove image"
+                          className="absolute top-2 right-2 z-10 h-8 w-8"
                           onClick={() => handleRemoveImage(index)}
                           disabled={isSubmitting}
                         >
@@ -704,6 +709,15 @@ function AddProduct() {
                     ))}
                   </div>
                 )}
+
+                <ImageLightbox
+                  images={imagePreviews}
+                  open={lightbox.open}
+                  index={lightbox.index}
+                  onOpenChange={lightbox.onOpenChange}
+                  onIndexChange={lightbox.setIndex}
+                  alt="Product image"
+                />
 
                 {/* Upload Area */}
                 {imagePreviews.length < 5 && (

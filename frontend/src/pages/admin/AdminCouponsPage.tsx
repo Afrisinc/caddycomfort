@@ -26,6 +26,7 @@ import {
 import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
+import { StatCard, StatGrid, type StatCardProps } from '@/components/admin/StatCard';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { couponsApi } from '@/lib/api';
 import { Coupon, CouponStats } from '@/types/api';
@@ -85,11 +86,17 @@ function CouponsManagement() {
 
   const totalUses = coupons.reduce((sum, c) => sum + c.usedCount, 0);
 
-  const statCards = stats
+  const statCards: StatCardProps[] = stats
     ? [
         { title: 'Active Coupons', value: stats.active.toLocaleString(), icon: Tag },
-        { title: 'Total Uses', value: totalUses.toLocaleString(), icon: Percent },
-        { title: 'Total Savings', value: formatMoney(stats.totalDiscountGiven), icon: Calendar },
+        { title: 'Total Uses', value: totalUses.toLocaleString(), icon: Percent, tone: 'blue' },
+        {
+          title: 'Total Savings',
+          value: formatMoney(stats.totalDiscountGiven),
+          icon: Calendar,
+          tone: 'green',
+          hint: 'Discounts given to customers',
+        },
       ]
     : [];
 
@@ -111,38 +118,11 @@ function CouponsManagement() {
       </AdminHeader>
 
       <div className="px-4 sm:px-8 py-8">
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {isLoading
-            ? Array.from({ length: 3 }, (_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-28" />
-                        <Skeleton className="h-7 w-16" />
-                      </div>
-                      <Skeleton className="h-12 w-12 rounded-full" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            : statCards.map((stat) => (
-                <Card key={stat.title}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground">{stat.title}</p>
-                        <p className="text-2xl font-bold mt-1">{stat.value}</p>
-                      </div>
-                      <div className="h-12 w-12 rounded-full bg-accent-rose/10 flex items-center justify-center">
-                        <stat.icon className="h-6 w-6 text-accent-rose" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-        </div>
+        <StatGrid columns={3} loading={isLoading}>
+          {statCards.map((stat) => (
+            <StatCard key={stat.title} {...stat} />
+          ))}
+        </StatGrid>
 
         {/* Search */}
         <Card className="mb-6">

@@ -3,9 +3,11 @@ import Link from '@/components/common/Link';
 import { ShoppingBag, Users, DollarSign, Package, AlertCircle, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import type { StatCardProps } from '@/components/admin/StatCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
+import { StatCard, StatGrid } from '@/components/admin/StatCard';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { dashboardApi } from '@/lib/api';
 import {
@@ -61,35 +63,39 @@ function AdminDashboard() {
     })();
   }, []);
 
-  const statCards = stats
+  const statCards: StatCardProps[] = stats
     ? [
         {
           title: 'Total Revenue',
           value: formatMoney(stats.revenue.total),
           icon: DollarSign,
-          color: 'text-green-600',
-          bgColor: 'bg-green-50',
+          tone: 'green',
+          hint: 'All time',
+          href: '/admin/analytics',
         },
         {
           title: 'Total Orders',
           value: stats.orders.total.toLocaleString(),
           icon: ShoppingBag,
-          color: 'text-blue-600',
-          bgColor: 'bg-blue-50',
+          tone: 'blue',
+          hint: `${stats.orders.completed.toLocaleString()} completed`,
+          href: '/admin/orders',
         },
         {
           title: 'Total Customers',
           value: stats.users.total.toLocaleString(),
           icon: Users,
-          color: 'text-purple-600',
-          bgColor: 'bg-purple-50',
+          tone: 'violet',
+          hint: 'Registered accounts',
+          href: '/admin/customers',
         },
         {
           title: 'Pending Orders',
           value: stats.orders.pending.toLocaleString(),
           icon: Clock,
-          color: 'text-orange-600',
-          bgColor: 'bg-orange-50',
+          tone: stats.orders.pending > 0 ? 'amber' : 'neutral',
+          hint: stats.orders.pending > 0 ? 'Awaiting processing' : 'All caught up',
+          href: '/admin/orders',
         },
       ]
     : [];
@@ -107,35 +113,11 @@ function AdminDashboard() {
       </AdminHeader>
 
       <div className="px-4 sm:px-8 py-8">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {isLoading
-            ? Array.from({ length: 4 }, (_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-6">
-                    <Skeleton className="h-12 w-12 rounded-lg mb-4" />
-                    <Skeleton className="h-7 w-24 mb-2" />
-                    <Skeleton className="h-4 w-32" />
-                  </CardContent>
-                </Card>
-              ))
-            : statCards.map((stat) => {
-                const Icon = stat.icon;
-                return (
-                  <Card key={stat.title}>
-                    <CardContent className="p-6">
-                      <div className={`p-3 rounded-lg w-fit ${stat.bgColor}`}>
-                        <Icon className={`h-6 w-6 ${stat.color}`} />
-                      </div>
-                      <div className="mt-4">
-                        <p className="text-2xl font-bold">{stat.value}</p>
-                        <p className="text-sm text-muted-foreground">{stat.title}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-        </div>
+        <StatGrid columns={4} loading={isLoading}>
+          {statCards.map((stat) => (
+            <StatCard key={stat.title} {...stat} />
+          ))}
+        </StatGrid>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Orders */}

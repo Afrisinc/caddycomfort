@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { useRouter } from '@/router/compat';
 import { Save, X, Loader2, Upload, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ImageLightbox, ImageZoomTrigger } from '@/components/common/ImageLightbox';
+import { useImageLightbox } from '@/hooks/useImageLightbox';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -64,6 +66,7 @@ function EditCategoryForm({ id }: { id: string }) {
     image: '',
   });
   const [imagePreview, setImagePreview] = useState<string>('');
+  const lightbox = useImageLightbox();
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [category, setCategory] = useState<Category | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -302,11 +305,21 @@ function EditCategoryForm({ id }: { id: string }) {
                           alt="Category preview"
                           className="w-full h-full object-cover"
                         />
+                        <ImageZoomTrigger onClick={() => lightbox.openAt(0)} />
+                        <ImageLightbox
+                          images={[imagePreview]}
+                          open={lightbox.open}
+                          index={0}
+                          onOpenChange={lightbox.onOpenChange}
+                          onIndexChange={lightbox.setIndex}
+                          alt={formData.name || 'Category image'}
+                        />
                         <Button
                           type="button"
                           variant="destructive"
                           size="icon"
-                          className="absolute top-2 right-2"
+                          aria-label="Remove image"
+                          className="absolute top-2 right-2 z-10"
                           onClick={handleRemoveImage}
                           disabled={isSubmitting}
                         >

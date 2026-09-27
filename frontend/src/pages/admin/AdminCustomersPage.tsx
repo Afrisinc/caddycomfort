@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/select';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
+import { StatCard, StatGrid, type StatCardProps } from '@/components/admin/StatCard';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { customersApi } from '@/lib/api';
 import { Customer, CustomerStats, CustomerStatus } from '@/types/api';
@@ -99,12 +100,29 @@ function CustomersManagement() {
     }
   };
 
-  const statCards = stats
+  const statCards: StatCardProps[] = stats
     ? [
         { title: 'Total Customers', value: stats.totalCustomers.toLocaleString(), icon: UsersIcon },
-        { title: 'Active', value: stats.activeCount.toLocaleString(), icon: UserCheck },
-        { title: 'Avg Orders', value: stats.avgOrdersPerCustomer.toFixed(1), icon: ShoppingBag },
-        { title: 'Avg Value', value: formatMoney(stats.avgOrderValue), icon: TrendingUp },
+        {
+          title: 'Active',
+          value: stats.activeCount.toLocaleString(),
+          icon: UserCheck,
+          tone: 'green',
+        },
+        {
+          title: 'Avg Orders',
+          value: stats.avgOrdersPerCustomer.toFixed(1),
+          icon: ShoppingBag,
+          tone: 'blue',
+          hint: 'Per customer',
+        },
+        {
+          title: 'Avg Value',
+          value: formatMoney(stats.avgOrderValue),
+          icon: TrendingUp,
+          tone: 'violet',
+          hint: 'Per order',
+        },
       ]
     : [];
 
@@ -121,44 +139,11 @@ function CustomersManagement() {
       <AdminHeader title="Customer Management" description="View and manage your customers" />
 
       <div className="px-4 sm:px-8 py-8">
-        {/* Stats */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {Array.from({ length: 4 }, (_, i) => (
-              <Card key={i}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-7 w-14" />
-                    </div>
-                    <Skeleton className="h-12 w-12 rounded-full" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          stats && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {statCards.map((stat) => (
-                <Card key={stat.title}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground">{stat.title}</p>
-                        <p className="text-2xl font-bold mt-1">{stat.value}</p>
-                      </div>
-                      <div className="h-12 w-12 rounded-full bg-accent-rose/10 flex items-center justify-center">
-                        <stat.icon className="h-6 w-6 text-accent-rose" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )
-        )}
+        <StatGrid columns={4} loading={isLoading}>
+          {statCards.map((stat) => (
+            <StatCard key={stat.title} {...stat} />
+          ))}
+        </StatGrid>
 
         {/* Filters */}
         <Card className="mb-6">

@@ -66,7 +66,7 @@ const navSections: { label: string; items: NavItem[] }[] = [
 const itemBase =
   'group relative flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent-rose/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background';
 
-export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
+export function AdminSidebar({ isOpen, onClose }: Readonly<AdminSidebarProps>) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
@@ -171,13 +171,13 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                         <span
                           aria-hidden="true"
                           className={cn(
-                            'absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-accent-rose transition-all duration-200',
+                            'absolute left-0 top-1/2 h-5 w-0.75 -translate-y-1/2 rounded-r-full bg-accent-rose transition-all duration-200',
                             active ? 'opacity-100' : 'scale-y-0 opacity-0',
                           )}
                         />
                         <Icon
                           className={cn(
-                            'h-[18px] w-[18px] shrink-0 transition-colors',
+                            'h-4.5 w-4.5 shrink-0 transition-colors',
                             active
                               ? 'text-accent-rose'
                               : 'text-muted-foreground group-hover:text-foreground',
@@ -199,7 +199,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
             onClick={onClose}
             className={cn(itemBase, 'text-foreground/70 hover:bg-muted hover:text-foreground')}
           >
-            <Store className="h-[18px] w-[18px] text-muted-foreground group-hover:text-foreground" />
+            <Store className="h-4.5 w-4.5 text-muted-foreground group-hover:text-foreground" />
             <span className="flex-1">View Store</span>
             <ExternalLink className="h-3.5 w-3.5 text-muted-foreground/60" />
           </Link>
@@ -208,7 +208,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
             onClick={onClose}
             className={cn(itemBase, 'text-foreground/70 hover:bg-muted hover:text-foreground')}
           >
-            <HelpCircle className="h-[18px] w-[18px] text-muted-foreground group-hover:text-foreground" />
+            <HelpCircle className="h-4.5 w-4.5 text-muted-foreground group-hover:text-foreground" />
             <span>Help & Support</span>
           </Link>
         </div>

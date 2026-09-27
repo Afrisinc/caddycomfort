@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from '@/components/common/Link';
 import Image from '@/components/common/Image';
+import { ImageLightbox } from '@/components/common/ImageLightbox';
+import { useImageLightbox } from '@/hooks/useImageLightbox';
 import {
   Plus,
   Search,
@@ -47,6 +49,46 @@ import { productsApi, categoriesApi } from '@/lib/api';
 import { Product, Category } from '@/types/api';
 import { toast } from 'sonner';
 
+function ProductThumb({
+  images,
+  name,
+  onOpen,
+}: Readonly<{ images: string[]; name: string; onOpen: () => void }>) {
+  const placeholder = (
+    <Package className="absolute top-1/2 left-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
+  );
+
+  if (images.length === 0) {
+    return (
+      <div className="relative h-12 w-12 shrink-0 rounded-lg border border-border/50 bg-muted">
+        {placeholder}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`View images of ${name}`}
+      className="group/thumb relative h-12 w-12 shrink-0 cursor-zoom-in overflow-hidden rounded-lg border border-border/50 bg-muted transition-all hover:border-accent-rose/50 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-rose/50"
+    >
+      <Image
+        src={images[0]}
+        alt={name}
+        fill
+        className="object-cover transition-transform duration-300 group-hover/thumb:scale-110"
+        fallback={placeholder}
+      />
+      {images.length > 1 && (
+        <span className="absolute right-0.5 bottom-0.5 rounded bg-black/60 px-1 text-[10px] leading-4 font-medium text-white tabular-nums">
+          {images.length}
+        </span>
+      )}
+    </button>
+  );
+}
+
 function ProductsManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -56,6 +98,16 @@ function ProductsManagement() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [previewProduct, setPreviewProduct] = useState<Product | null>(null);
+  const lightbox = useImageLightbox();
+
+  const productImages = (product: Product) =>
+    product.images?.length ? product.images : product.imageUrl ? [product.imageUrl] : [];
+
+  const openPreview = (product: Product) => {
+    setPreviewProduct(product);
+    lightbox.openAt(0);
+  };
 
   // Fetch categories once on mount
   useEffect(() => {
@@ -276,28 +328,21 @@ function ProductsManagement() {
                           className="border-b hover:bg-muted/30 transition-colors"
                         >
                           <td className="p-4">
-                            <Link href={productUrl} className="flex items-center gap-3 group">
-                              <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-muted border border-border/50 group-hover:border-accent-rose/50 transition-colors">
-                                {product.images && product.images.length > 0 ? (
-                                  <Image
-                                    src={product.images[0]}
-                                    alt={product.name}
-                                    fill
-                                    className="object-cover group-hover:scale-105 transition-transform"
-                                  />
-                                ) : (
-                                  <Package className="w-6 h-6 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
-                                )}
-                              </div>
-                              <div>
-                                <p className="font-medium group-hover:text-accent-rose transition-colors">
+                            <div className="flex items-center gap-3">
+                              <ProductThumb
+                                images={productImages(product)}
+                                name={product.name}
+                                onOpen={() => openPreview(product)}
+                              />
+                              <Link href={productUrl} className="group min-w-0">
+                                <p className="truncate font-medium transition-colors group-hover:text-accent-rose">
                                   {product.name}
                                 </p>
                                 <p className="text-xs text-muted-foreground sm:hidden">
                                   {product.sku || 'No SKU'}
                                 </p>
-                              </div>
-                            </Link>
+                              </Link>
+                            </div>
                           </td>
                           <td className="p-4 text-sm text-muted-foreground">
                             {product.sku || 'N/A'}
@@ -357,6 +402,15 @@ function ProductsManagement() {
           </CardContent>
         </Card>
       </div>
+
+      <ImageLightbox
+        images={previewProduct ? productImages(previewProduct) : []}
+        open={lightbox.open}
+        index={lightbox.index}
+        onOpenChange={lightbox.onOpenChange}
+        onIndexChange={lightbox.setIndex}
+        alt={previewProduct?.name}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

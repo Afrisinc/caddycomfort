@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Link from '@/components/common/Link';
 import Image from '@/components/common/Image';
+import { ImageLightbox, ImageZoomTrigger } from '@/components/common/ImageLightbox';
+import { useImageLightbox } from '@/hooks/useImageLightbox';
 import { useRouter } from '@/router/compat';
 import {
   ArrowLeft,
@@ -74,6 +76,7 @@ function ProductDetailContent({ slug }: { slug: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const lightbox = useImageLightbox();
 
   // Stock update modal state
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
@@ -339,7 +342,7 @@ function ProductDetailContent({ slug }: { slug: string }) {
                       src={images[selectedImageIndex] || images[0]}
                       alt={product.name}
                       fill
-                      className="object-cover transition-all duration-300 hover:scale-105"
+                      className="object-cover transition-transform duration-500 group-hover/gallery:scale-[1.03]"
                       priority
                       sizes="(max-width: 768px) 100vw, 40vw"
                     />
@@ -348,6 +351,10 @@ function ProductDetailContent({ slug }: { slug: string }) {
                       <Package className="h-16 w-16 mb-2 opacity-40" />
                       <p className="text-sm font-medium">No product images uploaded</p>
                     </div>
+                  )}
+
+                  {images.length > 0 && (
+                    <ImageZoomTrigger onClick={() => lightbox.openAt(selectedImageIndex)} />
                   )}
 
                   {/* Prev / Next arrows — only when multiple images */}
@@ -453,6 +460,18 @@ function ProductDetailContent({ slug }: { slug: string }) {
                 )}
               </CardContent>
             </Card>
+
+            <ImageLightbox
+              images={images}
+              open={lightbox.open}
+              index={lightbox.index}
+              onOpenChange={lightbox.onOpenChange}
+              onIndexChange={(i) => {
+                lightbox.setIndex(i);
+                setSelectedImageIndex(i);
+              }}
+              alt={product.name}
+            />
 
             {/* Quick Status Card */}
             <Card className="shadow-sm border-border/60">

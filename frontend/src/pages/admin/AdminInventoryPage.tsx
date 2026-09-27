@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
+import { StatCard, StatGrid, type StatCardProps } from '@/components/admin/StatCard';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AdjustStockDialog } from '@/components/admin/AdjustStockDialog';
 import { StockHistoryDialog } from '@/components/admin/StockHistoryDialog';
@@ -132,31 +133,32 @@ function Inventory() {
     return matchesSearch && matchesFilter;
   });
 
-  const statCards = summary
+  const statCards: StatCardProps[] = summary
     ? [
         {
           title: 'Total Products',
           value: summary.totalProducts.toLocaleString(),
           icon: Package,
-          alert: false,
         },
         {
           title: 'Low Stock Items',
           value: summary.lowStockCount.toLocaleString(),
           icon: AlertTriangle,
-          alert: summary.lowStockCount > 0,
+          tone: summary.lowStockCount > 0 ? 'amber' : 'neutral',
+          hint: summary.lowStockCount > 0 ? 'Needs restocking soon' : 'Stock levels healthy',
         },
         {
           title: 'Out of Stock',
           value: summary.outOfStockCount.toLocaleString(),
           icon: TrendingDown,
-          alert: summary.outOfStockCount > 0,
+          tone: summary.outOfStockCount > 0 ? 'red' : 'neutral',
+          hint: summary.outOfStockCount > 0 ? 'Unavailable to customers' : 'Everything in stock',
         },
         {
           title: 'Total Stock Value',
           value: formatK(summary.totalInventoryValue),
           icon: TrendingUp,
-          alert: false,
+          tone: 'green',
         },
       ]
     : [];
@@ -205,44 +207,11 @@ function Inventory() {
       </AdminHeader>
 
       <div className="px-4 sm:px-8 py-8">
-        {/* Stats */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {Array.from({ length: 4 }, (_, i) => (
-              <Card key={i}>
-                <CardContent className="p-6">
-                  <Skeleton className="h-12 w-12 rounded-lg mb-4" />
-                  <Skeleton className="h-7 w-16 mb-2" />
-                  <Skeleton className="h-4 w-24" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          summary && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {statCards.map((stat) => (
-                <Card key={stat.title}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div
-                        className={`p-3 rounded-lg ${stat.alert ? 'bg-orange-50' : 'bg-accent-rose/10'}`}
-                      >
-                        <stat.icon
-                          className={`h-6 w-6 ${stat.alert ? 'text-orange-600' : 'text-accent-rose'}`}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{stat.value}</p>
-                      <p className="text-sm text-muted-foreground">{stat.title}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )
-        )}
+        <StatGrid columns={4} loading={isLoading}>
+          {statCards.map((stat) => (
+            <StatCard key={stat.title} {...stat} />
+          ))}
+        </StatGrid>
 
         {/* Filters */}
         <Card className="mb-6">

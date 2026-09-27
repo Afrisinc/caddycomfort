@@ -1,25 +1,42 @@
 import { useState } from 'react';
 import Image from '@/components/common/Image';
+import { ImageLightbox, ImageZoomTrigger } from '@/components/common/ImageLightbox';
+import { useImageLightbox } from '@/hooks/useImageLightbox';
 import { Badge } from '@/components/ui/badge';
 
 interface ProductGalleryProps {
-  images: string[];
-  name: string;
-  hasDiscount: boolean;
-  discountPct: number;
+  readonly images: string[];
+  readonly name: string;
+  readonly hasDiscount: boolean;
+  readonly discountPct: number;
 }
 
 export function ProductGallery({ images, name, hasDiscount, discountPct }: ProductGalleryProps) {
   const [selectedImage, setSelectedImage] = useState(0);
+  const lightbox = useImageLightbox();
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
+      <div className="group relative aspect-square overflow-hidden rounded-lg bg-muted">
         {images[selectedImage] && (
-          <Image src={images[selectedImage]} alt={name} fill className="object-cover" priority />
+          <>
+            <Image
+              src={images[selectedImage]}
+              alt={name}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              priority
+            />
+            <ImageZoomTrigger
+              onClick={() => lightbox.openAt(selectedImage)}
+              className="[&>span]:bottom-4 [&>span]:right-4"
+            />
+          </>
         )}
         {hasDiscount && (
-          <Badge className="absolute top-4 right-4 bg-accent-rose">-{discountPct}%</Badge>
+          <Badge className="pointer-events-none absolute top-4 right-4 bg-accent-rose">
+            -{discountPct}%
+          </Badge>
         )}
       </div>
       {images.length > 1 && (
@@ -29,6 +46,8 @@ export function ProductGallery({ images, name, hasDiscount, discountPct }: Produ
               key={image}
               type="button"
               onClick={() => setSelectedImage(index)}
+              aria-label={`Show image ${index + 1}`}
+              aria-current={selectedImage === index || undefined}
               className={`relative aspect-square overflow-hidden rounded-lg border-2 transition-all ${
                 selectedImage === index
                   ? 'border-accent-rose'
@@ -40,6 +59,18 @@ export function ProductGallery({ images, name, hasDiscount, discountPct }: Produ
           ))}
         </div>
       )}
+
+      <ImageLightbox
+        images={images}
+        open={lightbox.open}
+        index={lightbox.index}
+        onOpenChange={lightbox.onOpenChange}
+        onIndexChange={(i) => {
+          lightbox.setIndex(i);
+          setSelectedImage(i);
+        }}
+        alt={name}
+      />
     </div>
   );
 }
