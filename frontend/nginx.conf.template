@@ -6,27 +6,57 @@ server {
 
     gzip on;
     gzip_vary on;
+    gzip_comp_level 6;
     gzip_min_length 1024;
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript image/svg+xml;
+    # Without gzip_proxied, nginx never compresses the /api responses it proxies.
+    gzip_proxied any;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript image/svg+xml application/manifest+json;
 
     location /api/ {
         proxy_pass ${BACKEND_INTERNAL_URL}/api/;
         proxy_http_version 1.1;
+        proxy_set_header Connection "";
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 30s;
+    }
+
+    # Generated from the product catalogue by the API.
+    location = /sitemap.xml {
+        proxy_pass ${BACKEND_INTERNAL_URL}/api/sitemap.xml;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
     }
 
     location /assets/ {
         expires 1y;
         add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    # Un-hashed public images: cache for a week, let clients revalidate after.
+    location ~* ^/(images|new-images)/ {
+        expires 7d;
+        add_header Cache-Control "public, max-age=604800, stale-while-revalidate=86400";
+        try_files $uri =404;
+    }
+
+    location ~* \.(ico|png|webmanifest|txt)$ {
+        expires 1d;
+        add_header Cache-Control "public, max-age=86400";
+        try_files $uri =404;
     }
 
     # index.html references hashed /assets/* filenames, so it must always be
     # revalidated or clients can get stuck on a stale bundle after a deploy.
     location = /index.html {
         add_header Cache-Control "no-cache";
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     }
 
     location / {

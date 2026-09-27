@@ -2,7 +2,7 @@ import express, { Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { logger } from './config/logger';
 import { requestLogger } from './middleware/logger.middleware';
 import { errorHandler, notFound } from './middleware/error.middleware';
@@ -13,6 +13,8 @@ dotenv.config();
 
 const app: Express = express();
 const PORT = process.env.PORT || 5000;
+
+app.set('trust proxy', 'loopback, linklocal, uniquelocal');
 
 // Security Middleware
 app.use(helmet());
@@ -30,6 +32,8 @@ const limiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => ipKeyGenerator(req.get('cf-connecting-ip') || req.ip || ''),
+  skip: (req) => req.path === '/health',
 });
 
 app.use('/api', limiter);

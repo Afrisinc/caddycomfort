@@ -2,39 +2,78 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CaddyComfort | Luxury Fashion</title>
+    <meta
+      name="description"
+      content="Discover timeless elegance and contemporary style at CaddyComfort — dresses, shoes, bags and wigs, delivered to your door."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://caddycomfort.com/" />
+
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#c2185b" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="index, follow" />
-    <meta
-      name="description"
-      content="Discover timeless elegance and contemporary style at CaddyComfort"
-    />
-    <title>CaddyComfort | Luxury Fashion</title>
+
+    <!-- Product images are served from Cloudinary; open the connection early. -->
+    <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
+    <link rel="dns-prefetch" href="https://res.cloudinary.com" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="CaddyComfort" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="https://caddycomfort.com/" />
     <meta property="og:title" content="CaddyComfort | Luxury Fashion" />
     <meta
       property="og:description"
-      content="Discover timeless elegance and contemporary style at CaddyComfort"
+      content="Discover timeless elegance and contemporary style at CaddyComfort — dresses, shoes, bags and wigs, delivered to your door."
     />
-    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:image" content="https://caddycomfort.com/og-image.png" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="CaddyComfort | Luxury Fashion" />
     <meta
       name="twitter:description"
-      content="Discover timeless elegance and contemporary style at CaddyComfort"
+      content="Discover timeless elegance and contemporary style at CaddyComfort — dresses, shoes, bags and wigs, delivered to your door."
     />
-    <meta name="twitter:image" content="/og-image.png" />
+    <meta name="twitter:image" content="https://caddycomfort.com/og-image.png" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://caddycomfort.com/#organization",
+            "name": "CaddyComfort",
+            "url": "https://caddycomfort.com/",
+            "logo": "https://caddycomfort.com/icon-512.png"
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://caddycomfort.com/#website",
+            "url": "https://caddycomfort.com/",
+            "name": "CaddyComfort",
+            "publisher": { "@id": "https://caddycomfort.com/#organization" },
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": "https://caddycomfort.com/search?q={search_term_string}",
+              "query-input": "required name=search_term_string"
+            }
+          }
+        ]
+      }
+    </script>
   </head>
   <body class="antialiased">
     <div id="root"></div>
+    <noscript>
+      CaddyComfort — luxury fashion: dresses, shoes, bags and wigs. Please enable JavaScript to
+      shop.
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

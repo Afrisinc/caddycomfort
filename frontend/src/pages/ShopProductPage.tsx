@@ -21,6 +21,7 @@ import { toProductCardProps } from '@/lib/productCard';
 import { Product, ProductReviewStats } from '@/types/api';
 import NotFoundPage from '@/pages/NotFoundPage';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Seo, SITE_URL } from '@/components/common/Seo';
 
 export default function ShopProductPage() {
   const { id } = useParams<{ id: string }>();
@@ -97,8 +98,41 @@ export default function ShopProductPage() {
   const averageRating = reviewStats?.stats.averageRating ?? 0;
   const reviewCount = reviewStats?.stats.totalReviews ?? 0;
 
+  const productJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description,
+    sku: product.sku,
+    image: images,
+    ...(product.category && { category: product.category.name }),
+    brand: { '@type': 'Brand', name: 'CaddyComfort' },
+    offers: {
+      '@type': 'Offer',
+      url: `${SITE_URL}/shop/${product.id}`,
+      priceCurrency: 'RWF',
+      price: product.salePrice ?? product.price,
+      availability:
+        product.stockQuantity > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+    },
+    ...(reviewCount > 0 && {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: averageRating,
+        reviewCount,
+      },
+    }),
+  };
+
   return (
     <>
+      <Seo
+        title={product.name}
+        description={product.description}
+        image={images[0]}
+        type="product"
+        jsonLd={productJsonLd}
+      />
       <Navbar />
 
       <div className="min-h-screen bg-background pt-20">

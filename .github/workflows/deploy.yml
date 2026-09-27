@@ -56,8 +56,8 @@ jobs:
           context: ./frontend
           push: true
           build-args: |
-            NEXT_PUBLIC_API_URL=/api
-            NEXT_PUBLIC_APP_URL=${{ secrets.PUBLIC_APP_URL }}
+            VITE_API_URL=/api
+            VITE_APP_URL=${{ secrets.PUBLIC_APP_URL }}
             BACKEND_INTERNAL_URL=http://caddycomfort-backend:5000
           tags: |
             ghcr.io/${{ secrets.GHCR_OWNER }}/caddycomfort-frontend:${{ steps.meta.outputs.short_sha }}

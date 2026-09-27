@@ -16,6 +16,7 @@ import dashboardRoutes from './dashboard.routes';
 import contactRoutes from './contact.routes';
 import paymentRoutes from './payment.routes';
 import webhookRoutes from './webhook.routes';
+import sitemapRoutes from './sitemap.routes';
 
 const router = Router();
 
@@ -37,5 +38,6 @@ router.use('/dashboard', dashboardRoutes);
 router.use('/contact', contactRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/webhooks', webhookRoutes);
+router.use('/sitemap.xml', sitemapRoutes);
 
 export default router;
