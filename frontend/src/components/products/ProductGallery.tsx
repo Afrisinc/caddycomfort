@@ -24,7 +24,7 @@ export function ProductGallery({ images, name, hasDiscount, discountPct }: Produ
               src={images[selectedImage]}
               alt={name}
               fill
-              className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              className="object-contain transition-transform duration-500 group-hover:scale-[1.03]"
               priority
             />
             <ImageZoomTrigger

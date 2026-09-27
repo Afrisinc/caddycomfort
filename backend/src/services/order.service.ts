@@ -232,8 +232,8 @@ export class OrderService {
     });
 
     await (couponId
-      ? cache.invalidate('products', 'customers', 'coupons')
-      : cache.invalidate('products', 'customers'));
+      ? cache.invalidate('products', 'customers', 'orders', 'coupons')
+      : cache.invalidate('products', 'customers', 'orders'));
     return this.formatOrderResponse(order);
   }
 
@@ -482,8 +482,8 @@ export class OrderService {
     });
 
     await (status === 'CANCELLED'
-      ? cache.invalidate('products', 'customers')
-      : cache.invalidate('customers'));
+      ? cache.invalidate('products', 'customers', 'orders')
+      : cache.invalidate('customers', 'orders'));
     return this.formatOrderResponse(updatedOrder);
   }
 
@@ -529,6 +529,7 @@ export class OrderService {
       },
     });
 
+    await cache.invalidate('orders');
     return this.formatOrderResponse(updatedOrder);
   }
 

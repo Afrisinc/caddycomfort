@@ -1,13 +1,22 @@
+import { CreditCard, ShieldCheck, Store, Truck, type LucideIcon } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { StoreSettingsForm } from '@/components/admin/StoreSettingsForm';
 import { ChangePasswordForm } from '@/components/auth/ChangePasswordForm';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { SectionNav } from '@/components/common/SectionNav';
 import { SETTINGS_SECTIONS } from '@/lib/settingsForm';
 
+const ICONS: Record<string, LucideIcon> = {
+  store: Store,
+  shipping: Truck,
+  payments: CreditCard,
+  security: ShieldCheck,
+};
+
 const NAV = [
-  ...SETTINGS_SECTIONS.map(({ id, title }) => ({ id, title })),
-  { id: 'security', title: 'Security' },
+  ...SETTINGS_SECTIONS.map(({ id, title }) => ({ id, title, icon: ICONS[id] })),
+  { id: 'security', title: 'Security', icon: ICONS.security },
 ];
 
 function SettingsContent() {
@@ -15,23 +24,9 @@ function SettingsContent() {
     <div className="min-h-screen bg-muted/30">
       <AdminHeader title="Settings" description="Store details, shipping, tax and payment rules" />
 
-      <div className="grid gap-8 px-4 py-8 sm:px-8 lg:grid-cols-[13rem_minmax(0,1fr)]">
-        <nav aria-label="Settings sections" className="lg:sticky lg:top-24 lg:self-start">
-          <ul className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] lg:flex-col lg:gap-1 [&::-webkit-scrollbar]:hidden">
-            {NAV.map((item) => (
-              <li key={item.id} className="shrink-0">
-                <a
-                  href={`#${item.id}`}
-                  className="block rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap text-foreground/75 transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-accent-rose/40"
-                >
-                  {item.title}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        <div className="max-w-3xl space-y-6">
+      <div className="mx-auto grid w-full max-w-6xl gap-6 px-4 pb-8 sm:px-8 xl:grid-cols-[12rem_minmax(0,1fr)] xl:gap-10 xl:pt-8">
+        <SectionNav items={NAV} label="Settings sections" />
+        <div className="min-w-0 space-y-6">
           <StoreSettingsForm />
           <ChangePasswordForm id="security" />
         </div>

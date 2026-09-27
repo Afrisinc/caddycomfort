@@ -196,6 +196,8 @@ export function CategoryForm({
             images={values.images}
             onChange={(images) => set('images', images)}
             max={1}
+            aspect="landscape"
+            label="Category image"
             disabled={saving}
           />
         ) : (

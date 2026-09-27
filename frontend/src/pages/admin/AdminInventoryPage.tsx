@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Download,
   Upload,
   AlertTriangle,
   Package,
@@ -31,6 +30,7 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { StatCard, StatGrid, type StatCardProps } from '@/components/admin/StatCard';
 import { TablePagination } from '@/components/admin/TablePagination';
+import { ExportButton } from '@/components/admin/ExportButton';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AdjustStockDialog } from '@/components/admin/AdjustStockDialog';
 import { StockHistoryDialog } from '@/components/admin/StockHistoryDialog';
@@ -40,6 +40,7 @@ import { InventorySummary, InventoryValuationItem, RestockRecommendation } from 
 import { formatRelativeTime } from '@/lib/utils';
 import { toast } from 'sonner';
 import { SearchInput } from '@/components/ui/search-input';
+import { downloadCsv } from '@/lib/csv';
 import { useUrlFilters } from '@/hooks/useUrlFilters';
 import { ADMIN_PAGE_SIZE, pageCount, pageSlice } from '@/lib/pagination';
 
@@ -61,24 +62,6 @@ const TIER_CONFIG: Record<StockTier, { label: string; className: string }> = {
 
 function formatK(amount: number): string {
   return `Rwf ${(amount / 1000).toFixed(0)}K`;
-}
-
-function escapeCsvField(value: string | number): string {
-  const text = String(value);
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-}
-
-function downloadCsv(filename: string, rows: (string | number)[][]) {
-  const csv = rows.map((row) => row.map(escapeCsvField).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
 }
 
 function Inventory() {
@@ -198,10 +181,7 @@ function Inventory() {
   return (
     <div className="min-h-screen bg-muted/30">
       <AdminHeader title="Inventory Management" description="Monitor and manage stock levels">
-        <Button variant="outline" onClick={handleExport} disabled={filteredItems.length === 0}>
-          <Download className="h-4 w-4 mr-2" />
-          Export
-        </Button>
+        <ExportButton onExport={handleExport} disabled={filteredItems.length === 0} />
         <Button
           className="bg-accent-rose hover:bg-accent-rose-dark"
           onClick={() => setImportOpen(true)}

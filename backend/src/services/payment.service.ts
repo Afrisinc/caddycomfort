@@ -1,4 +1,5 @@
 import prisma from '../config/database';
+import { cache } from '../utils/cache';
 import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 import { paymentClient } from '../utils/payment/payment-client';
 import { logger } from '../config/logger';
@@ -189,6 +190,7 @@ export class PaymentService {
         where: { id: order.id },
         data: successfulPaymentUpdate(order),
       });
+      await cache.invalidate('orders');
 
       logger.info({ orderId: order.id, orderNumber: order.orderNumber }, 'Order payment confirmed');
 

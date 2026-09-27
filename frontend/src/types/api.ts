@@ -366,6 +366,8 @@ export interface DashboardStats {
     total: number;
     active: number;
     lowStock: number;
+    outOfStock: number;
+    lowStockThreshold: number;
   };
   orders: {
     total: number;
@@ -374,6 +376,7 @@ export interface DashboardStats {
   };
   revenue: {
     total: number;
+    cashToCollect: number;
   };
 }
 
@@ -400,6 +403,7 @@ export interface DashboardLowStockProduct {
   sku: string;
   stockQuantity: number;
   imageUrl: string | null;
+  images: string[];
   category: { name: string } | null;
 }
 
@@ -421,8 +425,9 @@ export interface TopProduct {
     images: string[];
     stockQuantity: number;
     category: { name: string } | null;
-  } | null;
+  };
   totalSold: number;
+  revenue: number;
   orderCount: number;
 }
 
@@ -442,10 +447,12 @@ export interface CustomerInsights {
 
 export interface SalesAnalytics {
   period: 'week' | 'month' | 'year';
+  granularity: 'day' | 'month';
   summary: {
     totalSales: number;
     totalOrders: number;
     averageOrderValue: number;
+    totalCollected: number;
     totalDiscount: number;
     totalTax: number;
     totalShipping: number;

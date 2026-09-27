@@ -1,157 +1,179 @@
+import { OrderStatus, Prisma } from '@prisma/client';
 import prisma from '../config/database';
+import { CACHE_TTL, cache } from '../utils/cache';
+import { LOW_STOCK_THRESHOLD } from './product.service';
+
+export type SalesPeriod = 'week' | 'month' | 'year';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const OPEN_STATUSES: OrderStatus[] = ['PENDING', 'PROCESSING', 'SHIPPED'];
+const LIVE_ORDER: Prisma.OrderWhereInput = { status: { notIn: ['CANCELLED', 'REFUNDED'] } };
+
+interface SalesBucket {
+  date: string;
+  sales: number;
+  orders: number;
+}
+
+function dayKey(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function monthKey(date: Date) {
+  return `${date.toISOString().slice(0, 7)}-01`;
+}
+
+function periodBuckets(period: SalesPeriod, now: Date) {
+  if (period === 'year') {
+    const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11, 1));
+    const keys = Array.from({ length: 12 }, (_, i) =>
+      monthKey(new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + i, 1))),
+    );
+    return { start, keys, keyOf: monthKey };
+  }
+  const days = period === 'week' ? 7 : 30;
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const start = new Date(today - (days - 1) * DAY_MS);
+  const keys = Array.from({ length: days }, (_, i) =>
+    dayKey(new Date(start.getTime() + i * DAY_MS)),
+  );
+  return { start, keys, keyOf: dayKey };
+}
 
 export class DashboardService {
-  /**
-   * Get overall dashboard statistics
-   */
   static async getOverallStats() {
+    return cache.getOrSet('orders', ['dashboard-stats'], CACHE_TTL.short, () => this.loadStats());
+  }
+
+  private static async loadStats() {
     const [
       totalUsers,
       totalProducts,
-      totalOrders,
-      totalRevenue,
-      pendingOrders,
-      completedOrders,
       activeProducts,
       lowStockProducts,
+      outOfStockProducts,
+      totalOrders,
+      pendingOrders,
+      completedOrders,
+      collected,
+      cashToCollect,
     ] = await Promise.all([
       prisma.user.count({ where: { role: 'CUSTOMER' } }),
       prisma.product.count(),
-      prisma.order.count(),
-      prisma.order.aggregate({
-        where: { status: 'DELIVERED' },
-        _sum: { total: true },
-      }),
-      prisma.order.count({
-        where: {
-          status: {
-            in: ['PENDING', 'PROCESSING'],
-          },
-        },
-      }),
-      prisma.order.count({ where: { status: 'DELIVERED' } }),
       prisma.product.count({ where: { isActive: true } }),
       prisma.product.count({
-        where: {
-          stockQuantity: { lte: 10, gt: 0 },
-          isActive: true,
-        },
+        where: { isActive: true, stockQuantity: { gt: 0, lte: LOW_STOCK_THRESHOLD } },
+      }),
+      prisma.product.count({ where: { isActive: true, stockQuantity: 0 } }),
+      prisma.order.count(),
+      prisma.order.count({ where: { status: { in: ['PENDING', 'PROCESSING'] } } }),
+      prisma.order.count({ where: { status: 'DELIVERED' } }),
+      prisma.order.aggregate({ where: LIVE_ORDER, _sum: { amountPaid: true } }),
+      prisma.order.findMany({
+        where: { paymentMethod: 'CASH_ON_DELIVERY', status: { in: OPEN_STATUSES } },
+        select: { total: true, amountPaid: true },
       }),
     ]);
 
     return {
-      users: {
-        total: totalUsers,
-      },
+      users: { total: totalUsers },
       products: {
         total: totalProducts,
         active: activeProducts,
         lowStock: lowStockProducts,
+        outOfStock: outOfStockProducts,
+        lowStockThreshold: LOW_STOCK_THRESHOLD,
       },
-      orders: {
-        total: totalOrders,
-        pending: pendingOrders,
-        completed: completedOrders,
-      },
+      orders: { total: totalOrders, pending: pendingOrders, completed: completedOrders },
       revenue: {
-        total: totalRevenue._sum.total || 0,
+        total: collected._sum.amountPaid || 0,
+        cashToCollect: cashToCollect.reduce(
+          (sum, order) => sum + Math.max(0, order.total - order.amountPaid),
+          0,
+        ),
       },
     };
   }
 
-  /**
-   * Get sales analytics
-   */
-  static async getSalesAnalytics(period: 'week' | 'month' | 'year' = 'month') {
-    const now = new Date();
-    let startDate: Date;
+  static async getSalesAnalytics(period: SalesPeriod = 'month') {
+    return cache.getOrSet('orders', ['sales', period, dayKey(new Date())], CACHE_TTL.short, () =>
+      this.loadSales(period),
+    );
+  }
 
-    switch (period) {
-      case 'week':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case 'month':
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
-      case 'year':
-        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-        break;
-    }
+  private static async loadSales(period: SalesPeriod) {
+    const { start, keys, keyOf } = periodBuckets(period, new Date());
 
     const orders = await prisma.order.findMany({
-      where: {
-        createdAt: { gte: startDate },
-        status: 'DELIVERED',
-      },
+      where: { ...LIVE_ORDER, createdAt: { gte: start } },
       select: {
         total: true,
-        subtotal: true,
         discount: true,
         tax: true,
         shippingCost: true,
+        amountPaid: true,
         createdAt: true,
       },
     });
 
-    const totalSales = orders.reduce((sum, order) => sum + order.total, 0);
-    const totalOrders = orders.length;
-    const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
-    const totalDiscount = orders.reduce((sum, order) => sum + order.discount, 0);
-    const totalTax = orders.reduce((sum, order) => sum + order.tax, 0);
-    const totalShipping = orders.reduce((sum, order) => sum + order.shippingCost, 0);
-
-    // Group by date
-    const salesByDate = orders.reduce(
-      (acc, order) => {
-        const date = order.createdAt.toISOString().split('T')[0];
-        if (!acc[date]) {
-          acc[date] = { date, sales: 0, orders: 0 };
-        }
-        acc[date].sales += order.total;
-        acc[date].orders += 1;
-        return acc;
-      },
-      {} as Record<string, { date: string; sales: number; orders: number }>,
+    const buckets = new Map<string, SalesBucket>(
+      keys.map((date) => [date, { date, sales: 0, orders: 0 }]),
     );
+    const sum = (pick: (order: (typeof orders)[number]) => number) =>
+      orders.reduce((total, order) => total + pick(order), 0);
+
+    for (const order of orders) {
+      const bucket = buckets.get(keyOf(order.createdAt));
+      if (!bucket) continue;
+      bucket.sales += order.total;
+      bucket.orders += 1;
+    }
+
+    const totalSales = sum((o) => o.total);
 
     return {
       period,
+      granularity: period === 'year' ? 'month' : 'day',
       summary: {
         totalSales,
-        totalOrders,
-        averageOrderValue,
-        totalDiscount,
-        totalTax,
-        totalShipping,
+        totalOrders: orders.length,
+        averageOrderValue: orders.length ? totalSales / orders.length : 0,
+        totalCollected: sum((o) => o.amountPaid),
+        totalDiscount: sum((o) => o.discount),
+        totalTax: sum((o) => o.tax),
+        totalShipping: sum((o) => o.shippingCost),
       },
-      chart: Object.values(salesByDate).sort((a, b) => a.date.localeCompare(b.date)),
+      chart: [...buckets.values()],
     };
   }
 
-  /**
-   * Get top selling products
-   */
   static async getTopProducts(limit = 10) {
-    const topProducts = await prisma.orderItem.groupBy({
-      by: ['productId'],
-      _sum: {
-        quantity: true,
-      },
-      _count: {
-        productId: true,
-      },
-      orderBy: {
-        _sum: {
-          quantity: 'desc',
-        },
-      },
-      take: limit,
+    return cache.getOrSet('orders', ['top-products', limit], CACHE_TTL.medium, () =>
+      this.loadTopProducts(limit),
+    );
+  }
+
+  private static async loadTopProducts(limit: number) {
+    const items = await prisma.orderItem.findMany({
+      where: { order: LIVE_ORDER },
+      select: { productId: true, orderId: true, quantity: true, price: true },
     });
 
-    // One batched query instead of one concurrent query per product.
-    const products = topProducts.length
+    const totals = new Map<string, { sold: number; revenue: number; orders: Set<string> }>();
+    for (const item of items) {
+      const entry = totals.get(item.productId) ?? { sold: 0, revenue: 0, orders: new Set() };
+      entry.sold += item.quantity;
+      entry.revenue += item.quantity * item.price;
+      entry.orders.add(item.orderId);
+      totals.set(item.productId, entry);
+    }
+
+    const ranked = [...totals.entries()]
+      .sort((a, b) => b[1].revenue - a[1].revenue)
+      .slice(0, limit);
+    const products = ranked.length
       ? await prisma.product.findMany({
-          where: { id: { in: topProducts.map((item) => item.productId) } },
+          where: { id: { in: ranked.map(([id]) => id) } },
           select: {
             id: true,
             name: true,
@@ -161,146 +183,106 @@ export class DashboardService {
             imageUrl: true,
             images: true,
             stockQuantity: true,
-            category: {
-              select: {
-                name: true,
-              },
-            },
+            category: { select: { name: true } },
           },
         })
       : [];
     const productById = new Map(products.map((p) => [p.id, p]));
 
-    const productsWithDetails = topProducts.map((item) => ({
-      product: productById.get(item.productId) || null,
-      totalSold: item._sum.quantity || 0,
-      orderCount: item._count.productId,
-    }));
-
-    return productsWithDetails.filter((item) => item.product !== null);
+    return ranked
+      .filter(([id]) => productById.has(id))
+      .map(([id, entry]) => ({
+        product: productById.get(id)!,
+        totalSold: entry.sold,
+        revenue: entry.revenue,
+        orderCount: entry.orders.size,
+      }));
   }
 
-  /**
-   * Get recent orders
-   */
   static async getRecentOrders(limit = 10) {
-    return prisma.order.findMany({
-      take: limit,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            name: true,
+    return cache.getOrSet('orders', ['recent', limit], CACHE_TTL.short, () =>
+      prisma.order.findMany({
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: {
+            select: { id: true, email: true, firstName: true, lastName: true, name: true },
           },
+          items: { select: { productName: true, quantity: true, price: true } },
         },
-        items: {
-          select: {
-            productName: true,
-            quantity: true,
-            price: true,
-          },
-        },
-      },
-    });
+      }),
+    );
   }
 
-  /**
-   * Get revenue by category
-   */
   static async getRevenueByCategory() {
+    return cache.getOrSet('orders', ['revenue-by-category'], CACHE_TTL.medium, () =>
+      this.loadRevenueByCategory(),
+    );
+  }
+
+  private static async loadRevenueByCategory() {
     const orderItems = await prisma.orderItem.findMany({
-      where: {
-        order: {
-          status: 'DELIVERED',
-        },
-      },
+      where: { order: LIVE_ORDER },
       select: {
         quantity: true,
         price: true,
-        product: {
-          select: {
-            category: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
+        product: { select: { category: { select: { id: true, name: true } } } },
       },
     });
 
-    const categoryRevenue = orderItems.reduce(
-      (acc, item) => {
-        const categoryId = item.product.category.id;
-        const categoryName = item.product.category.name;
-        const revenue = item.quantity * item.price;
+    const byCategory = new Map<
+      string,
+      { categoryId: string; categoryName: string; revenue: number; itemsSold: number }
+    >();
+    for (const item of orderItems) {
+      const { id, name } = item.product.category;
+      const entry = byCategory.get(id) ?? {
+        categoryId: id,
+        categoryName: name,
+        revenue: 0,
+        itemsSold: 0,
+      };
+      entry.revenue += item.quantity * item.price;
+      entry.itemsSold += item.quantity;
+      byCategory.set(id, entry);
+    }
 
-        if (!acc[categoryId]) {
-          acc[categoryId] = {
-            categoryId,
-            categoryName,
-            revenue: 0,
-            itemsSold: 0,
-          };
-        }
+    return [...byCategory.values()].sort((a, b) => b.revenue - a.revenue);
+  }
 
-        acc[categoryId].revenue += revenue;
-        acc[categoryId].itemsSold += item.quantity;
-
-        return acc;
-      },
-      {} as Record<
-        string,
-        { categoryId: string; categoryName: string; revenue: number; itemsSold: number }
-      >,
+  static async getLowStockAlert(threshold = LOW_STOCK_THRESHOLD) {
+    return cache.getOrSet('products', ['low-stock-alert', threshold], CACHE_TTL.short, () =>
+      prisma.product.findMany({
+        where: { isActive: true, stockQuantity: { lte: threshold } },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          sku: true,
+          stockQuantity: true,
+          imageUrl: true,
+          images: true,
+          category: { select: { name: true } },
+        },
+        orderBy: [{ stockQuantity: 'asc' }, { name: 'asc' }],
+      }),
     );
-
-    return Object.values(categoryRevenue).sort((a, b) => b.revenue - a.revenue);
   }
 
-  /**
-   * Get low stock alert
-   */
-  static async getLowStockAlert(threshold = 10) {
-    return prisma.product.findMany({
-      where: {
-        stockQuantity: { lte: threshold, gt: 0 },
-        isActive: true,
-      },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        sku: true,
-        stockQuantity: true,
-        imageUrl: true,
-        category: {
-          select: {
-            name: true,
-          },
-        },
-      },
-      orderBy: { stockQuantity: 'asc' },
-    });
-  }
-
-  /**
-   * Get customer insights
-   */
   static async getCustomerInsights() {
+    return cache.getOrSet('customers', ['insights'], CACHE_TTL.short, () =>
+      this.loadCustomerInsights(),
+    );
+  }
+
+  private static async loadCustomerInsights() {
+    const now = new Date();
     const [totalCustomers, newCustomersThisMonth, topCustomers] = await Promise.all([
       prisma.user.count({ where: { role: 'CUSTOMER' } }),
       prisma.user.count({
         where: {
           role: 'CUSTOMER',
-          createdAt: {
-            gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-          },
+          createdAt: { gte: new Date(now.getFullYear(), now.getMonth(), 1) },
         },
       }),
       prisma.user.findMany({
@@ -312,40 +294,28 @@ export class DashboardService {
           firstName: true,
           lastName: true,
           name: true,
-          _count: {
-            select: { orders: true },
-          },
+          _count: { select: { orders: true } },
         },
-        orderBy: {
-          orders: {
-            _count: 'desc',
-          },
-        },
+        orderBy: { orders: { _count: 'desc' } },
       }),
     ]);
 
-    // One grouped query instead of one concurrent aggregate per customer.
     const spendByCustomer = topCustomers.length
       ? await prisma.order.groupBy({
           by: ['userId'],
-          where: {
-            userId: { in: topCustomers.map((c) => c.id) },
-            status: 'DELIVERED',
-          },
+          where: { ...LIVE_ORDER, userId: { in: topCustomers.map((c) => c.id) } },
           _sum: { total: true },
         })
       : [];
     const spentById = new Map(spendByCustomer.map((s) => [s.userId, s._sum.total || 0]));
 
-    const topCustomersWithSpending = topCustomers.map((customer) => ({
-      ...customer,
-      totalSpent: spentById.get(customer.id) || 0,
-    }));
-
     return {
       totalCustomers,
       newCustomersThisMonth,
-      topCustomers: topCustomersWithSpending,
+      topCustomers: topCustomers.map((customer) => ({
+        ...customer,
+        totalSpent: spentById.get(customer.id) || 0,
+      })),
     };
   }
 }

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { DashboardService } from '../services/dashboard.service';
+import { parsePageQuery } from '../utils/pagination';
 
 export class DashboardController {
   /**
@@ -48,8 +49,8 @@ export class DashboardController {
    */
   static async getTopProducts(req: Request, res: Response) {
     try {
-      const { limit = '10' } = req.query;
-      const products = await DashboardService.getTopProducts(parseInt(limit as string));
+      const { limit } = parsePageQuery(req.query);
+      const products = await DashboardService.getTopProducts(limit);
       res.json({ success: true, data: { products } });
     } catch (error) {
       res.status(500).json({
@@ -64,8 +65,8 @@ export class DashboardController {
    */
   static async getRecentOrders(req: Request, res: Response) {
     try {
-      const { limit = '10' } = req.query;
-      const orders = await DashboardService.getRecentOrders(parseInt(limit as string));
+      const { limit } = parsePageQuery(req.query);
+      const orders = await DashboardService.getRecentOrders(limit);
       res.json({ success: true, data: { orders } });
     } catch (error) {
       res.status(500).json({
@@ -95,8 +96,10 @@ export class DashboardController {
    */
   static async getLowStockAlert(req: Request, res: Response) {
     try {
-      const { threshold = '10' } = req.query;
-      const products = await DashboardService.getLowStockAlert(parseInt(threshold as string));
+      const threshold = Number.parseInt(String(req.query.threshold ?? ''), 10);
+      const products = await DashboardService.getLowStockAlert(
+        Number.isFinite(threshold) && threshold > 0 ? threshold : undefined,
+      );
       res.json({ success: true, data: { products } });
     } catch (error) {
       res.status(500).json({

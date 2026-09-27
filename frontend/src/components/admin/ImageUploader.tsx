@@ -12,6 +12,8 @@ interface ImageUploaderProps {
   readonly max?: number;
   readonly maxBytes?: number;
   readonly disabled?: boolean;
+  readonly aspect?: 'square' | 'landscape';
+  readonly label?: string;
 }
 
 const readAsDataUrl = (file: File) =>
@@ -31,6 +33,8 @@ export function ImageUploader({
   max = 5,
   maxBytes = 5 * 1024 * 1024,
   disabled,
+  aspect = 'square',
+  label = 'Product image',
 }: ImageUploaderProps) {
   const inputId = useId();
   const lightbox = useImageLightbox();
@@ -80,13 +84,16 @@ export function ImageUploader({
   return (
     <div className="space-y-4">
       {images.length > 0 && (
-        <ul className={cn('grid gap-3', max > 1 ? 'grid-cols-3' : 'grid-cols-1')}>
+        <ul className={cn('grid gap-3', max > 1 ? 'grid-cols-3' : 'max-w-xl grid-cols-1')}>
           {images.map((src, index) => (
             <li
               key={src.slice(-48) + index}
-              className="group relative aspect-square overflow-hidden rounded-xl border bg-muted"
+              className={cn(
+                'group relative overflow-hidden rounded-xl border bg-muted/60',
+                aspect === 'landscape' ? 'aspect-4/3' : 'aspect-square',
+              )}
             >
-              <Image src={src} alt={`Product image ${index + 1}`} fill className="object-cover" />
+              <Image src={src} alt={`${label} ${index + 1}`} fill className="object-contain p-2" />
               <ImageZoomTrigger
                 onClick={() => lightbox.openAt(index)}
                 label={`Preview image ${index + 1}`}
@@ -179,7 +186,7 @@ export function ImageUploader({
         index={lightbox.index}
         onOpenChange={lightbox.onOpenChange}
         onIndexChange={lightbox.setIndex}
-        alt="Product image"
+        alt={label}
       />
     </div>
   );

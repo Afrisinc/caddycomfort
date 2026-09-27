@@ -1,4 +1,5 @@
 import prisma from '../config/database';
+import { cache } from '../utils/cache';
 import { logger } from '../config/logger';
 import { isOnlinePaymentSettled, successfulPaymentUpdate } from '../utils/payment/payment-rules';
 
@@ -79,6 +80,7 @@ export class PaymentWebhookService {
       where: { id: order.id },
       data: successfulPaymentUpdate(order),
     });
+    await cache.invalidate('orders');
 
     logger.info(
       { orderId: order.id, orderNumber: order.orderNumber },

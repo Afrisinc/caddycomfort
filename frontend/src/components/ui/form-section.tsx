@@ -22,7 +22,8 @@ export function FormSection({
     <section
       id={id}
       aria-labelledby={id ? `${id}-title` : undefined}
-      className={cn('scroll-mt-28 rounded-2xl border bg-card', className)}
+      tabIndex={id ? -1 : undefined}
+      className={cn('scroll-mt-28 rounded-2xl border bg-card outline-none', className)}
     >
       <header className="border-b px-5 py-4 sm:px-6">
         <h2 id={id ? `${id}-title` : undefined} className="text-base font-semibold">

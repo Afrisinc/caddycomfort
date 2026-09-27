@@ -20,4 +20,13 @@ export function formatRwf(amount: number): string {
   return `Rwf ${Math.round(amount).toLocaleString()}`;
 }
 
+const compactNumber = new Intl.NumberFormat('en', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
+
+export function formatRwfCompact(amount: number): string {
+  return `Rwf ${compactNumber.format(Math.round(amount))}`;
+}
+
 export const LOW_STOCK_THRESHOLD = 5;

@@ -8,7 +8,7 @@ export const CACHE_TTL = {
 } as const;
 
 export type CacheNamespace =
-  'products' | 'categories' | 'reviews' | 'settings' | 'customers' | 'coupons';
+  'products' | 'categories' | 'reviews' | 'settings' | 'customers' | 'coupons' | 'orders';
 
 const versionKey = (namespace: CacheNamespace) => `${namespace}:version`;
 
