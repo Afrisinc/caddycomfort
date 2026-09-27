@@ -1,24 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { useRouter } from '@/router/compat';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  MoreVertical,
-  Eye,
-  Mail,
   Ban,
-  UserCheck,
-  Users as UsersIcon,
-  TrendingUp,
-  ShoppingBag,
+  Eye,
   Loader2,
+  Mail,
+  MoreVertical,
+  RefreshCw,
+  ShoppingBag,
+  TrendingUp,
+  UserCheck,
+  Users,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import Link from '@/components/common/Link';
+import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
+import { SearchInput } from '@/components/ui/search-input';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -30,287 +33,314 @@ import {
 } from '@/components/ui/select';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
-import { StatCard, StatGrid, type StatCardProps } from '@/components/admin/StatCard';
+import { StatCard, StatGrid } from '@/components/admin/StatCard';
+import { TablePagination } from '@/components/admin/TablePagination';
+import { CustomerStatusBadge } from '@/components/admin/CustomerStatusBadge';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { ALL, useUrlFilters } from '@/hooks/useUrlFilters';
 import { customersApi } from '@/lib/api';
-import { Customer, CustomerStats, CustomerStatus } from '@/types/api';
+import { CUSTOMER_STATUSES, CUSTOMER_STATUS_STYLES } from '@/lib/customerStatus';
+import { ADMIN_PAGE_SIZE } from '@/lib/pagination';
+import { formatRwf } from '@/lib/pricing';
 import { formatRelativeTime } from '@/lib/utils';
-import { toast } from 'sonner';
-import { SearchInput } from '@/components/ui/search-input';
-
-const STATUS_BADGES: Record<CustomerStatus, { label: string; className: string }> = {
-  vip: { label: 'VIP', className: 'bg-purple-100 text-purple-700' },
-  active: { label: 'Active', className: 'bg-green-100 text-green-700' },
-  inactive: { label: 'Inactive', className: 'bg-gray-100 text-gray-700' },
-  suspended: { label: 'Suspended', className: 'bg-red-100 text-red-700' },
-};
-
-function formatMoney(amount: number): string {
-  return `Rwf ${(amount / 1000).toFixed(0)}K`;
-}
+import type { Customer, CustomerStats, CustomerStatus } from '@/types/api';
 
 function CustomersManagement() {
-  const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<CustomerStatus | 'all'>('all');
+  const { get, query, search, setSearch, setFilter, page, setPage, clearFilters, hasFilters } =
+    useUrlFilters();
+  const status = get('status') as CustomerStatus | typeof ALL;
+
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [stats, setStats] = useState<CustomerStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchCustomers();
-    fetchStats();
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadFailed(false);
+    try {
+      const result = await customersApi.getAll({
+        page,
+        limit: ADMIN_PAGE_SIZE,
+        search: query || undefined,
+        status,
+      });
+      setCustomers(result.customers);
+      setTotalCount(result.pagination.total);
+    } catch {
+      setLoadFailed(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, query, status]);
+
+  const loadStats = useCallback(() => {
+    customersApi
+      .getStats()
+      .then(setStats)
+      .catch(() => setStats(null))
+      .finally(() => setStatsLoading(false));
   }, []);
 
-  const fetchCustomers = async () => {
-    try {
-      setIsLoading(true);
-      const data = await customersApi.getAll();
-      setCustomers(Array.isArray(data) ? data : []);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to load customers');
-      setCustomers([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  const fetchStats = async () => {
-    try {
-      const data = await customersApi.getStats();
-      setStats(data);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to load customer statistics');
-    }
-  };
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
-  const handleToggleStatus = async (customer: Customer) => {
+  const toggleStatus = async (customer: Customer) => {
     const nextActive = !customer.isActive;
+    setTogglingId(customer.id);
     try {
-      setTogglingId(customer.id);
       await customersApi.updateStatus(customer.id, nextActive);
       toast.success(nextActive ? `${customer.name} reactivated` : `${customer.name} suspended`);
-      await Promise.all([fetchCustomers(), fetchStats()]);
+      load();
+      loadStats();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update customer status');
+      toast.error(error.message || 'Could not update the customer');
     } finally {
       setTogglingId(null);
     }
   };
 
-  const statCards: StatCardProps[] = stats
-    ? [
-        { title: 'Total Customers', value: stats.totalCustomers.toLocaleString(), icon: UsersIcon },
-        {
-          title: 'Active',
-          value: stats.activeCount.toLocaleString(),
-          icon: UserCheck,
-          tone: 'green',
-        },
-        {
-          title: 'Avg Orders',
-          value: stats.avgOrdersPerCustomer.toFixed(1),
-          icon: ShoppingBag,
-          tone: 'blue',
-          hint: 'Per customer',
-        },
-        {
-          title: 'Avg Value',
-          value: formatMoney(stats.avgOrderValue),
-          icon: TrendingUp,
-          tone: 'violet',
-          hint: 'Per order',
-        },
-      ]
-    : [];
+  const renderRows = () => {
+    if (loading) {
+      return Array.from({ length: 6 }, (_, i) => (
+        <tr key={i} className="border-b last:border-0">
+          <td colSpan={6} className="p-4">
+            <Skeleton className="h-9 w-full" />
+          </td>
+        </tr>
+      ));
+    }
+    return customers.map((customer) => {
+      const busy = togglingId === customer.id;
+      return (
+        <tr
+          key={customer.id}
+          className="border-b transition-colors last:border-0 hover:bg-muted/40"
+        >
+          <td className="p-4">
+            <Link
+              href={`/admin/customers/${customer.id}`}
+              className="block max-w-56 truncate font-medium outline-none hover:text-accent-rose focus-visible:underline"
+            >
+              {customer.name}
+            </Link>
+            <p className="max-w-56 truncate text-xs text-muted-foreground">{customer.email}</p>
+          </td>
+          <td className="p-4 text-sm text-muted-foreground">{customer.phone || '—'}</td>
+          <td className="p-4 text-right text-sm tabular-nums">
+            <p className="font-medium">{customer.ordersCount}</p>
+            <p className="text-xs text-muted-foreground">
+              {customer.lastOrderAt ? formatRelativeTime(customer.lastOrderAt) : 'Never'}
+            </p>
+          </td>
+          <td className="p-4 text-right text-sm font-semibold tabular-nums">
+            {formatRwf(customer.totalSpent)}
+          </td>
+          <td className="p-4">
+            <CustomerStatusBadge status={customer.status} />
+          </td>
+          <td className="p-4 text-right">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  disabled={busy}
+                  aria-label={`Actions for ${customer.name}`}
+                >
+                  {busy ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <MoreVertical className="h-4 w-4" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href={`/admin/customers/${customer.id}`}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    View details
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href={`mailto:${customer.email}`}>
+                    <Mail className="mr-2 h-4 w-4" />
+                    Send email
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {customer.isActive ? (
+                  <DropdownMenuItem
+                    onSelect={() => toggleStatus(customer)}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <Ban className="mr-2 h-4 w-4" />
+                    Suspend account
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onSelect={() => toggleStatus(customer)}>
+                    <UserCheck className="mr-2 h-4 w-4" />
+                    Reactivate account
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </td>
+        </tr>
+      );
+    });
+  };
 
-  const filteredCustomers = customers.filter((customer) => {
-    const matchesSearch =
-      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || customer.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const renderTable = () => {
+    if (loadFailed) {
+      return (
+        <EmptyState
+          icon={RefreshCw}
+          title="We couldn't load customers"
+          description="Check your connection and try again."
+          action={
+            <Button variant="outline" onClick={load}>
+              Try again
+            </Button>
+          }
+        />
+      );
+    }
+    if (!loading && customers.length === 0) {
+      return (
+        <EmptyState
+          icon={Users}
+          title={hasFilters ? 'No customers match these filters' : 'No customers yet'}
+          description={
+            hasFilters
+              ? 'Try a different search or clear the filters.'
+              : 'Customers appear here once they create an account.'
+          }
+          action={
+            hasFilters && (
+              <Button variant="outline" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            )
+          }
+        />
+      );
+    }
+    return (
+      <div className="overflow-hidden rounded-2xl border bg-card">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-208">
+            <thead className="border-b bg-muted/40 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="p-4 font-medium">Customer</th>
+                <th className="p-4 font-medium">Phone</th>
+                <th className="p-4 text-right font-medium">Orders</th>
+                <th className="p-4 text-right font-medium">Total spent</th>
+                <th className="p-4 font-medium">Status</th>
+                <th className="p-4">
+                  <span className="sr-only">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>{renderRows()}</tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <AdminHeader title="Customer Management" description="View and manage your customers" />
+      <AdminHeader title="Customers" description="See who shops with you and manage their accounts">
+        <Button
+          variant="outline"
+          onClick={() => {
+            load();
+            loadStats();
+          }}
+          className="gap-2"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Refresh
+        </Button>
+      </AdminHeader>
 
-      <div className="px-4 sm:px-8 py-8">
-        <StatGrid columns={4} loading={isLoading}>
-          {statCards.map((stat) => (
-            <StatCard key={stat.title} {...stat} />
-          ))}
+      <div className="px-4 py-8 sm:px-8">
+        <StatGrid columns={4} loading={statsLoading}>
+          <StatCard
+            title="Total customers"
+            value={(stats?.totalCustomers ?? 0).toLocaleString()}
+            icon={Users}
+            tone="blue"
+          />
+          <StatCard
+            title="Active"
+            value={(stats?.activeCount ?? 0).toLocaleString()}
+            icon={UserCheck}
+            tone="green"
+            hint="Placed at least one order"
+            href="/admin/customers?status=active"
+          />
+          <StatCard
+            title="Avg orders"
+            value={(stats?.avgOrdersPerCustomer ?? 0).toFixed(1)}
+            icon={ShoppingBag}
+            tone="violet"
+            hint="Per customer"
+          />
+          <StatCard
+            title="Avg order value"
+            value={formatRwf(stats?.avgOrderValue ?? 0)}
+            icon={TrendingUp}
+            tone="amber"
+          />
         </StatGrid>
 
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <SearchInput
-                  label="Search customers"
-                  placeholder="Search by name or email..."
-                  value={searchQuery}
-                  onValueChange={setSearchQuery}
-                />
-              </div>
-              <Select
-                value={statusFilter}
-                onValueChange={(value) => setStatusFilter(value as CustomerStatus | 'all')}
-              >
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Customers</SelectItem>
-                  <SelectItem value="vip">VIP</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <SearchInput
+            className="flex-1"
+            label="Search customers"
+            placeholder="Search by name or email"
+            value={search}
+            onValueChange={setSearch}
+          />
+          <Select value={status} onValueChange={(value) => setFilter('status', value)}>
+            <SelectTrigger
+              className="h-10 w-full bg-background sm:w-48"
+              aria-label="Filter by status"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All customers</SelectItem>
+              {CUSTOMER_STATUSES.map((value) => (
+                <SelectItem key={value} value={value}>
+                  {CUSTOMER_STATUS_STYLES[value].label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        {/* Customers Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>All Customers ({filteredCustomers.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {
-              <>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-3 px-4 font-semibold">Customer</th>
-                        <th className="text-left py-3 px-4 font-semibold">Contact</th>
-                        <th className="text-left py-3 px-4 font-semibold">Orders</th>
-                        <th className="text-left py-3 px-4 font-semibold">Total Spent</th>
-                        <th className="text-left py-3 px-4 font-semibold">Last Order</th>
-                        <th className="text-left py-3 px-4 font-semibold">Status</th>
-                        <th className="text-right py-3 px-4 font-semibold">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {isLoading
-                        ? Array.from({ length: 5 }, (_, i) => (
-                            <tr key={i} className="border-b">
-                              {Array.from({ length: 7 }, (_, j) => (
-                                <td key={j} className="py-4 px-4">
-                                  <Skeleton className="h-4 w-full max-w-28" />
-                                </td>
-                              ))}
-                            </tr>
-                          ))
-                        : filteredCustomers.map((customer) => {
-                            const badge = STATUS_BADGES[customer.status];
-                            return (
-                              <tr key={customer.id} className="border-b hover:bg-muted/50">
-                                <td className="py-4 px-4">
-                                  <div>
-                                    <p className="font-medium">{customer.name}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                      Joined{' '}
-                                      {new Date(customer.joinedAt).toLocaleDateString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric',
-                                      })}
-                                    </p>
-                                  </div>
-                                </td>
-                                <td className="py-4 px-4">
-                                  <div>
-                                    <p className="text-sm">{customer.email}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                      {customer.phone || '—'}
-                                    </p>
-                                  </div>
-                                </td>
-                                <td className="py-4 px-4">
-                                  <p className="font-medium">{customer.ordersCount}</p>
-                                </td>
-                                <td className="py-4 px-4">
-                                  <p className="font-medium">{formatMoney(customer.totalSpent)}</p>
-                                </td>
-                                <td className="py-4 px-4">
-                                  <p className="text-sm">
-                                    {formatRelativeTime(customer.lastOrderAt)}
-                                  </p>
-                                </td>
-                                <td className="py-4 px-4">
-                                  <Badge className={badge.className}>{badge.label}</Badge>
-                                </td>
-                                <td className="py-4 px-4 text-right">
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        disabled={togglingId === customer.id}
-                                      >
-                                        {togglingId === customer.id ? (
-                                          <Loader2 className="h-4 w-4 animate-spin" />
-                                        ) : (
-                                          <MoreVertical className="h-4 w-4" />
-                                        )}
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuItem
-                                        onClick={() =>
-                                          router.push(`/admin/customers/${customer.id}`)
-                                        }
-                                      >
-                                        <Eye className="h-4 w-4 mr-2" />
-                                        View Details
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem asChild>
-                                        <a href={`mailto:${customer.email}`}>
-                                          <Mail className="h-4 w-4 mr-2" />
-                                          Send Email
-                                        </a>
-                                      </DropdownMenuItem>
-                                      {customer.isActive ? (
-                                        <DropdownMenuItem
-                                          className="text-red-600"
-                                          onClick={() => handleToggleStatus(customer)}
-                                        >
-                                          <Ban className="h-4 w-4 mr-2" />
-                                          Suspend Account
-                                        </DropdownMenuItem>
-                                      ) : (
-                                        <DropdownMenuItem
-                                          onClick={() => handleToggleStatus(customer)}
-                                        >
-                                          <UserCheck className="h-4 w-4 mr-2" />
-                                          Reactivate Account
-                                        </DropdownMenuItem>
-                                      )}
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                    </tbody>
-                  </table>
-                </div>
+        {renderTable()}
 
-                {!isLoading && filteredCustomers.length === 0 && (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground">No customers found</p>
-                  </div>
-                )}
-              </>
-            }
-          </CardContent>
-        </Card>
+        {!loading && !loadFailed && (
+          <TablePagination
+            page={page}
+            pageSize={ADMIN_PAGE_SIZE}
+            total={totalCount}
+            onPageChange={setPage}
+            noun={['customer', 'customers']}
+          />
+        )}
       </div>
     </div>
   );

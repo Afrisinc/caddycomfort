@@ -1,5 +1,5 @@
 import prisma from '../config/database';
-import { cache } from '../utils/cache';
+import { CACHE_TTL, cache } from '../utils/cache';
 import { Prisma, InventoryLogType } from '@prisma/client';
 
 export interface StockAdjustmentInput {
@@ -238,6 +238,12 @@ export class InventoryService {
    * Get inventory summary
    */
   static async getInventorySummary() {
+    return cache.getOrSet('products', ['inventory-summary'], CACHE_TTL.short, () =>
+      this.loadSummary(),
+    );
+  }
+
+  private static async loadSummary() {
     const [
       totalProducts,
       totalStockValue,
@@ -303,6 +309,12 @@ export class InventoryService {
    * Get inventory valuation report
    */
   static async getInventoryValuation() {
+    return cache.getOrSet('products', ['inventory-valuation'], CACHE_TTL.short, () =>
+      this.loadValuation(),
+    );
+  }
+
+  private static async loadValuation() {
     // Intentionally includes inactive/draft products: stock still needs to
     // be tracked and restocked before a product is published.
     const products = await prisma.product.findMany({
@@ -354,7 +366,7 @@ export class InventoryService {
         totalProducts: products.length,
         totalQuantity,
         totalValue,
-        averageValue: totalValue / products.length,
+        averageValue: products.length ? totalValue / products.length : 0,
       },
     };
   }
@@ -553,6 +565,12 @@ export class InventoryService {
    * Get products requiring restock
    */
   static async getRestockRecommendations(threshold = 10, daysToAnalyze = 30) {
+    return cache.getOrSet('products', ['restock', threshold, daysToAnalyze], CACHE_TTL.short, () =>
+      this.loadRestockRecommendations(threshold, daysToAnalyze),
+    );
+  }
+
+  private static async loadRestockRecommendations(threshold: number, daysToAnalyze: number) {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - daysToAnalyze);
 

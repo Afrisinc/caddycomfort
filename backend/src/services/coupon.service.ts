@@ -1,5 +1,42 @@
-import { Coupon, DiscountType } from '@prisma/client';
+import { Coupon, DiscountType, Prisma } from '@prisma/client';
 import prisma from '../config/database';
+import { CACHE_TTL, cache } from '../utils/cache';
+import { pageMeta, skipOf, type PageQuery } from '../utils/pagination';
+
+export type CouponStatus = 'active' | 'expired' | 'inactive';
+
+export interface CouponFilters {
+  search?: string;
+  status?: CouponStatus;
+  isActive?: boolean;
+  discountType?: DiscountType;
+  isExpired?: boolean;
+}
+
+function couponWhere(filters: CouponFilters, now: Date): Prisma.CouponWhereInput {
+  const { search, status, isActive, discountType, isExpired } = filters;
+  const and: Prisma.CouponWhereInput[] = [];
+
+  if (search) {
+    and.push({
+      OR: [
+        { code: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ],
+    });
+  }
+  if (isActive !== undefined) and.push({ isActive });
+  if (discountType) and.push({ discountType });
+  if (isExpired === true) and.push({ validUntil: { lt: now } });
+  if (isExpired === false) and.push({ OR: [{ validUntil: null }, { validUntil: { gte: now } }] });
+  if (status === 'inactive') and.push({ isActive: false });
+  if (status === 'expired') and.push({ isActive: true, validUntil: { lt: now } });
+  if (status === 'active') {
+    and.push({ isActive: true, OR: [{ validUntil: null }, { validUntil: { gte: now } }] });
+  }
+
+  return and.length ? { AND: and } : {};
+}
 
 interface CreateCouponData {
   code: string;
@@ -62,51 +99,31 @@ export class CouponService {
       throw new Error('Start date must be before end date');
     }
 
-    return prisma.coupon.create({
+    const created = await prisma.coupon.create({
       data: {
         ...data,
         code: data.code.toUpperCase(),
       },
     });
+    await cache.invalidate('coupons');
+    return created;
   }
 
-  /**
-   * Get all coupons with filters
-   */
-  static async getAll(filters?: {
-    isActive?: boolean;
-    discountType?: DiscountType;
-    isExpired?: boolean;
-  }) {
-    const { isActive, discountType, isExpired } = filters || {};
-
-    const where: any = {};
-
-    if (isActive !== undefined) {
-      where.isActive = isActive;
-    }
-
-    if (discountType) {
-      where.discountType = discountType;
-    }
-
-    if (isExpired === true) {
-      where.validUntil = { lt: new Date() };
-    } else if (isExpired === false) {
-      where.validUntil = { gte: new Date() };
-    }
-
-    const coupons = await prisma.coupon.findMany({
-      where,
-      include: {
-        _count: {
-          select: { usages: true, orders: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
+  static async getAll(filters: CouponFilters, pageQuery: PageQuery) {
+    return cache.getOrSet('coupons', ['list', filters, pageQuery], CACHE_TTL.medium, async () => {
+      const where = couponWhere(filters, new Date());
+      const [coupons, total] = await Promise.all([
+        prisma.coupon.findMany({
+          where,
+          include: { _count: { select: { usages: true, orders: true } } },
+          orderBy: { createdAt: 'desc' },
+          skip: skipOf(pageQuery),
+          take: pageQuery.limit,
+        }),
+        prisma.coupon.count({ where }),
+      ]);
+      return { coupons, pagination: pageMeta(total, pageQuery) };
     });
-
-    return coupons;
   }
 
   /**
@@ -216,13 +233,15 @@ export class CouponService {
       }
     }
 
-    return prisma.coupon.update({
+    const updated = await prisma.coupon.update({
       where: { id },
       data: {
         ...data,
         code: data.code?.toUpperCase(),
       },
     });
+    await cache.invalidate('coupons');
+    return updated;
   }
 
   /**
@@ -251,6 +270,7 @@ export class CouponService {
     await prisma.coupon.delete({
       where: { id },
     });
+    await cache.invalidate('coupons');
   }
 
   /**
@@ -357,6 +377,7 @@ export class CouponService {
         },
       }),
     ]);
+    await cache.invalidate('coupons');
   }
 
   /**
@@ -396,6 +417,10 @@ export class CouponService {
    * Get coupon statistics
    */
   static async getStats() {
+    return cache.getOrSet('coupons', ['stats'], CACHE_TTL.medium, () => this.loadStats());
+  }
+
+  private static async loadStats() {
     const now = new Date();
 
     const [total, active, expired, used, unused] = await Promise.all([
@@ -426,13 +451,13 @@ export class CouponService {
       }),
     ]);
 
-    // Get total discount given
-    const discountStats = await prisma.order.aggregate({
-      _sum: { discount: true },
-      where: {
-        couponId: { not: null },
-      },
-    });
+    const [discountStats, usageStats] = await Promise.all([
+      prisma.order.aggregate({
+        _sum: { discount: true },
+        where: { couponId: { not: null } },
+      }),
+      prisma.coupon.aggregate({ _sum: { usedCount: true } }),
+    ]);
 
     return {
       total,
@@ -440,6 +465,7 @@ export class CouponService {
       expired,
       used,
       unused,
+      totalUses: usageStats._sum.usedCount || 0,
       totalDiscountGiven: discountStats._sum.discount || 0,
     };
   }
@@ -458,6 +484,7 @@ export class CouponService {
       },
     });
 
+    if (result.count > 0) await cache.invalidate('coupons');
     return result.count;
   }
 

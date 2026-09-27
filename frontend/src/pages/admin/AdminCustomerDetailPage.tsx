@@ -15,32 +15,26 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
+import { CustomerStatusBadge } from '@/components/admin/CustomerStatusBadge';
+import { TablePagination } from '@/components/admin/TablePagination';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { EmptyState } from '@/components/common/EmptyState';
 import { customersApi } from '@/lib/api';
-import { CustomerDetail, CustomerStatus } from '@/types/api';
+import { CustomerDetail } from '@/types/api';
+import { ADMIN_PAGE_SIZE, pageCount, pageSlice } from '@/lib/pagination';
+import { formatRwf } from '@/lib/pricing';
 import { formatRelativeTime } from '@/lib/utils';
 import { toast } from 'sonner';
 import { OrderStatusBadge } from '@/components/orders/StatusBadge';
-
-const STATUS_BADGES: Record<CustomerStatus, { label: string; className: string }> = {
-  vip: { label: 'VIP', className: 'bg-purple-100 text-purple-700' },
-  active: { label: 'Active', className: 'bg-green-100 text-green-700' },
-  inactive: { label: 'Inactive', className: 'bg-gray-100 text-gray-700' },
-  suspended: { label: 'Suspended', className: 'bg-red-100 text-red-700' },
-};
-
-function formatMoney(amount: number): string {
-  return `Rwf ${amount.toLocaleString()}`;
-}
 
 function CustomerDetailView({ id }: { id: string }) {
   const router = useRouter();
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isToggling, setIsToggling] = useState(false);
+  const [ordersPage, setOrdersPage] = useState(1);
 
   useEffect(() => {
     fetchCustomer();
@@ -84,7 +78,11 @@ function CustomerDetailView({ id }: { id: string }) {
 
   if (!customer) return null;
 
-  const badge = STATUS_BADGES[customer.status];
+  const currentOrdersPage = Math.min(
+    ordersPage,
+    pageCount(customer.orders.length, ADMIN_PAGE_SIZE),
+  );
+  const visibleOrders = pageSlice(customer.orders, currentOrdersPage, ADMIN_PAGE_SIZE);
   const defaultAddress = customer.addresses.find((a) => a.isDefault) || customer.addresses[0];
 
   return (
@@ -112,13 +110,12 @@ function CustomerDetailView({ id }: { id: string }) {
       </AdminHeader>
 
       <div className="px-4 sm:px-8 py-8 space-y-6">
-        {/* Overview */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-1">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 Customer
-                <Badge className={badge.className}>{badge.label}</Badge>
+                <CustomerStatusBadge status={customer.status} />
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
@@ -175,7 +172,7 @@ function CustomerDetailView({ id }: { id: string }) {
             <CardContent className="p-6 flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Spent</p>
-                <p className="text-2xl font-bold mt-1">{formatMoney(customer.totalSpent)}</p>
+                <p className="text-2xl font-bold mt-1">{formatRwf(customer.totalSpent)}</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-accent-rose/10 flex items-center justify-center">
                 <Wallet className="h-6 w-6 text-accent-rose" />
@@ -184,53 +181,66 @@ function CustomerDetailView({ id }: { id: string }) {
           </Card>
         </div>
 
-        {/* Order History */}
         <Card>
           <CardHeader>
-            <CardTitle>Order History ({customer.orders.length})</CardTitle>
+            <CardTitle>Order history</CardTitle>
           </CardHeader>
           <CardContent>
             {customer.orders.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No orders yet</p>
-              </div>
+              <EmptyState
+                icon={ShoppingBag}
+                title="No orders yet"
+                description="Orders this customer places will appear here."
+              />
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-4 font-semibold">Order</th>
-                      <th className="text-left py-3 px-4 font-semibold">Date</th>
-                      <th className="text-left py-3 px-4 font-semibold">Total</th>
-                      <th className="text-left py-3 px-4 font-semibold">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {customer.orders.map((order) => {
-                      return (
-                        <tr key={order.id} className="border-b hover:bg-muted/50">
-                          <td className="py-3 px-4">
-                            <code className="text-sm bg-muted px-2 py-1 rounded">
-                              {order.orderNumber}
-                            </code>
-                          </td>
-                          <td className="py-3 px-4 text-sm text-muted-foreground">
-                            {new Date(order.createdAt).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}
-                          </td>
-                          <td className="py-3 px-4 font-medium">{formatMoney(order.total)}</td>
-                          <td className="py-3 px-4">
-                            <OrderStatusBadge status={order.status} />
-                          </td>
+              <>
+                <div className="overflow-hidden rounded-xl border">
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-128">
+                      <thead className="border-b bg-muted/40 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        <tr>
+                          <th className="p-4 font-medium">Order</th>
+                          <th className="p-4 font-medium">Date</th>
+                          <th className="p-4 text-right font-medium">Total</th>
+                          <th className="p-4 font-medium">Status</th>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                      </thead>
+                      <tbody>
+                        {visibleOrders.map((order) => (
+                          <tr
+                            key={order.id}
+                            className="border-b transition-colors last:border-0 hover:bg-muted/40"
+                          >
+                            <td className="p-4 font-mono text-sm font-medium">
+                              {order.orderNumber}
+                            </td>
+                            <td className="p-4 text-sm text-muted-foreground">
+                              {new Date(order.createdAt).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}
+                            </td>
+                            <td className="p-4 text-right text-sm font-semibold tabular-nums">
+                              {formatRwf(order.total)}
+                            </td>
+                            <td className="p-4">
+                              <OrderStatusBadge status={order.status} />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <TablePagination
+                  page={currentOrdersPage}
+                  pageSize={ADMIN_PAGE_SIZE}
+                  total={customer.orders.length}
+                  onPageChange={setOrdersPage}
+                  noun={['order', 'orders']}
+                />
+              </>
             )}
           </CardContent>
         </Card>

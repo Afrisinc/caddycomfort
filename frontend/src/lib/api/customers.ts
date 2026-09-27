@@ -1,18 +1,28 @@
 import apiClient, { handleApiResponse, handleApiError } from '@/lib/api-client';
-import { Customer, CustomerStats, CustomerDetail, CustomerStatus } from '@/types/api';
+import {
+  Customer,
+  CustomerStats,
+  CustomerDetail,
+  CustomerStatus,
+  PageMeta,
+  PaginationParams,
+} from '@/types/api';
+
+export interface CustomersResult {
+  customers: Customer[];
+  pagination: PageMeta;
+}
 
 export const customersApi = {
   /**
    * Get all customers (Admin only)
    */
-  getAll: async (params?: {
-    search?: string;
-    status?: CustomerStatus | 'all';
-  }): Promise<Customer[]> => {
+  getAll: async (
+    params?: PaginationParams & { search?: string; status?: CustomerStatus | 'all' },
+  ): Promise<CustomersResult> => {
     try {
       const response = await apiClient.get('/customers', { params });
-      const result = handleApiResponse<{ customers: Customer[] }>(response).data!;
-      return result.customers || [];
+      return handleApiResponse<CustomersResult>(response).data!;
     } catch (error) {
       throw handleApiError(error);
     }

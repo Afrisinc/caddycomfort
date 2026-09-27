@@ -231,7 +231,9 @@ export class OrderService {
       return newOrder;
     });
 
-    await cache.invalidate('products');
+    await (couponId
+      ? cache.invalidate('products', 'customers', 'coupons')
+      : cache.invalidate('products', 'customers'));
     return this.formatOrderResponse(order);
   }
 
@@ -479,7 +481,9 @@ export class OrderService {
       },
     });
 
-    if (status === 'CANCELLED') await cache.invalidate('products');
+    await (status === 'CANCELLED'
+      ? cache.invalidate('products', 'customers')
+      : cache.invalidate('customers'));
     return this.formatOrderResponse(updatedOrder);
   }
 

@@ -30,6 +30,7 @@ import {
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { StatCard, StatGrid, type StatCardProps } from '@/components/admin/StatCard';
+import { TablePagination } from '@/components/admin/TablePagination';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AdjustStockDialog } from '@/components/admin/AdjustStockDialog';
 import { StockHistoryDialog } from '@/components/admin/StockHistoryDialog';
@@ -39,6 +40,8 @@ import { InventorySummary, InventoryValuationItem, RestockRecommendation } from 
 import { formatRelativeTime } from '@/lib/utils';
 import { toast } from 'sonner';
 import { SearchInput } from '@/components/ui/search-input';
+import { useUrlFilters } from '@/hooks/useUrlFilters';
+import { ADMIN_PAGE_SIZE, pageCount, pageSlice } from '@/lib/pagination';
 
 type StockTier = 'out' | 'critical' | 'low' | 'good';
 
@@ -79,8 +82,9 @@ function downloadCsv(filename: string, rows: (string | number)[][]) {
 }
 
 function Inventory() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [stockFilter, setStockFilter] = useState<'all' | 'good' | 'low' | 'out'>('all');
+  const { get, query, search, setSearch, setFilter, page, setPage } = useUrlFilters();
+  const stockFilter = get('stock');
+  const searchQuery = query.toLowerCase();
   const [items, setItems] = useState<InventoryValuationItem[]>([]);
   const [summary, setSummary] = useState<InventorySummary | null>(null);
   const [recommendations, setRecommendations] = useState<RestockRecommendation[]>([]);
@@ -119,8 +123,8 @@ function Inventory() {
 
   const filteredItems = items.filter((item) => {
     const matchesSearch =
-      item.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.sku.toLowerCase().includes(searchQuery.toLowerCase());
+      item.productName.toLowerCase().includes(searchQuery) ||
+      item.sku.toLowerCase().includes(searchQuery);
 
     const tier = getStockTier(item.quantity);
     const matchesFilter =
@@ -131,6 +135,8 @@ function Inventory() {
 
     return matchesSearch && matchesFilter;
   });
+  const currentPage = Math.min(page, pageCount(filteredItems.length, ADMIN_PAGE_SIZE));
+  const visibleItems = pageSlice(filteredItems, currentPage, ADMIN_PAGE_SIZE);
 
   const statCards: StatCardProps[] = summary
     ? [
@@ -220,14 +226,11 @@ function Inventory() {
                 <SearchInput
                   label="Search inventory"
                   placeholder="Search by product name or SKU..."
-                  value={searchQuery}
-                  onValueChange={setSearchQuery}
+                  value={search}
+                  onValueChange={setSearch}
                 />
               </div>
-              <Select
-                value={stockFilter}
-                onValueChange={(v) => setStockFilter(v as typeof stockFilter)}
-              >
+              <Select value={stockFilter} onValueChange={(v) => setFilter('stock', v)}>
                 <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="Stock Status" />
                 </SelectTrigger>
@@ -245,7 +248,7 @@ function Inventory() {
         {/* Inventory Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Inventory Items ({filteredItems.length})</CardTitle>
+            <CardTitle>Inventory items</CardTitle>
           </CardHeader>
           <CardContent>
             {
@@ -273,7 +276,7 @@ function Inventory() {
                               ))}
                             </tr>
                           ))
-                        : filteredItems.map((item) => {
+                        : visibleItems.map((item) => {
                             const tier = getStockTier(item.quantity);
                             const tierConfig = TIER_CONFIG[tier];
                             const recommendation = recommendationByProduct.get(item.productId);
@@ -348,6 +351,16 @@ function Inventory() {
                   <div className="text-center py-12">
                     <p className="text-muted-foreground">No inventory items found</p>
                   </div>
+                )}
+
+                {!isLoading && (
+                  <TablePagination
+                    page={currentPage}
+                    pageSize={ADMIN_PAGE_SIZE}
+                    total={filteredItems.length}
+                    onPageChange={setPage}
+                    noun={['item', 'items']}
+                  />
                 )}
               </>
             }

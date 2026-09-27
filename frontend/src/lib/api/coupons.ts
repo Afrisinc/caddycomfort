@@ -1,5 +1,12 @@
 import apiClient, { handleApiResponse, handleApiError } from '@/lib/api-client';
-import { Coupon, CouponValidation, CouponStats } from '@/types/api';
+import { Coupon, CouponValidation, CouponStats, PageMeta, PaginationParams } from '@/types/api';
+
+export type CouponStatus = 'active' | 'expired' | 'inactive';
+
+export interface CouponsResult {
+  coupons: Coupon[];
+  pagination: PageMeta;
+}
 
 export interface CreateCouponData {
   code: string;
@@ -74,15 +81,16 @@ export const couponsApi = {
   /**
    * Get all coupons (Admin only)
    */
-  getAll: async (filters?: {
-    isActive?: boolean;
-    discountType?: string;
-    isExpired?: boolean;
-  }): Promise<Coupon[]> => {
+  getAll: async (
+    filters?: PaginationParams & {
+      search?: string;
+      status?: CouponStatus;
+      discountType?: string;
+    },
+  ): Promise<CouponsResult> => {
     try {
       const response = await apiClient.get('/coupons', { params: filters });
-      const result = handleApiResponse<{ coupons: Coupon[] }>(response).data!;
-      return result.coupons;
+      return handleApiResponse<CouponsResult>(response).data!;
     } catch (error) {
       throw handleApiError(error);
     }

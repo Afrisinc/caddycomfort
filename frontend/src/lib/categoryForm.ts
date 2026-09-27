@@ -122,3 +122,12 @@ export function categoryRows(categories: Category[], query = ''): CategoryRow[] 
     .forEach((root) => visit(root, 0, false));
   return rows;
 }
+
+export function groupRowsByRoot(rows: CategoryRow[]): CategoryRow[][] {
+  const groups: CategoryRow[][] = [];
+  for (const row of rows) {
+    if (row.depth === 0 || groups.length === 0) groups.push([row]);
+    else groups[groups.length - 1].push(row);
+  }
+  return groups;
+}

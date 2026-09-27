@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Banknote, Clock, PackageCheck, RefreshCw, ShoppingBag, TrendingUp } from 'lucide-react';
+import { Banknote, Clock, PackageCheck, RefreshCw, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Pagination } from '@/components/ui/pagination';
 import {
   Select,
   SelectContent,
@@ -14,11 +13,13 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { OrderDetailSheet } from '@/components/admin/OrderDetailSheet';
 import { StatCard, StatGrid } from '@/components/admin/StatCard';
+import { TablePagination } from '@/components/admin/TablePagination';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { EmptyState } from '@/components/common/EmptyState';
 import { OrderStatusBadge, PaymentStatusBadge } from '@/components/orders/StatusBadge';
-import { useDebounce } from '@/hooks/useDebounce';
+import { ALL, useUrlFilters } from '@/hooks/useUrlFilters';
 import { adminOrdersApi, type AdminOrderStats } from '@/lib/api';
+import { ADMIN_PAGE_SIZE } from '@/lib/pagination';
 import { formatRwf } from '@/lib/pricing';
 import {
   ADMIN_ORDER_STATUSES,
@@ -30,9 +31,6 @@ import {
 import type { Order, OrderStatus, PaymentStatus } from '@/types/api';
 import { SearchInput } from '@/components/ui/search-input';
 
-const PAGE_SIZE = 20;
-const ALL = 'all';
-
 function cashToCollect(order: Order): number {
   if (order.paymentMethod !== 'CASH_ON_DELIVERY') return 0;
   if (order.status === 'DELIVERED' || order.status === 'CANCELLED') return 0;
@@ -43,16 +41,14 @@ function OrdersManagement() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [stats, setStats] = useState<AdminOrderStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
-  const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<OrderStatus | typeof ALL>(ALL);
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | typeof ALL>(ALL);
+  const { get, query, search, setSearch, setFilter, page, setPage, clearFilters, hasFilters } =
+    useUrlFilters();
+  const status = get('status') as OrderStatus | typeof ALL;
+  const paymentStatus = get('payment') as PaymentStatus | typeof ALL;
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [selected, setSelected] = useState<Order | null>(null);
-  const debouncedSearch = useDebounce(search, 350);
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
@@ -60,20 +56,19 @@ function OrdersManagement() {
     try {
       const result = await adminOrdersApi.getAll({
         page,
-        limit: PAGE_SIZE,
-        search: debouncedSearch,
+        limit: ADMIN_PAGE_SIZE,
+        search: query,
         status: status === ALL ? undefined : status,
         paymentStatus: paymentStatus === ALL ? undefined : paymentStatus,
       });
       setOrders(result.orders);
-      setTotalPages(result.pagination.totalPages || 1);
       setTotalCount(result.pagination.total);
     } catch {
       setLoadFailed(true);
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedSearch, status, paymentStatus]);
+  }, [page, query, status, paymentStatus]);
 
   const loadStats = useCallback(() => {
     adminOrdersApi
@@ -91,21 +86,10 @@ function OrdersManagement() {
     loadStats();
   }, [loadStats]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, status, paymentStatus]);
-
   const handleUpdated = (updated: Order) => {
     setOrders((list) => list.map((order) => (order.id === updated.id ? updated : order)));
     setSelected(updated);
     loadStats();
-  };
-
-  const hasFilters = !!search || status !== ALL || paymentStatus !== ALL;
-  const clearFilters = () => {
-    setSearch('');
-    setStatus(ALL);
-    setPaymentStatus(ALL);
   };
 
   const needsAction = (stats?.byStatus.PENDING ?? 0) + (stats?.byStatus.PROCESSING ?? 0);
@@ -219,7 +203,7 @@ function OrdersManagement() {
     return (
       <div className="overflow-hidden rounded-2xl border bg-card">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[56rem]">
+          <table className="w-full min-w-224">
             <thead className="border-b bg-muted/40 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="p-4 font-medium">Order</th>
@@ -296,10 +280,7 @@ function OrdersManagement() {
             onValueChange={setSearch}
           />
           <div className="flex flex-wrap gap-3">
-            <Select
-              value={status}
-              onValueChange={(value) => setStatus(value as OrderStatus | typeof ALL)}
-            >
+            <Select value={status} onValueChange={(value) => setFilter('status', value)}>
               <SelectTrigger
                 className="h-10 w-full bg-background sm:w-44"
                 aria-label="Filter by order status"
@@ -315,10 +296,7 @@ function OrdersManagement() {
                 ))}
               </SelectContent>
             </Select>
-            <Select
-              value={paymentStatus}
-              onValueChange={(value) => setPaymentStatus(value as PaymentStatus | typeof ALL)}
-            >
+            <Select value={paymentStatus} onValueChange={(value) => setFilter('payment', value)}>
               <SelectTrigger
                 className="h-10 w-full bg-background sm:w-44"
                 aria-label="Filter by payment status"
@@ -337,16 +315,17 @@ function OrdersManagement() {
           </div>
         </div>
 
-        {!loading && !loadFailed && (
-          <p className="mb-3 flex items-center gap-1.5 text-sm text-muted-foreground">
-            <TrendingUp className="h-4 w-4" />
-            {totalCount.toLocaleString()} {totalCount === 1 ? 'order' : 'orders'}
-          </p>
-        )}
-
         {renderTable()}
 
-        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} className="mt-6" />
+        {!loading && !loadFailed && (
+          <TablePagination
+            page={page}
+            pageSize={ADMIN_PAGE_SIZE}
+            total={totalCount}
+            onPageChange={setPage}
+            noun={['order', 'orders']}
+          />
+        )}
       </div>
 
       <OrderDetailSheet

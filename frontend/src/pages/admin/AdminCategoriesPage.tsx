@@ -28,10 +28,13 @@ import {
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { StatCard, StatGrid } from '@/components/admin/StatCard';
+import { TablePagination } from '@/components/admin/TablePagination';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { EmptyState } from '@/components/common/EmptyState';
 import { categoriesApi } from '@/lib/api';
-import { categoryRows } from '@/lib/categoryForm';
+import { categoryRows, groupRowsByRoot } from '@/lib/categoryForm';
+import { useUrlFilters } from '@/hooks/useUrlFilters';
+import { ADMIN_PAGE_SIZE, pageCount, pageSlice } from '@/lib/pagination';
 import type { Category } from '@/types/api';
 
 function deleteBlocker(category: Category, childCount: number): string | null {
@@ -47,7 +50,7 @@ function CategoriesManagement() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [search, setSearch] = useState('');
+  const { query, search, setSearch, page, setPage, clearFilters } = useUrlFilters();
   const [toDelete, setToDelete] = useState<Category | null>(null);
 
   const load = useCallback(async () => {
@@ -66,7 +69,12 @@ function CategoriesManagement() {
     load();
   }, [load]);
 
-  const rows = useMemo(() => categoryRows(categories, search), [categories, search]);
+  const groups = useMemo(
+    () => groupRowsByRoot(categoryRows(categories, query)),
+    [categories, query],
+  );
+  const currentPage = Math.min(page, pageCount(groups.length, ADMIN_PAGE_SIZE));
+  const rows = pageSlice(groups, currentPage, ADMIN_PAGE_SIZE).flat();
   const topLevel = categories.filter((c) => !c.parentId).length;
   const empty = categories.filter((c) => (c._count?.products ?? 0) === 0).length;
   const toDeleteChildren = toDelete
@@ -93,15 +101,15 @@ function CategoriesManagement() {
       return (
         <EmptyState
           icon={FolderTree}
-          title={search ? 'No categories match your search' : 'No categories yet'}
+          title={query ? 'No categories match your search' : 'No categories yet'}
           description={
-            search
+            query
               ? 'Try a different word.'
               : 'Create your first category to start organizing products.'
           }
           action={
-            search ? (
-              <Button variant="outline" onClick={() => setSearch('')}>
+            query ? (
+              <Button variant="outline" onClick={clearFilters}>
                 Clear search
               </Button>
             ) : (
@@ -116,7 +124,7 @@ function CategoriesManagement() {
     return (
       <div className="overflow-hidden rounded-2xl border bg-card">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[44rem]">
+          <table className="w-full min-w-176">
             <thead className="border-b bg-muted/40 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="p-4 font-medium">Category</th>
@@ -283,6 +291,16 @@ function CategoriesManagement() {
         />
 
         {renderTable()}
+
+        {!loading && !loadFailed && (
+          <TablePagination
+            page={currentPage}
+            pageSize={ADMIN_PAGE_SIZE}
+            total={groups.length}
+            onPageChange={setPage}
+            noun={['top-level category', 'top-level categories']}
+          />
+        )}
       </div>
 
       <ConfirmDeleteDialog

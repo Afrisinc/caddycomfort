@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { User, UserRole } from '@prisma/client';
 import prisma from '../config/database';
+import { cache } from '../utils/cache';
 import {
   sendVerificationEmail,
   sendPasswordResetEmail,
@@ -252,6 +253,8 @@ export class AuthService {
         verificationCodeExpiry: new Date(Date.now() + VERIFICATION_CODE_TTL_MS),
       },
     });
+
+    await cache.invalidate('customers');
 
     // Generate tokens
     const tokens = await this.generateTokens(user);

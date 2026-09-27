@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import {
   AlertTriangle,
   Eye,
@@ -21,7 +20,6 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SearchInput } from '@/components/ui/search-input';
-import { Pagination } from '@/components/ui/pagination';
 import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog';
 import {
   Select,
@@ -40,18 +38,18 @@ import {
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { StatCard, StatGrid } from '@/components/admin/StatCard';
+import { TablePagination } from '@/components/admin/TablePagination';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { PriceDisplay } from '@/components/products/PriceDisplay';
-import { useDebounce } from '@/hooks/useDebounce';
+import { ALL, useUrlFilters } from '@/hooks/useUrlFilters';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { categoriesApi, productsApi } from '@/lib/api';
 import { categoryOptions } from '@/lib/productForm';
+import { ADMIN_PAGE_SIZE } from '@/lib/pagination';
 import { getProductPricing } from '@/lib/pricing';
 import { cn } from '@/lib/utils';
 import type { Category, Product, ProductFilters } from '@/types/api';
 
-const PAGE_SIZE = 20;
-const ALL = 'all';
 const LOW_STOCK = 10;
 const NO_CATEGORIES: Category[] = [];
 
@@ -64,17 +62,14 @@ function stockTone(quantity: number) {
 }
 
 function ProductsManagement() {
-  const [params, setParams] = useSearchParams();
-  const category = params.get('category') ?? ALL;
-  const status = params.get('status') ?? ALL;
-  const stock = params.get('stock') ?? ALL;
-  const page = Number(params.get('page')) || 1;
-  const [search, setSearch] = useState(params.get('q') ?? '');
-  const debouncedSearch = useDebounce(search.trim(), 350);
+  const { get, query, search, setSearch, setFilter, page, setPage, clearFilters, hasFilters } =
+    useUrlFilters();
+  const category = get('category');
+  const status = get('status');
+  const stock = get('stock');
 
   const categories = useAsyncData(categoriesApi.getAll, NO_CATEGORIES);
   const [products, setProducts] = useState<Product[]>([]);
-  const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -82,43 +77,25 @@ function ProductsManagement() {
   const [statsLoading, setStatsLoading] = useState(true);
   const [toDelete, setToDelete] = useState<Product | null>(null);
 
-  const setFilter = useCallback(
-    (key: string, value: string) => {
-      setParams((current) => {
-        const next = new URLSearchParams(current);
-        if (!value || value === ALL) next.delete(key);
-        else next.set(key, value);
-        if (key !== 'page') next.delete('page');
-        return next;
-      });
-    },
-    [setParams],
-  );
-
-  useEffect(() => {
-    if (debouncedSearch !== (params.get('q') ?? '')) setFilter('q', debouncedSearch);
-  }, [debouncedSearch, params, setFilter]);
-
   const load = useCallback(async () => {
     setLoading(true);
     setLoadFailed(false);
     const filters: ProductFilters = {
-      search: params.get('q') || undefined,
+      search: query || undefined,
       categoryId: category === ALL ? undefined : category,
       isActive: status === ALL ? undefined : status === 'active',
       stock: stock === 'low' || stock === 'out' ? stock : undefined,
     };
     try {
-      const result = await productsApi.getAll(filters, { page, limit: PAGE_SIZE });
+      const result = await productsApi.getAll(filters, { page, limit: ADMIN_PAGE_SIZE });
       setProducts(result.products);
-      setTotalPages(result.pagination.totalPages || 1);
       setTotalCount(result.pagination.total);
     } catch {
       setLoadFailed(true);
     } finally {
       setLoading(false);
     }
-  }, [params, category, status, stock, page]);
+  }, [query, category, status, stock, page]);
 
   const loadStats = useCallback(() => {
     productsApi
@@ -137,7 +114,6 @@ function ProductsManagement() {
   }, [loadStats]);
 
   const options = useMemo(() => categoryOptions(categories.data), [categories.data]);
-  const hasFilters = !!params.get('q') || category !== ALL || status !== ALL || stock !== ALL;
 
   const toggleVisibility = async (product: Product) => {
     try {
@@ -295,13 +271,7 @@ function ProductsManagement() {
           }
           action={
             hasFilters ? (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearch('');
-                  setParams(new URLSearchParams());
-                }}
-              >
+              <Button variant="outline" onClick={clearFilters}>
                 Clear filters
               </Button>
             ) : (
@@ -316,7 +286,7 @@ function ProductsManagement() {
     return (
       <div className="overflow-hidden rounded-2xl border bg-card">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[52rem]">
+          <table className="w-full min-w-208">
             <thead className="border-b bg-muted/40 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="p-4 font-medium">Product</th>
@@ -436,20 +406,17 @@ function ProductsManagement() {
           </div>
         </div>
 
-        {!loading && !loadFailed && (
-          <p className="mb-3 text-sm text-muted-foreground" aria-live="polite">
-            {totalCount.toLocaleString()} {totalCount === 1 ? 'product' : 'products'}
-          </p>
-        )}
-
         {renderTable()}
 
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          onPageChange={(next) => setFilter('page', String(next))}
-          className="mt-6"
-        />
+        {!loading && !loadFailed && (
+          <TablePagination
+            page={page}
+            pageSize={ADMIN_PAGE_SIZE}
+            total={totalCount}
+            onPageChange={setPage}
+            noun={['product', 'products']}
+          />
+        )}
       </div>
 
       <ConfirmDeleteDialog

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { CustomerService, CustomerStatus } from '../services/customer.service';
+import { parsePageQuery } from '../utils/pagination';
 
 const VALID_STATUSES: CustomerStatus[] = ['vip', 'active', 'inactive', 'suspended'];
 
@@ -12,12 +13,12 @@ export const getAllCustomers = async (req: Request, res: Response): Promise<void
         ? (status as CustomerStatus)
         : 'all';
 
-    const customers = await CustomerService.getCustomers({
-      search: typeof search === 'string' ? search : undefined,
-      status: statusFilter,
-    });
+    const result = await CustomerService.getCustomers(
+      { search: typeof search === 'string' ? search : undefined, status: statusFilter },
+      parsePageQuery(req.query),
+    );
 
-    res.json({ success: true, data: { customers } });
+    res.json({ success: true, data: result });
   } catch (error: any) {
     res.status(500).json({
       success: false,

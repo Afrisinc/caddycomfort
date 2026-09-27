@@ -1,847 +1,439 @@
-import React, { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import Link from '@/components/common/Link';
-import Image from '@/components/common/Image';
-import { ImageLightbox, ImageZoomTrigger } from '@/components/common/ImageLightbox';
-import { useImageLightbox } from '@/hooks/useImageLightbox';
-import { useRouter } from '@/router/compat';
 import {
   ArrowLeft,
-  Edit,
-  Trash2,
-  Package,
+  Boxes,
   ExternalLink,
-  Tag,
-  Layers,
-  Calendar,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  Sparkles,
-  RefreshCw,
-  Hash,
-  Info,
-  Loader2,
-  ChevronLeft,
-  ChevronRight,
+  Eye,
+  EyeOff,
+  History,
+  MessageSquare,
+  MoreHorizontal,
+  PackageX,
+  Pencil,
+  ShoppingBag,
+  Star,
+  Trash2,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
+import { toast } from 'sonner';
+import { useRouter } from '@/router/compat';
+import Link from '@/components/common/Link';
+import { EmptyState } from '@/components/common/EmptyState';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
+import { AdjustStockDialog } from '@/components/admin/AdjustStockDialog';
+import { StockHistoryDialog } from '@/components/admin/StockHistoryDialog';
+import { StatCard, StatGrid } from '@/components/admin/StatCard';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { ProductGallery } from '@/components/products/ProductGallery';
+import { PriceDisplay } from '@/components/products/PriceDisplay';
+import { RatingStars } from '@/components/products/RatingStars';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { FormSection } from '@/components/ui/form-section';
+import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog';
+import { DetailList, Text } from '@/components/ui/typography';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { productsApi } from '@/lib/api';
-import { Product } from '@/types/api';
-import { toast } from 'sonner';
+import { getProductPricing } from '@/lib/pricing';
+import { swatchColor } from '@/lib/swatches';
+import { cn } from '@/lib/utils';
+import type { Product } from '@/types/api';
 
-function ProductDetailContent({ slug }: { slug: string }) {
-  const router = useRouter();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const lightbox = useImageLightbox();
+const LOW_STOCK = 10;
 
-  // Stock update modal state
-  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
-  const [stockOperation, setStockOperation] = useState<'SET' | 'ADD' | 'SUBTRACT'>('SET');
-  const [stockAmount, setStockAmount] = useState<number>(0);
-  const [stockReason, setStockReason] = useState('');
-  const [isUpdatingStock, setIsUpdatingStock] = useState(false);
+function findProduct(handle: string): Promise<Product> {
+  return productsApi.getBySlug(handle).catch(() => productsApi.getById(handle));
+}
 
-  // Delete modal state
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString(undefined, { dateStyle: 'medium' });
+}
 
-  const fetchProduct = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      let fetchedProduct: Product | null = null;
-
-      try {
-        fetchedProduct = await productsApi.getBySlug(slug);
-      } catch (slugError) {
-        // Fallback to getById in case the slug is a UUID or slug route failed
-        try {
-          fetchedProduct = await productsApi.getById(slug);
-        } catch (idError) {
-          throw slugError;
-        }
-      }
-
-      if (!fetchedProduct || !fetchedProduct.id) {
-        throw new Error('Product not found');
-      }
-
-      setProduct(fetchedProduct);
-      setStockAmount(fetchedProduct.stockQuantity ?? (fetchedProduct as any).stock ?? 0);
-    } catch (err: any) {
-      console.error('Failed to load product detail:', err);
-      setError(err.message || 'Failed to load product details');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProduct();
-  }, [slug]);
-
-  const handleStockSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!product) return;
-
-    try {
-      setIsUpdatingStock(true);
-      const updatedProduct = await productsApi.updateStock(product.id, {
-        quantity: Number(stockAmount),
-        type: stockOperation,
-        reason: stockReason.trim() || undefined,
-      });
-
-      toast.success('Inventory stock updated successfully');
-      setProduct((prev) =>
-        prev
-          ? {
-              ...prev,
-              stockQuantity: updatedProduct.stockQuantity ?? updatedProduct.stock ?? stockAmount,
-            }
-          : updatedProduct,
-      );
-      setIsStockModalOpen(false);
-      setStockReason('');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to update stock');
-    } finally {
-      setIsUpdatingStock(false);
-    }
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!product) return;
-
-    try {
-      setIsDeleting(true);
-      await productsApi.delete(product.id);
-      toast.success('Product deleted successfully');
-      setIsDeleteDialogOpen(false);
-      router.push('/admin/products');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to delete product');
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-muted/30">
-        <AdminHeader title="Product Details" description="Loading product information...">
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/admin/products">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Products
-            </Link>
-          </Button>
-        </AdminHeader>
-        <div className="px-4 sm:px-8 py-12 flex flex-col items-center justify-center">
-          <Loader2 className="h-10 w-10 animate-spin text-accent-rose mb-4" />
-          <p className="text-muted-foreground font-medium">Fetching product data for "{slug}"...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !product) {
-    return (
-      <div className="min-h-screen bg-muted/30">
-        <AdminHeader
-          title="Product Not Found"
-          description="The requested product could not be located"
-        >
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/admin/products">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Products
-            </Link>
-          </Button>
-        </AdminHeader>
-        <div className="px-4 sm:px-8 py-12 max-w-2xl mx-auto">
-          <Card className="border-destructive/30 bg-destructive/5 text-center p-8">
-            <XCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">Product Not Found</h2>
-            <p className="text-muted-foreground mb-6">
-              {error ||
-                `We could not find any product with the slug "${slug}". It might have been deleted or the link is incorrect.`}
-            </p>
-            <div className="flex justify-center gap-4">
-              <Button variant="outline" onClick={fetchProduct}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Retry
-              </Button>
-              <Button asChild className="bg-accent-rose hover:bg-accent-rose-dark">
-                <Link href="/admin/products">Back to Product Catalog</Link>
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  const images =
-    product.images && product.images.length > 0
-      ? product.images
-      : product.imageUrl
-        ? [product.imageUrl]
-        : [];
-
-  const currentStock = product.stockQuantity ?? (product as any).stock ?? 0;
-  const activePrice =
-    product.salePrice && product.salePrice > 0 ? product.salePrice : product.price;
-  const originalPrice =
-    product.comparePrice ??
-    (product as any).compareAtPrice ??
-    (product.salePrice && product.salePrice < product.price ? product.price : undefined);
-  const hasDiscount = originalPrice && originalPrice > activePrice;
-  const discountPercent = hasDiscount
-    ? Math.round(((originalPrice - activePrice) / originalPrice) * 100)
-    : 0;
-
-  const stockBadge =
-    currentStock === 0 ? (
-      <Badge variant="destructive" className="font-semibold gap-1">
-        <XCircle className="h-3.5 w-3.5" /> Out of Stock
-      </Badge>
-    ) : currentStock <= 5 ? (
-      <Badge className="bg-orange-500 hover:bg-orange-600 text-white font-semibold gap-1">
-        <AlertTriangle className="h-3.5 w-3.5" /> Low Stock ({currentStock} left)
-      </Badge>
-    ) : (
-      <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold gap-1">
-        <CheckCircle2 className="h-3.5 w-3.5" /> In Stock ({currentStock} units)
-      </Badge>
-    );
-
+function Chips({ items, swatches }: Readonly<{ items: string[]; swatches?: boolean }>) {
+  if (items.length === 0) return <Text variant="small">None</Text>;
   return (
-    <div className="min-h-screen bg-muted/20">
-      <AdminHeader
-        title={product.name}
-        description={`SKU: ${product.sku || 'N/A'} • Slug: ${product.slug}`}
-      >
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/admin/products">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Link>
-          </Button>
-
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/admin/products/${product?.slug || slug}/edit`}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </Link>
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setStockAmount(currentStock);
-              setStockOperation('SET');
-              setIsStockModalOpen(true);
-            }}
+    <ul className="flex flex-wrap gap-2">
+      {items.map((item) => {
+        const color = swatches ? swatchColor(item) : undefined;
+        return (
+          <li
+            key={item}
+            className="inline-flex h-8 items-center gap-2 rounded-full border bg-background px-3 text-sm"
           >
-            <Package className="h-4 w-4 mr-2" />
-            Quick Stock
-          </Button>
-
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/shop`} target="_blank">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              View in Shop
-            </Link>
-          </Button>
-
-          <Button variant="destructive" size="sm" onClick={() => setIsDeleteDialogOpen(true)}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
-          </Button>
-        </div>
-      </AdminHeader>
-
-      <div className="px-4 sm:px-8 py-6 space-y-6">
-        {/* Breadcrumb Navigation */}
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/admin">Dashboard</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/admin/products">Products</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage className="font-semibold text-foreground truncate max-w-[200px] sm:max-w-md">
-                {product.name}
-              </BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column: Image Gallery & Badges (5 cols) */}
-          <div className="lg:col-span-5 space-y-6">
-            <Card className="overflow-hidden shadow-sm border-border/60">
-              <CardContent className="p-4 space-y-4">
-                {/* Main Active Image Display */}
-                <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-muted/60 border border-border/40 shadow-inner flex items-center justify-center group/gallery">
-                  {images.length > 0 ? (
-                    <Image
-                      src={images[selectedImageIndex] || images[0]}
-                      alt={product.name}
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover/gallery:scale-[1.03]"
-                      priority
-                      sizes="(max-width: 768px) 100vw, 40vw"
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center text-muted-foreground p-8 text-center">
-                      <Package className="h-16 w-16 mb-2 opacity-40" />
-                      <p className="text-sm font-medium">No product images uploaded</p>
-                    </div>
-                  )}
-
-                  {images.length > 0 && (
-                    <ImageZoomTrigger onClick={() => lightbox.openAt(selectedImageIndex)} />
-                  )}
-
-                  {/* Prev / Next arrows — only when multiple images */}
-                  {images.length > 1 && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSelectedImageIndex((prev) =>
-                            prev === 0 ? images.length - 1 : prev - 1,
-                          )
-                        }
-                        className="absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-background/80 backdrop-blur-sm border border-border/60 rounded-full p-1.5 shadow opacity-0 group-hover/gallery:opacity-100 transition-opacity hover:bg-background"
-                        aria-label="Previous image"
-                      >
-                        <ChevronLeft className="h-5 w-5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSelectedImageIndex((prev) =>
-                            prev === images.length - 1 ? 0 : prev + 1,
-                          )
-                        }
-                        className="absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-background/80 backdrop-blur-sm border border-border/60 rounded-full p-1.5 shadow opacity-0 group-hover/gallery:opacity-100 transition-opacity hover:bg-background"
-                        aria-label="Next image"
-                      >
-                        <ChevronRight className="h-5 w-5" />
-                      </button>
-                      {/* Image counter dot indicator */}
-                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5">
-                        {images.map((_, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => setSelectedImageIndex(idx)}
-                            className={`w-2 h-2 rounded-full transition-all ${
-                              selectedImageIndex === idx
-                                ? 'bg-white scale-125 shadow'
-                                : 'bg-white/50 hover:bg-white/80'
-                            }`}
-                            aria-label={`Image ${idx + 1}`}
-                          />
-                        ))}
-                      </div>
-                    </>
-                  )}
-
-                  {/* Badges on image */}
-                  <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
-                    {product.isFeatured && (
-                      <Badge className="bg-amber-500 hover:bg-amber-600 text-white shadow-md flex items-center gap-1">
-                        <Sparkles className="h-3 w-3" /> Featured
-                      </Badge>
-                    )}
-                    {product.isActive ? (
-                      <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-md">
-                        Active Catalog
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="secondary"
-                        className="shadow-md bg-muted text-muted-foreground"
-                      >
-                        Draft / Inactive
-                      </Badge>
-                    )}
-                  </div>
-
-                  {hasDiscount && (
-                    <div className="absolute top-3 right-3 z-10">
-                      <Badge className="bg-accent-rose text-white shadow-md font-bold">
-                        {discountPercent}% OFF
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-
-                {/* Thumbnails Gallery */}
-                {images.length > 1 && (
-                  <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-1">
-                    {images.map((img, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setSelectedImageIndex(idx)}
-                        className={`relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border-2 transition-all ${
-                          selectedImageIndex === idx
-                            ? 'border-accent-rose ring-2 ring-accent-rose/20 scale-105'
-                            : 'border-transparent opacity-70 hover:opacity-100'
-                        }`}
-                      >
-                        <Image
-                          src={img}
-                          alt={`${product.name} thumbnail ${idx + 1}`}
-                          fill
-                          className="object-cover"
-                          sizes="64px"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <ImageLightbox
-              images={images}
-              open={lightbox.open}
-              index={lightbox.index}
-              onOpenChange={lightbox.onOpenChange}
-              onIndexChange={(i) => {
-                lightbox.setIndex(i);
-                setSelectedImageIndex(i);
-              }}
-              alt={product.name}
-            />
-
-            {/* Quick Status Card */}
-            <Card className="shadow-sm border-border/60">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Info className="h-4 w-4 text-accent-rose" />
-                  Product Status & Visibility
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <div className="flex items-center justify-between py-1.5 border-b border-border/40">
-                  <span className="text-muted-foreground">Inventory Status</span>
-                  <div>{stockBadge}</div>
-                </div>
-                <div className="flex items-center justify-between py-1.5 border-b border-border/40">
-                  <span className="text-muted-foreground">Store Visibility</span>
-                  <Badge variant={product.isActive ? 'default' : 'secondary'}>
-                    {product.isActive ? 'Published & Live' : 'Hidden / Inactive'}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between py-1.5 border-b border-border/40">
-                  <span className="text-muted-foreground">Category</span>
-                  <span className="font-medium text-foreground">
-                    {product.category?.name || 'Uncategorized'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-1.5">
-                  <span className="text-muted-foreground">SKU Code</span>
-                  <code className="px-2 py-0.5 rounded bg-muted font-mono text-xs">
-                    {product.sku || 'None'}
-                  </code>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column: Pricing, Overview, Attributes, Inventory (7 cols) */}
-          <div className="lg:col-span-7 space-y-6">
-            {/* Pricing & Commercial Highlights */}
-            <Card className="shadow-sm border-border/60">
-              <CardHeader className="pb-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <CardTitle className="text-xl font-bold">{product.name}</CardTitle>
-                    <CardDescription className="mt-1">
-                      {product.category?.name
-                        ? `Category: ${product.category.name}`
-                        : 'Catalog Item'}
-                    </CardDescription>
-                  </div>
-                  <div className="text-left sm:text-right">
-                    <div className="text-2xl sm:text-3xl font-black text-foreground">
-                      Rwf {activePrice.toLocaleString()}
-                    </div>
-                    {product.salePrice && product.salePrice < product.price && (
-                      <div className="text-xs text-accent-rose font-semibold">
-                        Sale Price (Reg: Rwf {product.price.toLocaleString()})
-                      </div>
-                    )}
-                    {hasDiscount && originalPrice && (
-                      <div className="text-sm text-muted-foreground line-through">
-                        Rwf {originalPrice.toLocaleString()}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-2">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 rounded-lg bg-muted/40 border border-border/50">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Available Stock</p>
-                    <p
-                      className={`text-lg font-bold ${currentStock === 0 ? 'text-red-600' : currentStock <= 5 ? 'text-orange-600' : 'text-emerald-600'}`}
-                    >
-                      {currentStock} units
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">SKU Number</p>
-                    <p className="text-lg font-semibold truncate">{product.sku || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Pricing Status</p>
-                    <p className="text-lg font-semibold text-accent-rose">
-                      {product.salePrice && product.salePrice < product.price
-                        ? 'On Sale'
-                        : hasDiscount
-                          ? 'Discounted'
-                          : 'Standard'}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Description Card */}
-            <Card className="shadow-sm border-border/60">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Layers className="h-4 w-4 text-accent-rose" />
-                  Product Description
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {product.description ? (
-                  <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed whitespace-pre-line">
-                    {product.description}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">
-                    No detailed description provided for this product.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Sizes, Colors & Tags */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {/* Sizes Card */}
-              <Card className="shadow-sm border-border/60">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-accent-rose" />
-                    Available Sizes
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {product.sizes && product.sizes.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {product.sizes.map((size, index) => (
-                        <Badge
-                          key={index}
-                          variant="outline"
-                          className="px-3 py-1 text-sm font-medium border-border/80 bg-background"
-                        >
-                          {size}
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No specific sizes specified</p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Colors Card */}
-              <Card className="shadow-sm border-border/60">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-accent-rose" />
-                    Available Colors
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {product.colors && product.colors.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {product.colors.map((color, index) => {
-                        const isHex =
-                          color.startsWith('#') || /^([0-9a-f]{3}|[0-9a-f]{6})$/i.test(color);
-                        const hexValue = isHex
-                          ? color.startsWith('#')
-                            ? color
-                            : `#${color}`
-                          : null;
-
-                        return (
-                          <div
-                            key={index}
-                            className="flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-background text-sm font-medium"
-                          >
-                            {hexValue && (
-                              <span
-                                className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
-                                style={{ backgroundColor: hexValue }}
-                              />
-                            )}
-                            <span>{color}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No specific colors specified</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Tags Card */}
-            {product.tags && product.tags.length > 0 && (
-              <Card className="shadow-sm border-border/60">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <Hash className="h-4 w-4 text-accent-rose" />
-                    Keywords & Search Tags
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-1.5">
-                    {product.tags.map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs px-2.5 py-1">
-                        #{tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+            {color && (
+              <span
+                aria-hidden="true"
+                className="h-3.5 w-3.5 rounded-full border border-black/10"
+                style={{ backgroundColor: color }}
+              />
             )}
+            {item}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
-            {/* Metadata & Technical Info */}
-            <Card className="shadow-sm border-border/60">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-accent-rose" />
-                  System Metadata
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-xs text-muted-foreground block">System ID</span>
-                  <code className="text-xs font-mono select-all bg-muted px-2 py-0.5 rounded block mt-0.5 truncate">
-                    {product.id}
-                  </code>
-                </div>
-                <div>
-                  <span className="text-xs text-muted-foreground block">Slug</span>
-                  <code className="text-xs font-mono select-all bg-muted px-2 py-0.5 rounded block mt-0.5 truncate">
-                    {product.slug}
-                  </code>
-                </div>
-                <div>
-                  <span className="text-xs text-muted-foreground block">Created At</span>
-                  <span className="text-sm font-medium block mt-0.5">
-                    {product.createdAt ? new Date(product.createdAt).toLocaleString() : 'N/A'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-muted-foreground block">Last Modified</span>
-                  <span className="text-sm font-medium block mt-0.5">
-                    {product.updatedAt ? new Date(product.updatedAt).toLocaleString() : 'N/A'}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+function DetailSkeleton() {
+  return (
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]" aria-hidden="true">
+      <Skeleton className="aspect-square w-full rounded-2xl" />
+      <div className="space-y-6">
+        <Skeleton className="h-56 w-full rounded-2xl" />
+        <Skeleton className="h-28 w-full rounded-2xl" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
       </div>
-
-      {/* Quick Stock Update Modal */}
-      <Dialog open={isStockModalOpen} onOpenChange={setIsStockModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Update Inventory Stock</DialogTitle>
-            <DialogDescription>
-              Adjust available inventory units for <strong>{product.name}</strong>.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleStockSubmit} className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="stockOperation">Operation Mode</Label>
-              <Select
-                value={stockOperation}
-                onValueChange={(val: 'SET' | 'ADD' | 'SUBTRACT') => setStockOperation(val)}
-              >
-                <SelectTrigger id="stockOperation">
-                  <SelectValue placeholder="Select operation" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="SET">Set Absolute Quantity</SelectItem>
-                  <SelectItem value="ADD">Add to Current Stock (+)</SelectItem>
-                  <SelectItem value="SUBTRACT">Subtract from Stock (-)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="stockAmount">
-                {stockOperation === 'SET' ? 'New Total Quantity' : 'Units to Adjust'}
-              </Label>
-              <Input
-                id="stockAmount"
-                type="number"
-                min="0"
-                required
-                value={stockAmount}
-                onChange={(e) => setStockAmount(Math.max(0, parseInt(e.target.value) || 0))}
-              />
-              <p className="text-xs text-muted-foreground">
-                Current stock: <strong>{currentStock} units</strong>
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="stockReason">Adjustment Reason (Optional)</Label>
-              <Input
-                id="stockReason"
-                placeholder="e.g. Stock replenishment, physical count audit"
-                value={stockReason}
-                onChange={(e) => setStockReason(e.target.value)}
-              />
-            </div>
-
-            <DialogFooter className="pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsStockModalOpen(false)}
-                disabled={isUpdatingStock}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isUpdatingStock}
-                className="bg-accent-rose hover:bg-accent-rose-dark"
-              >
-                {isUpdatingStock ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  'Save Stock'
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Alert Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Product</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to permanently delete <strong>{product.name}</strong>? This
-              action cannot be undone and will remove the product from the catalog.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete Product'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
 
-export default function ProductDetailPage() {
-  const { slug } = useParams<{ slug: string }>() as { slug: string };
+function ProductDetail() {
+  const { slug = '' } = useParams<{ slug: string }>();
+  const router = useRouter();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'missing'>('loading');
+  const [dialog, setDialog] = useState<'stock' | 'history' | 'delete' | null>(null);
 
+  const load = useCallback(async () => {
+    try {
+      setProduct(await findProduct(slug));
+      setStatus('ready');
+    } catch {
+      setStatus('missing');
+    }
+  }, [slug]);
+
+  useEffect(() => {
+    setStatus('loading');
+    load();
+  }, [load]);
+
+  const toggleVisibility = async () => {
+    if (!product) return;
+    try {
+      const updated = await productsApi.update(product.id, { isActive: !product.isActive });
+      setProduct((current) => (current ? { ...current, isActive: updated.isActive } : current));
+      toast.success(
+        updated.isActive ? 'Product is now visible in the shop' : 'Product hidden from the shop',
+      );
+    } catch (error: any) {
+      toast.error(error.message || 'Could not update the product');
+    }
+  };
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-muted/30">
+        <AdminHeader title="Product" description="Loading…" />
+        <div className="px-4 py-8 sm:px-8">
+          <DetailSkeleton />
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'missing' || !product) {
+    return (
+      <div className="min-h-screen bg-muted/30">
+        <AdminHeader title="Product" />
+        <div className="px-4 py-8 sm:px-8">
+          <EmptyState
+            icon={PackageX}
+            title="Product not found"
+            description="It may have been deleted or its address changed."
+            action={
+              <Button asChild variant="outline">
+                <Link href="/admin/products">Back to products</Link>
+              </Button>
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
+  const pricing = getProductPricing(product);
+  const images = product.images?.length
+    ? product.images
+    : product.imageUrl
+      ? [product.imageUrl]
+      : [];
+  const stock = product.stockQuantity ?? 0;
+  const orderCount = product._count?.orderItems ?? 0;
+  const reviews = product.reviews ?? [];
+  const reviewCount = product._count?.reviews ?? reviews.length;
+  const averageRating =
+    product.averageRating ??
+    (reviews.length ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0);
+  const editHref = `/admin/products/${product.slug}/edit`;
+
+  let stockTone: 'green' | 'amber' | 'red' = 'green';
+  if (stock <= 0) stockTone = 'red';
+  else if (stock <= LOW_STOCK) stockTone = 'amber';
+
+  const deleteBlocker =
+    orderCount > 0
+      ? `This product appears in ${orderCount} order${orderCount === 1 ? '' : 's'}, so it can't be deleted. Hide it from the shop instead.`
+      : null;
+
+  return (
+    <div className="min-h-screen bg-muted/30">
+      <AdminHeader
+        title={product.name}
+        description={`${product.category?.name ?? 'Uncategorized'} · ${product.sku}`}
+      >
+        <Button asChild variant="outline" className="hidden gap-2 sm:inline-flex">
+          <Link href={`/shop/${product.id}`} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="h-4 w-4" />
+            View in shop
+          </Link>
+        </Button>
+        <Button asChild className="gap-2 bg-accent-rose hover:bg-accent-rose-dark">
+          <Link href={editHref}>
+            <Pencil className="h-4 w-4" />
+            Edit
+          </Link>
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" aria-label="More actions">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onSelect={() => setDialog('stock')}>
+              <Boxes className="mr-2 h-4 w-4" />
+              Adjust stock
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setDialog('history')}>
+              <History className="mr-2 h-4 w-4" />
+              Stock history
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={toggleVisibility}>
+              {product.isActive ? (
+                <EyeOff className="mr-2 h-4 w-4" />
+              ) : (
+                <Eye className="mr-2 h-4 w-4" />
+              )}
+              {product.isActive ? 'Hide from shop' : 'Show in shop'}
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="sm:hidden">
+              <Link href={`/shop/${product.id}`} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                View in shop
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={() => setDialog('delete')}
+              className="text-red-600 focus:text-red-600"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </AdminHeader>
+
+      <div className="space-y-6 px-4 py-8 sm:px-8">
+        <Link
+          href="/admin/products"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          All products
+        </Link>
+
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <ProductGallery
+              images={images}
+              name={product.name}
+              hasDiscount={pricing.discountPct > 0}
+              discountPct={pricing.discountPct}
+            />
+          </div>
+
+          <div className="space-y-6">
+            <FormSection title="Overview">
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={cn(
+                    'inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium',
+                    product.isActive
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
+                      : 'bg-muted text-muted-foreground',
+                  )}
+                >
+                  {product.isActive ? 'Visible in shop' : 'Draft — hidden'}
+                </span>
+                {product.isFeatured && (
+                  <span className="inline-flex rounded-full bg-accent-rose/10 px-2.5 py-0.5 text-xs font-medium text-accent-rose">
+                    Featured
+                  </span>
+                )}
+              </div>
+              <PriceDisplay pricing={pricing} size="lg" />
+              <DetailList
+                bordered={false}
+                className="-mb-2 border-t"
+                items={[
+                  {
+                    label: 'Category',
+                    value: product.category ? (
+                      <Link
+                        href={`/admin/categories/${product.category.id}/edit`}
+                        className="hover:text-accent-rose hover:underline"
+                      >
+                        {product.category.name}
+                      </Link>
+                    ) : (
+                      'Uncategorized'
+                    ),
+                  },
+                  { label: 'SKU', value: <code className="font-mono text-xs">{product.sku}</code> },
+                  {
+                    label: 'URL handle',
+                    value: <code className="font-mono text-xs">{product.slug}</code>,
+                  },
+                  { label: 'Created', value: formatDate(product.createdAt) },
+                  { label: 'Last updated', value: formatDate(product.updatedAt) },
+                ]}
+              />
+            </FormSection>
+
+            <div>
+              <StatGrid columns={3} className="mb-0">
+                <StatCard
+                  title="In stock"
+                  value={stock.toLocaleString()}
+                  icon={Boxes}
+                  tone={stockTone}
+                  hint={stock <= 0 ? 'Sold out' : stock <= LOW_STOCK ? 'Running low' : 'Healthy'}
+                />
+                <StatCard
+                  title="Orders"
+                  value={orderCount.toLocaleString()}
+                  icon={ShoppingBag}
+                  tone="blue"
+                  hint="Times ordered"
+                />
+                <StatCard
+                  title="Reviews"
+                  value={reviewCount.toLocaleString()}
+                  icon={Star}
+                  tone="violet"
+                  hint={reviewCount ? `${averageRating.toFixed(1)} average` : 'No reviews yet'}
+                />
+              </StatGrid>
+            </div>
+
+            <FormSection title="Description">
+              <Text className="whitespace-pre-line">
+                {product.description || 'No description yet.'}
+              </Text>
+            </FormSection>
+
+            <FormSection
+              title="Options"
+              description="What customers can choose on the product page."
+            >
+              <DetailList
+                bordered={false}
+                className="-my-3"
+                items={[
+                  { label: 'Sizes', value: <Chips items={product.sizes ?? []} /> },
+                  { label: 'Colors', value: <Chips items={product.colors ?? []} swatches /> },
+                  ...((product.tags?.length ?? 0) > 0
+                    ? [{ label: 'Tags', value: <Chips items={product.tags} /> }]
+                    : []),
+                ]}
+              />
+            </FormSection>
+
+            <FormSection
+              title="Latest reviews"
+              description={
+                reviewCount > reviews.length
+                  ? `Showing ${reviews.length} of ${reviewCount}`
+                  : undefined
+              }
+            >
+              {reviews.length === 0 ? (
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MessageSquare className="h-4 w-4" />
+                  No reviews yet.
+                </p>
+              ) : (
+                <ul className="divide-y">
+                  {reviews.slice(0, 5).map((review) => (
+                    <li key={review.id} className="space-y-1.5 py-4 first:pt-0 last:pb-0">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-sm font-medium">
+                          {review.user?.name || review.user?.firstName || 'Customer'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(review.createdAt)}
+                        </span>
+                      </div>
+                      <RatingStars rating={review.rating} />
+                      {review.comment && <Text variant="small">{review.comment}</Text>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </FormSection>
+          </div>
+        </div>
+      </div>
+
+      <AdjustStockDialog
+        open={dialog === 'stock'}
+        onOpenChange={(open) => setDialog(open ? 'stock' : null)}
+        productId={product.id}
+        productName={product.name}
+        currentStock={stock}
+        onSuccess={load}
+      />
+      <StockHistoryDialog
+        open={dialog === 'history'}
+        onOpenChange={(open) => setDialog(open ? 'history' : null)}
+        productId={product.id}
+        productName={product.name}
+      />
+      <ConfirmDeleteDialog
+        open={dialog === 'delete'}
+        onOpenChange={(open) => setDialog(open ? 'delete' : null)}
+        title="Delete product"
+        description={
+          <>
+            Delete <span className="font-medium text-foreground">{product.name}</span>? This cannot
+            be undone.
+          </>
+        }
+        warning={deleteBlocker ?? undefined}
+        blocked={!!deleteBlocker}
+        onConfirm={() => productsApi.delete(product.id)}
+        onSuccess={() => router.push('/admin/products')}
+        successMessage="Product deleted"
+      />
+    </div>
+  );
+}
+
+export default function AdminProductDetailPage() {
   return (
     <ProtectedRoute requireAdmin>
       <AdminLayout>
-        <ProductDetailContent slug={slug} />
+        <ProductDetail />
       </AdminLayout>
     </ProtectedRoute>
   );

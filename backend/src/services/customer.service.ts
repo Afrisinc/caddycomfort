@@ -1,5 +1,7 @@
 import { UserRole } from '@prisma/client';
 import prisma from '../config/database';
+import { CACHE_TTL, cache } from '../utils/cache';
+import { paginate, type PageQuery } from '../utils/pagination';
 
 // A customer counts as a "VIP" once their lifetime spend crosses this
 // threshold (RWF). Kept as a single constant so the business rule is easy
@@ -42,13 +44,23 @@ function summarizeOrders(orders: CustomerOrderSummary[]) {
 }
 
 export class CustomerService {
-  /**
-   * Admin: list customers (role = CUSTOMER) with real order aggregates and
-   * a derived status, optionally filtered by search text and/or status.
-   */
-  static async getCustomers(filters?: { search?: string; status?: CustomerStatus | 'all' }) {
-    const { search, status } = filters || {};
+  static async getCustomers(
+    filters: { search?: string; status?: CustomerStatus | 'all' },
+    pageQuery: PageQuery,
+  ) {
+    const search = filters.search?.trim() || undefined;
+    const customers = await cache.getOrSet('customers', ['list', search], CACHE_TTL.short, () =>
+      this.loadCustomers(search),
+    );
+    const filtered =
+      !filters.status || filters.status === 'all'
+        ? customers
+        : customers.filter((c) => c.status === filters.status);
+    const { items, pagination } = paginate(filtered, pageQuery);
+    return { customers: items, pagination };
+  }
 
+  private static async loadCustomers(search?: string) {
     const where: any = { role: UserRole.CUSTOMER };
     if (search) {
       where.OR = [
@@ -99,14 +111,17 @@ export class CustomerService {
       };
     });
 
-    if (!status || status === 'all') return customers;
-    return customers.filter((c) => c.status === status);
+    return customers;
   }
 
   /**
    * Admin: aggregate stats for the customer dashboard cards.
    */
   static async getCustomerStats() {
+    return cache.getOrSet('customers', ['stats'], CACHE_TTL.short, () => this.loadStats());
+  }
+
+  private static async loadStats() {
     const users = await prisma.user.findMany({
       where: { role: UserRole.CUSTOMER },
       select: {
@@ -148,6 +163,12 @@ export class CustomerService {
    * Admin: single customer detail — profile, addresses, and full order history.
    */
   static async getCustomerById(id: string) {
+    return cache.getOrSet('customers', ['detail', id], CACHE_TTL.short, () =>
+      this.loadCustomer(id),
+    );
+  }
+
+  private static async loadCustomer(id: string) {
     const user = await prisma.user.findUnique({
       where: { id },
       select: {
@@ -228,6 +249,7 @@ export class CustomerService {
       });
     }
 
+    await cache.invalidate('customers');
     return updated;
   }
 }

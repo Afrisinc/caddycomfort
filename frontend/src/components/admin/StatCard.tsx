@@ -115,7 +115,7 @@ interface StatGridProps {
 export function StatGrid({ columns = 4, loading, children, className }: StatGridProps) {
   return (
     <div
-      className={cn('mb-8 grid grid-cols-1 gap-4 lg:gap-5', gridCols[columns], className)}
+      className={cn('mb-8 grid grid-cols-1 gap-4 sm:gap-6', gridCols[columns], className)}
       aria-busy={loading || undefined}
     >
       {loading ? Array.from({ length: columns }, (_, i) => <StatCardSkeleton key={i} />) : children}

@@ -1,3 +1,5 @@
+export const ADMIN_PAGE_SIZE = 10;
+
 export type PageItem = number | 'gap';
 
 export function getPageItems(page: number, totalPages: number, siblings = 1): PageItem[] {
@@ -15,4 +17,13 @@ export function getPageItems(page: number, totalPages: number, siblings = 1): Pa
   items.push(totalPages);
 
   return items;
+}
+
+export function pageCount(total: number, pageSize: number): number {
+  return Math.max(1, Math.ceil(total / pageSize));
+}
+
+export function pageSlice<T>(items: T[], page: number, pageSize: number): T[] {
+  const start = (page - 1) * pageSize;
+  return items.slice(start, start + pageSize);
 }

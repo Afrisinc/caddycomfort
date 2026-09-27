@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
-import { CouponService } from '../services/coupon.service';
+import { CouponService, type CouponFilters, type CouponStatus } from '../services/coupon.service';
+import { parsePageQuery } from '../utils/pagination';
+
+const COUPON_STATUSES: CouponStatus[] = ['active', 'expired', 'inactive'];
 
 /**
  * Create a new coupon
@@ -26,20 +29,21 @@ export const createCoupon = async (req: Request, res: Response): Promise<void> =
  */
 export const getAllCoupons = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { isActive, discountType, isExpired } = req.query;
+    const { isActive, discountType, isExpired, search, status } = req.query;
 
-    const filters = {
+    const filters: CouponFilters = {
+      search: typeof search === 'string' && search.trim() ? search.trim() : undefined,
+      status: COUPON_STATUSES.includes(status as CouponStatus)
+        ? (status as CouponStatus)
+        : undefined,
       isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
-      discountType: discountType as any,
+      discountType: discountType as CouponFilters['discountType'],
       isExpired: isExpired === 'true' ? true : isExpired === 'false' ? false : undefined,
     };
 
-    const coupons = await CouponService.getAll(filters);
+    const result = await CouponService.getAll(filters, parsePageQuery(req.query));
 
-    res.json({
-      success: true,
-      data: { coupons },
-    });
+    res.json({ success: true, data: result });
   } catch (error: any) {
     res.status(500).json({
       success: false,

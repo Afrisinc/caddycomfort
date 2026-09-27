@@ -98,6 +98,7 @@ export interface Product {
     orderItems: number;
   };
   averageRating?: number;
+  reviews?: Review[];
 }
 
 export interface ProductFilters {
@@ -169,6 +170,7 @@ export interface CouponStats {
   expired: number;
   used: number;
   unused: number;
+  totalUses: number;
   totalDiscountGiven: number;
 }
 
@@ -543,6 +545,13 @@ export interface BulkAdjustResult {
 export interface PaginationParams {
   page?: number;
   limit?: number;
+}
+
+export interface PageMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
 }
 
 export interface SortParams {

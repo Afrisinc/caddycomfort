@@ -161,16 +161,20 @@ export function InfoBlock({ icon: Icon, title, children, className }: InfoBlockP
 
 export interface DetailListProps {
   readonly items: { label: string; value: ReactNode }[];
+  readonly bordered?: boolean;
   readonly className?: string;
 }
 
-export function DetailList({ items, className }: DetailListProps) {
+export function DetailList({ items, bordered = true, className }: DetailListProps) {
   return (
-    <dl className={cn('divide-y rounded-xl border bg-card', className)}>
+    <dl className={cn('divide-y', bordered && 'rounded-xl border bg-card', className)}>
       {items.map((item) => (
         <div
           key={item.label}
-          className="grid grid-cols-[minmax(0,9rem)_1fr] gap-4 px-5 py-3.5 text-sm"
+          className={cn(
+            'grid grid-cols-[minmax(0,9rem)_1fr] items-center gap-4 py-3 text-sm',
+            bordered && 'px-5 py-3.5',
+          )}
         >
           <dt className="text-muted-foreground">{item.label}</dt>
           <dd className="font-medium text-foreground">{item.value}</dd>
