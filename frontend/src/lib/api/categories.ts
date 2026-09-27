@@ -59,9 +59,9 @@ export const categoriesApi = {
   create: async (data: {
     name: string;
     slug?: string;
-    description?: string;
-    parentId?: string;
-    image?: string;
+    description?: string | null;
+    parentId?: string | null;
+    image?: string | null;
   }): Promise<Category> => {
     try {
       const response = await apiClient.post('/categories', data);
@@ -79,9 +79,9 @@ export const categoriesApi = {
     data: {
       name?: string;
       slug?: string;
-      description?: string;
-      parentId?: string;
-      image?: string;
+      description?: string | null;
+      parentId?: string | null;
+      image?: string | null;
     },
   ): Promise<Category> => {
     try {

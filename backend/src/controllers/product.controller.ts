@@ -47,6 +47,7 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
       sizes,
       colors,
       inStock,
+      stock,
       page,
       limit,
       sortBy,
@@ -73,6 +74,7 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
       sizes: toStringArray(sizes),
       colors: toStringArray(colors),
       inStock: inStock === 'true',
+      stock: stock === 'low' || stock === 'out' ? (stock as 'low' | 'out') : undefined,
     };
 
     const pagination = {

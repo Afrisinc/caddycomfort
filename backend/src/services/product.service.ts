@@ -1,6 +1,5 @@
 import { Product, Prisma } from '@prisma/client';
 import {
-  uploadBase64Image,
   uploadMultipleBase64Images,
   deleteMultipleImages,
   isValidBase64Image,
@@ -56,6 +55,7 @@ interface ProductFilters {
   sizes?: string[];
   colors?: string[];
   inStock?: boolean;
+  stock?: 'low' | 'out';
 }
 
 interface PaginationOptions {
@@ -64,6 +64,8 @@ interface PaginationOptions {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
+
+export const LOW_STOCK_THRESHOLD = 10;
 
 export class ProductService {
   /**
@@ -97,30 +99,7 @@ export class ProductService {
       throw new Error('Category not found');
     }
 
-    // Upload images to Cloudinary if provided
-    let imageUrls: string[] = [];
-    if (data.images && data.images.length > 0) {
-      const base64Images = data.images.filter((img) => isValidBase64Image(img));
-      const urlImages = data.images.filter((img) => img.startsWith('http'));
-
-      if (base64Images.length > 0) {
-        try {
-          const uploadedUrls = await uploadMultipleBase64Images(base64Images, {
-            folder: 'clementine-shop/products',
-            transformation: [
-              { width: 1200, height: 1200, crop: 'limit' },
-              { quality: 'auto' },
-              { format: 'webp' },
-            ],
-          });
-          imageUrls = [...uploadedUrls, ...urlImages];
-        } catch (error: any) {
-          throw new Error(`Failed to upload product images: ${error.message}`);
-        }
-      } else {
-        imageUrls = urlImages;
-      }
-    }
+    const imageUrls = data.images?.length ? await this.resolveImages(data.images) : [];
 
     const resolvedComparePrice =
       data.comparePrice !== undefined ? data.comparePrice : (data as any).compareAtPrice;
@@ -185,6 +164,7 @@ export class ProductService {
       sizes,
       colors,
       inStock,
+      stock,
     } = filters || {};
 
     const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc' } = pagination || {};
@@ -221,6 +201,8 @@ export class ProductService {
       ...(isActive !== undefined && { isActive }),
       ...(isFeatured !== undefined && { isFeatured }),
       ...(inStock && { stockQuantity: { gt: 0 } }),
+      ...(stock === 'low' && { stockQuantity: { gt: 0, lte: LOW_STOCK_THRESHOLD } }),
+      ...(stock === 'out' && { stockQuantity: { lte: 0 } }),
       ...(minPrice !== undefined && { price: { gte: minPrice } }),
       ...(maxPrice !== undefined && { price: { lte: maxPrice } }),
       ...(search && {
@@ -414,40 +396,18 @@ export class ProductService {
       }
     }
 
-    // Handle image updates
-    let imageUrls: string[] | undefined = data.images;
-    if (data.images && data.images.length > 0) {
-      const base64Images = data.images.filter((img) => isValidBase64Image(img));
-      const urlImages = data.images.filter((img) => img.startsWith('http'));
-
-      if (base64Images.length > 0) {
-        try {
-          // Upload new base64 images
-          const uploadedUrls = await uploadMultipleBase64Images(base64Images, {
-            folder: 'clementine-shop/products',
-            transformation: [
-              { width: 1200, height: 1200, crop: 'limit' },
-              { quality: 'auto' },
-              { format: 'webp' },
-            ],
-          });
-          imageUrls = [...uploadedUrls, ...urlImages];
-
-          // Delete old images from Cloudinary if they're not in the new list
-          const oldCloudinaryImages = product.images.filter(
-            (img) => img.includes('cloudinary.com') && !urlImages.includes(img),
-          );
-          if (oldCloudinaryImages.length > 0) {
-            try {
-              await deleteMultipleImages(oldCloudinaryImages);
-            } catch (error) {
-              console.error('Failed to delete old product images:', error);
-            }
-          }
-        } catch (error: any) {
-          throw new Error(`Failed to upload product images: ${error.message}`);
-        }
+    let imageUrls: string[] | undefined;
+    if (data.images) {
+      const nextImages = data.images.length ? await this.resolveImages(data.images) : [];
+      const removed = product.images.filter(
+        (img) => img.includes('cloudinary.com') && !nextImages.includes(img),
+      );
+      if (removed.length > 0) {
+        await deleteMultipleImages(removed).catch((error) =>
+          console.error('Failed to delete old product images:', error),
+        );
       }
+      imageUrls = nextImages;
     }
 
     const resolvedComparePrice =
@@ -652,8 +612,8 @@ export class ProductService {
       prisma.product.count(),
       prisma.product.count({ where: { isActive: true } }),
       prisma.product.count({ where: { isFeatured: true } }),
-      prisma.product.count({ where: { stockQuantity: { gt: 10 } } }),
-      prisma.product.count({ where: { stockQuantity: { lte: 10, gt: 0 } } }),
+      prisma.product.count({ where: { stockQuantity: { gt: LOW_STOCK_THRESHOLD } } }),
+      prisma.product.count({ where: { stockQuantity: { lte: LOW_STOCK_THRESHOLD, gt: 0 } } }),
       prisma.product.count({ where: { stockQuantity: 0 } }),
     ]);
 
@@ -708,5 +668,28 @@ export class ProductService {
       },
       take: limit,
     });
+  }
+
+  private static async resolveImages(images: string[]): Promise<string[]> {
+    const kept = images.filter((img) => isValidBase64Image(img) || img.startsWith('http'));
+    const pending = kept.filter((img) => isValidBase64Image(img));
+    if (pending.length === 0) return kept;
+
+    let uploaded: string[];
+    try {
+      uploaded = await uploadMultipleBase64Images(pending, {
+        folder: 'clementine-shop/products',
+        transformation: [
+          { width: 1200, height: 1200, crop: 'limit' },
+          { quality: 'auto' },
+          { format: 'webp' },
+        ],
+      });
+    } catch (error: any) {
+      throw new Error(`Failed to upload product images: ${error.message}`);
+    }
+
+    let next = 0;
+    return kept.map((img) => (isValidBase64Image(img) ? uploaded[next++] : img));
   }
 }

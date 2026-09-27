@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { InputGroup } from '@/components/ui/input-group';
 import { FormField } from '@/components/ui/form-field';
 import { FormSection } from '@/components/ui/form-section';
+import { FormActionBar } from '@/components/ui/form-action-bar';
 import { settingsApi } from '@/lib/api';
 import { fieldDescribedBy } from '@/lib/forms';
 import {
@@ -160,38 +159,14 @@ export function StoreSettingsForm() {
         </FormSection>
       ))}
 
-      <div
-        className={cn(
-          'sticky bottom-4 z-10 flex items-center justify-between gap-4 rounded-2xl border bg-background/95 px-5 py-3 shadow-lg backdrop-blur transition-all',
-          dirty ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0',
-        )}
-        aria-hidden={!dirty}
-      >
-        <p className="text-sm font-medium">You have unsaved changes</p>
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              setValues(saved);
-              setErrors({});
-            }}
-            disabled={saving}
-            tabIndex={dirty ? 0 : -1}
-          >
-            Discard
-          </Button>
-          <Button
-            type="submit"
-            disabled={saving}
-            tabIndex={dirty ? 0 : -1}
-            className="gap-2 bg-accent-rose hover:bg-accent-rose-dark"
-          >
-            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-            Save changes
-          </Button>
-        </div>
-      </div>
+      <FormActionBar
+        visible={dirty}
+        saving={saving}
+        onSecondary={() => {
+          setValues(saved);
+          setErrors({});
+        }}
+      />
     </form>
   );
 }

@@ -21,6 +21,7 @@ interface ConfirmDeleteDialogProps {
   description: ReactNode;
   /** Extra callout shown below the description, e.g. dependency counts blocking the delete. */
   warning?: ReactNode;
+  blocked?: boolean;
   confirmLabel?: string;
   pendingLabel?: string;
   /** Performs the actual deletion (an API call). Throw/reject to signal failure. */
@@ -39,6 +40,7 @@ export function ConfirmDeleteDialog({
   title = 'Are you sure?',
   description,
   warning,
+  blocked = false,
   confirmLabel = 'Delete',
   pendingLabel = 'Deleting...',
   onConfirm,
@@ -76,7 +78,7 @@ export function ConfirmDeleteDialog({
           <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
-            disabled={isDeleting}
+            disabled={isDeleting || blocked}
             className="bg-red-600 hover:bg-red-700"
           >
             {isDeleting ? (

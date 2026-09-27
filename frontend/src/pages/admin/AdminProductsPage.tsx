@@ -1,28 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import Link from '@/components/common/Link';
-import Image from '@/components/common/Image';
-import { ImageLightbox } from '@/components/common/ImageLightbox';
-import { useImageLightbox } from '@/hooks/useImageLightbox';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
-  Plus,
-  Filter,
-  MoreVertical,
-  Edit,
-  Trash2,
+  AlertTriangle,
   Eye,
+  EyeOff,
+  ExternalLink,
+  MoreVertical,
   Package,
-  AlertCircle,
-  Loader2,
+  PackageCheck,
+  PackageX,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Trash2,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import Link from '@/components/common/Link';
+import { ImageThumbnail } from '@/components/common/ImageThumbnail';
+import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { SearchInput } from '@/components/ui/search-input';
+import { Pagination } from '@/components/ui/pagination';
+import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog';
 import {
   Select,
   SelectContent,
@@ -31,418 +31,456 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
+import { StatCard, StatGrid } from '@/components/admin/StatCard';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { productsApi, categoriesApi } from '@/lib/api';
-import { Product, Category } from '@/types/api';
-import { toast } from 'sonner';
-import { SearchInput } from '@/components/ui/search-input';
+import { PriceDisplay } from '@/components/products/PriceDisplay';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useAsyncData } from '@/hooks/useAsyncData';
+import { categoriesApi, productsApi } from '@/lib/api';
+import { categoryOptions } from '@/lib/productForm';
+import { getProductPricing } from '@/lib/pricing';
+import { cn } from '@/lib/utils';
+import type { Category, Product, ProductFilters } from '@/types/api';
 
-function ProductThumb({
-  images,
-  name,
-  onOpen,
-}: Readonly<{ images: string[]; name: string; onOpen: () => void }>) {
-  const placeholder = (
-    <Package className="absolute top-1/2 left-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
-  );
+const PAGE_SIZE = 20;
+const ALL = 'all';
+const LOW_STOCK = 10;
+const NO_CATEGORIES: Category[] = [];
 
-  if (images.length === 0) {
-    return (
-      <div className="relative h-12 w-12 shrink-0 rounded-lg border border-border/50 bg-muted">
-        {placeholder}
-      </div>
-    );
-  }
+type Stats = Awaited<ReturnType<typeof productsApi.getStats>>;
 
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      aria-label={`View images of ${name}`}
-      className="group/thumb relative h-12 w-12 shrink-0 cursor-zoom-in overflow-hidden rounded-lg border border-border/50 bg-muted transition-all hover:border-accent-rose/50 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-rose/50"
-    >
-      <Image
-        src={images[0]}
-        alt={name}
-        fill
-        className="object-cover transition-transform duration-300 group-hover/thumb:scale-110"
-        fallback={placeholder}
-      />
-      {images.length > 1 && (
-        <span className="absolute right-0.5 bottom-0.5 rounded bg-black/60 px-1 text-[10px] leading-4 font-medium text-white tabular-nums">
-          {images.length}
-        </span>
-      )}
-    </button>
-  );
+function stockTone(quantity: number) {
+  if (quantity <= 0) return 'text-red-600 dark:text-red-400';
+  if (quantity <= LOW_STOCK) return 'text-amber-700 dark:text-amber-400';
+  return 'text-foreground';
 }
 
 function ProductsManagement() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [params, setParams] = useSearchParams();
+  const category = params.get('category') ?? ALL;
+  const status = params.get('status') ?? ALL;
+  const stock = params.get('stock') ?? ALL;
+  const page = Number(params.get('page')) || 1;
+  const [search, setSearch] = useState(params.get('q') ?? '');
+  const debouncedSearch = useDebounce(search.trim(), 350);
+
+  const categories = useAsyncData(categoriesApi.getAll, NO_CATEGORIES);
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [previewProduct, setPreviewProduct] = useState<Product | null>(null);
-  const lightbox = useImageLightbox();
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [toDelete, setToDelete] = useState<Product | null>(null);
 
-  const productImages = (product: Product) =>
-    product.images?.length ? product.images : product.imageUrl ? [product.imageUrl] : [];
+  const setFilter = useCallback(
+    (key: string, value: string) => {
+      setParams((current) => {
+        const next = new URLSearchParams(current);
+        if (!value || value === ALL) next.delete(key);
+        else next.set(key, value);
+        if (key !== 'page') next.delete('page');
+        return next;
+      });
+    },
+    [setParams],
+  );
 
-  const openPreview = (product: Product) => {
-    setPreviewProduct(product);
-    lightbox.openAt(0);
-  };
-
-  // Fetch categories once on mount
   useEffect(() => {
-    fetchCategories();
+    if (debouncedSearch !== (params.get('q') ?? '')) setFilter('q', debouncedSearch);
+  }, [debouncedSearch, params, setFilter]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadFailed(false);
+    const filters: ProductFilters = {
+      search: params.get('q') || undefined,
+      categoryId: category === ALL ? undefined : category,
+      isActive: status === ALL ? undefined : status === 'active',
+      stock: stock === 'low' || stock === 'out' ? stock : undefined,
+    };
+    try {
+      const result = await productsApi.getAll(filters, { page, limit: PAGE_SIZE });
+      setProducts(result.products);
+      setTotalPages(result.pagination.totalPages || 1);
+      setTotalCount(result.pagination.total);
+    } catch {
+      setLoadFailed(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [params, category, status, stock, page]);
+
+  const loadStats = useCallback(() => {
+    productsApi
+      .getStats()
+      .then(setStats)
+      .catch(() => setStats(null))
+      .finally(() => setStatsLoading(false));
   }, []);
 
-  // Fetch products when category filter changes
   useEffect(() => {
-    fetchProducts();
-  }, [categoryFilter]);
+    load();
+  }, [load]);
 
-  const fetchProducts = async () => {
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  const options = useMemo(() => categoryOptions(categories.data), [categories.data]);
+  const hasFilters = !!params.get('q') || category !== ALL || status !== ALL || stock !== ALL;
+
+  const toggleVisibility = async (product: Product) => {
     try {
-      setIsLoading(true);
-      const filters = categoryFilter !== 'all' ? { categoryId: categoryFilter } : undefined;
-      const response = await productsApi.getAll(filters, { page: 1, limit: 100 });
-
-      // Handle nested response structure: { data: { products: [...], pagination: {...} } }
-      const resAny = response as any;
-      const productsData =
-        resAny.products ||
-        resAny.data?.products ||
-        resAny.data ||
-        (Array.isArray(response) ? response : []);
-      setProducts(Array.isArray(productsData) ? productsData : []);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to load products');
-      setProducts([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const data = await categoriesApi.getAll();
-      const result = data as any;
-      setCategories(
-        Array.isArray(result.categories) ? result.categories : Array.isArray(result) ? result : [],
+      await productsApi.update(product.id, { isActive: !product.isActive });
+      toast.success(
+        product.isActive
+          ? `${product.name} hidden from the shop`
+          : `${product.name} is now visible`,
       );
+      load();
+      loadStats();
     } catch (error: any) {
-      console.error('Failed to load categories:', error);
-      setCategories([]);
+      toast.error(error.message || 'Could not update the product');
     }
   };
 
-  const handleDeleteClick = (product: Product) => {
-    setProductToDelete(product);
-    setDeleteDialogOpen(true);
-  };
+  const orderCount = toDelete?._count?.orderItems ?? 0;
+  const deleteBlocker =
+    orderCount > 0
+      ? `This product appears in ${orderCount} order${orderCount === 1 ? '' : 's'}, so it can't be deleted. Hide it from the shop instead.`
+      : null;
 
-  const handleDeleteConfirm = async () => {
-    if (!productToDelete) return;
-
-    try {
-      setIsDeleting(true);
-      await productsApi.delete(productToDelete.id);
-      toast.success('Product deleted successfully');
-      setDeleteDialogOpen(false);
-      setProductToDelete(null);
-      // Refresh products list
-      fetchProducts();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to delete product');
-    } finally {
-      setIsDeleting(false);
+  const renderRows = () => {
+    if (loading) {
+      return Array.from({ length: 6 }, (_, i) => (
+        <tr key={i} className="border-b last:border-0">
+          <td colSpan={6} className="p-4">
+            <Skeleton className="h-10 w-full" />
+          </td>
+        </tr>
+      ));
     }
-  };
-
-  const getStatusBadge = (stock: number) => {
-    if (stock === 0) {
+    return products.map((product) => {
+      const href = `/admin/products/${product.slug || product.id}`;
+      const images = product.images?.length ? product.images : [product.imageUrl];
       return (
-        <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Out of Stock</span>
+        <tr key={product.id} className="border-b transition-colors last:border-0 hover:bg-muted/40">
+          <td className="p-4">
+            <div className="flex items-center gap-3">
+              <ImageThumbnail images={images} alt={product.name} fallbackIcon={Package} />
+              <div className="min-w-0">
+                <Link
+                  href={href}
+                  className="block max-w-72 truncate font-medium outline-none hover:text-accent-rose focus-visible:underline"
+                >
+                  {product.name}
+                </Link>
+                <p className="font-mono text-xs text-muted-foreground">{product.sku}</p>
+              </div>
+            </div>
+          </td>
+          <td className="p-4 text-sm">{product.category?.name ?? '—'}</td>
+          <td className="p-4">
+            <PriceDisplay pricing={getProductPricing(product)} size="sm" className="gap-x-2" />
+          </td>
+          <td
+            className={cn(
+              'p-4 text-right text-sm font-medium tabular-nums',
+              stockTone(product.stockQuantity),
+            )}
+          >
+            {product.stockQuantity}
+          </td>
+          <td className="p-4">
+            <span
+              className={cn(
+                'inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium',
+                product.isActive
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
+                  : 'bg-muted text-muted-foreground',
+              )}
+            >
+              {product.isActive ? 'Active' : 'Draft'}
+            </span>
+            {product.isFeatured && (
+              <span className="ml-1.5 inline-flex rounded-full bg-accent-rose/10 px-2.5 py-0.5 text-xs font-medium text-accent-rose">
+                Featured
+              </span>
+            )}
+          </td>
+          <td className="p-4 text-right">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label={`Actions for ${product.name}`}>
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href={`${href}/edit`}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={href}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    View details
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/shop/${product.id}`} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    View in shop
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => toggleVisibility(product)}>
+                  {product.isActive ? (
+                    <EyeOff className="mr-2 h-4 w-4" />
+                  ) : (
+                    <Eye className="mr-2 h-4 w-4" />
+                  )}
+                  {product.isActive ? 'Hide from shop' : 'Show in shop'}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={() => setToDelete(product)}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </td>
+        </tr>
+      );
+    });
+  };
+
+  const renderTable = () => {
+    if (loadFailed) {
+      return (
+        <EmptyState
+          icon={RefreshCw}
+          title="We couldn't load products"
+          description="Check your connection and try again."
+          action={
+            <Button variant="outline" onClick={load}>
+              Try again
+            </Button>
+          }
+        />
       );
     }
-    if (stock <= 5) {
+    if (!loading && products.length === 0) {
       return (
-        <span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800">
-          Low Stock
-        </span>
+        <EmptyState
+          icon={Package}
+          title={hasFilters ? 'No products match these filters' : 'No products yet'}
+          description={
+            hasFilters
+              ? 'Try a different search or clear the filters.'
+              : 'Add your first product to start selling.'
+          }
+          action={
+            hasFilters ? (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearch('');
+                  setParams(new URLSearchParams());
+                }}
+              >
+                Clear filters
+              </Button>
+            ) : (
+              <Button asChild className="bg-accent-rose hover:bg-accent-rose-dark">
+                <Link href="/admin/products/new">Add product</Link>
+              </Button>
+            )
+          }
+        />
       );
     }
     return (
-      <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">In Stock</span>
+      <div className="overflow-hidden rounded-2xl border bg-card">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[52rem]">
+            <thead className="border-b bg-muted/40 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="p-4 font-medium">Product</th>
+                <th className="p-4 font-medium">Category</th>
+                <th className="p-4 font-medium">Price</th>
+                <th className="p-4 text-right font-medium">Stock</th>
+                <th className="p-4 font-medium">Status</th>
+                <th className="p-4">
+                  <span className="sr-only">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>{renderRows()}</tbody>
+          </table>
+        </div>
+      </div>
     );
   };
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch =
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (product.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
-    const matchesCategory = categoryFilter === 'all' || product.categoryId === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
-
   return (
     <div className="min-h-screen bg-muted/30">
-      <AdminHeader
-        title="Product Management"
-        description="Manage your product catalog and inventory"
-      >
-        <Link href="/admin/products/new">
-          <Button className="bg-accent-rose hover:bg-accent-rose-dark">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Product
-          </Button>
-        </Link>
+      <AdminHeader title="Products" description="Manage your catalog, prices and stock">
+        <Button asChild className="gap-2 bg-accent-rose hover:bg-accent-rose-dark">
+          <Link href="/admin/products/new">
+            <Plus className="h-4 w-4" />
+            Add product
+          </Link>
+        </Button>
       </AdminHeader>
 
-      <div className="px-4 sm:px-8 py-8">
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="px-4 py-8 sm:px-8">
+        <StatGrid columns={4} loading={statsLoading}>
+          <StatCard
+            title="Total products"
+            value={stats?.total ?? 0}
+            icon={Package}
+            tone="blue"
+            href="/admin/products"
+          />
+          <StatCard
+            title="Active"
+            value={stats?.active ?? 0}
+            icon={PackageCheck}
+            tone="green"
+            hint={`${stats?.inactive ?? 0} drafts`}
+            href="/admin/products?status=active"
+          />
+          <StatCard
+            title="Low stock"
+            value={stats?.lowStock ?? 0}
+            icon={AlertTriangle}
+            tone={(stats?.lowStock ?? 0) > 0 ? 'amber' : 'neutral'}
+            hint={`${LOW_STOCK} or fewer left`}
+            href="/admin/products?stock=low"
+          />
+          <StatCard
+            title="Out of stock"
+            value={stats?.outOfStock ?? 0}
+            icon={PackageX}
+            tone={(stats?.outOfStock ?? 0) > 0 ? 'red' : 'neutral'}
+            hint="Customers can't buy these"
+            href="/admin/products?stock=out"
+          />
+        </StatGrid>
+
+        <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center">
           <SearchInput
             className="flex-1"
             label="Search products"
-            placeholder="Search products by name or SKU..."
-            value={searchQuery}
-            onValueChange={setSearchQuery}
+            placeholder="Search by name or SKU"
+            value={search}
+            onValueChange={setSearch}
           />
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button variant="outline">
-            <Filter className="h-4 w-4 mr-2" />
-            More Filters
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <Select value={category} onValueChange={(value) => setFilter('category', value)}>
+              <SelectTrigger
+                className="h-10 w-full bg-background sm:w-52"
+                aria-label="Filter by category"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All categories</SelectItem>
+                {options.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={status} onValueChange={(value) => setFilter('status', value)}>
+              <SelectTrigger
+                className="h-10 w-full bg-background sm:w-36"
+                aria-label="Filter by status"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All statuses</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={stock} onValueChange={(value) => setFilter('stock', value)}>
+              <SelectTrigger
+                className="h-10 w-full bg-background sm:w-40"
+                aria-label="Filter by stock"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All stock levels</SelectItem>
+                <SelectItem value="low">Low stock</SelectItem>
+                <SelectItem value="out">Out of stock</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">Total Products</p>
-              <p className="text-2xl font-bold">{filteredProducts.length}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">In Stock</p>
-              <p className="text-2xl font-bold text-green-600">
-                {filteredProducts.filter((p) => p.stockQuantity > 5).length}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">Low Stock</p>
-              <p className="text-2xl font-bold text-orange-600">
-                {filteredProducts.filter((p) => p.stockQuantity > 0 && p.stockQuantity <= 5).length}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">Out of Stock</p>
-              <p className="text-2xl font-bold text-red-600">
-                {products.filter((p) => p.stockQuantity === 0).length}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        {!loading && !loadFailed && (
+          <p className="mb-3 text-sm text-muted-foreground" aria-live="polite">
+            {totalCount.toLocaleString()} {totalCount === 1 ? 'product' : 'products'}
+          </p>
+        )}
 
-        {/* Products Table */}
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-muted/50 border-b">
-                  <tr>
-                    <th className="text-left p-4 font-medium text-sm">Product</th>
-                    <th className="text-left p-4 font-medium text-sm">SKU</th>
-                    <th className="text-left p-4 font-medium text-sm">Category</th>
-                    <th className="text-right p-4 font-medium text-sm">Price</th>
-                    <th className="text-center p-4 font-medium text-sm">Stock</th>
-                    <th className="text-center p-4 font-medium text-sm">Sales</th>
-                    <th className="text-center p-4 font-medium text-sm">Status</th>
-                    <th className="text-center p-4 font-medium text-sm">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
-                    Array.from({ length: 6 }, (_, i) => (
-                      <tr key={i} className="border-b">
-                        {Array.from({ length: 8 }, (_, j) => (
-                          <td key={j} className="p-4">
-                            <Skeleton className="h-4 w-full max-w-24 mx-auto" />
-                          </td>
-                        ))}
-                      </tr>
-                    ))
-                  ) : filteredProducts.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="p-12 text-center text-muted-foreground">
-                        <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                        <p>No products found</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredProducts.map((product) => {
-                      const category = categories.find((c) => c.id === product.categoryId);
-                      const productUrl = `/admin/products/${product.slug || product.id}`;
+        {renderTable()}
 
-                      return (
-                        <tr
-                          key={product.id}
-                          className="border-b hover:bg-muted/30 transition-colors"
-                        >
-                          <td className="p-4">
-                            <div className="flex items-center gap-3">
-                              <ProductThumb
-                                images={productImages(product)}
-                                name={product.name}
-                                onOpen={() => openPreview(product)}
-                              />
-                              <Link href={productUrl} className="group min-w-0">
-                                <p className="truncate font-medium transition-colors group-hover:text-accent-rose">
-                                  {product.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground sm:hidden">
-                                  {product.sku || 'No SKU'}
-                                </p>
-                              </Link>
-                            </div>
-                          </td>
-                          <td className="p-4 text-sm text-muted-foreground">
-                            {product.sku || 'N/A'}
-                          </td>
-                          <td className="p-4 text-sm">{category?.name || 'Uncategorized'}</td>
-                          <td className="p-4 text-right font-medium">
-                            Rwf {product.price.toLocaleString()}
-                          </td>
-                          <td className="p-4 text-center">
-                            <span
-                              className={`font-medium ${product.stockQuantity <= 5 && product.stockQuantity > 0 ? 'text-orange-600' : product.stockQuantity === 0 ? 'text-red-600' : ''}`}
-                            >
-                              {product.stockQuantity}
-                            </span>
-                          </td>
-                          <td className="p-4 text-center text-sm">-</td>
-                          <td className="p-4 text-center">
-                            {getStatusBadge(product.stockQuantity)}
-                          </td>
-                          <td className="p-4 text-center">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem asChild>
-                                  <Link href={productUrl} className="cursor-pointer">
-                                    <Eye className="h-4 w-4 mr-2" />
-                                    View Details
-                                  </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                  <Link href={`${productUrl}/edit`} className="cursor-pointer">
-                                    <Edit className="h-4 w-4 mr-2" />
-                                    Edit
-                                  </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-red-600 cursor-pointer"
-                                  onClick={() => handleDeleteClick(product)}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={(next) => setFilter('page', String(next))}
+          className="mt-6"
+        />
       </div>
 
-      <ImageLightbox
-        images={previewProduct ? productImages(previewProduct) : []}
-        open={lightbox.open}
-        index={lightbox.index}
-        onOpenChange={lightbox.onOpenChange}
-        onIndexChange={lightbox.setIndex}
-        alt={previewProduct?.name}
+      <ConfirmDeleteDialog
+        open={!!toDelete}
+        onOpenChange={(open) => !open && setToDelete(null)}
+        title="Delete product"
+        description={
+          toDelete ? (
+            <>
+              Delete <span className="font-medium text-foreground">{toDelete.name}</span>? This
+              cannot be undone.
+            </>
+          ) : null
+        }
+        warning={deleteBlocker ?? undefined}
+        blocked={!!deleteBlocker}
+        onConfirm={async () => {
+          if (toDelete) await productsApi.delete(toDelete.id);
+        }}
+        onSuccess={() => {
+          setToDelete(null);
+          load();
+          loadStats();
+        }}
+        successMessage="Product deleted"
       />
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Product</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{productToDelete?.name}"? This action cannot be
-              undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
 
-export default function ProductsManagementPage() {
+export default function AdminProductsPage() {
   return (
     <ProtectedRoute requireAdmin>
       <AdminLayout>

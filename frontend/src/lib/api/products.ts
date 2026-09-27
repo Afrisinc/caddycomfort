@@ -11,6 +11,16 @@ export interface ProductListResult {
   };
 }
 
+export interface ProductStats {
+  total: number;
+  active: number;
+  inactive: number;
+  featured: number;
+  inStock: number;
+  lowStock: number;
+  outOfStock: number;
+}
+
 export const productsApi = {
   /**
    * Get all products with filters and pagination
@@ -31,6 +41,7 @@ export const productsApi = {
         if (filters.isFeatured !== undefined)
           params.append('isFeatured', filters.isFeatured.toString());
         if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString());
+        if (filters.stock) params.append('stock', filters.stock);
         if (filters.sizes?.length) filters.sizes.forEach((s) => params.append('sizes', s));
         if (filters.colors?.length) filters.colors.forEach((c) => params.append('colors', c));
         if (filters.tags?.length) filters.tags.forEach((t) => params.append('tags', t));
@@ -256,23 +267,11 @@ export const productsApi = {
   /**
    * Get product stats (Admin only)
    */
-  getStats: async (): Promise<{
-    totalProducts: number;
-    activeProducts: number;
-    lowStockProducts: number;
-    outOfStockProducts: number;
-    totalValue: number;
-  }> => {
+  getStats: async (): Promise<ProductStats> => {
     try {
       const response = await apiClient.get('/products/admin/stats');
       const resData = handleApiResponse<any>(response).data;
-      return (resData?.stats || resData) as {
-        totalProducts: number;
-        activeProducts: number;
-        lowStockProducts: number;
-        outOfStockProducts: number;
-        totalValue: number;
-      };
+      return (resData?.stats || resData) as ProductStats;
     } catch (error) {
       throw handleApiError(error);
     }

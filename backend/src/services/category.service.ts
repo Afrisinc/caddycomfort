@@ -14,9 +14,9 @@ interface CreateCategoryData {
 interface UpdateCategoryData {
   name?: string;
   slug?: string;
-  description?: string;
-  image?: string;
-  parentId?: string;
+  description?: string | null;
+  image?: string | null;
+  parentId?: string | null;
 }
 
 export class CategoryService {
@@ -79,7 +79,10 @@ export class CategoryService {
 
     const result = await prisma.category.create({
       data: {
-        ...data,
+        name: data.name,
+        slug: data.slug,
+        description: data.description || null,
+        parentId: data.parentId || null,
         image: imageUrl,
       },
       include: {
@@ -227,42 +230,16 @@ export class CategoryService {
       }
     }
 
-    // Handle image update
-    let imageUrl: string | undefined = data.image;
-    if (data.image && data.image !== category.image) {
-      if (isValidBase64Image(data.image)) {
-        try {
-          // Upload new image
-          imageUrl = await uploadBase64Image(data.image, {
-            folder: 'clementine-shop/categories',
-            transformation: [
-              { width: 800, height: 600, crop: 'limit' },
-              { quality: 'auto' },
-              { format: 'webp' },
-            ],
-          });
-
-          // Delete old image if it exists and is from Cloudinary
-          if (category.image && category.image.includes('cloudinary.com')) {
-            try {
-              await deleteImage(category.image);
-            } catch (error) {
-              console.error('Failed to delete old category image:', error);
-            }
-          }
-        } catch (error: any) {
-          throw new Error(`Failed to upload category image: ${error.message}`);
-        }
-      } else if (!data.image.startsWith('http')) {
-        throw new Error('Invalid image format. Provide base64 or URL.');
-      }
-    }
+    const image = await this.resolveImageUpdate(category.image, data.image);
 
     const result = await prisma.category.update({
       where: { id },
       data: {
-        ...data,
-        image: imageUrl,
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.slug !== undefined && { slug: data.slug }),
+        ...(data.description !== undefined && { description: data.description || null }),
+        ...(data.parentId !== undefined && { parentId: data.parentId || null }),
+        ...(image !== undefined && { image }),
       },
       include: {
         parent: true,
@@ -391,5 +368,38 @@ export class CategoryService {
       withProducts: categoriesWithProducts,
       empty: totalCategories - categoriesWithProducts,
     };
+  }
+
+  private static async resolveImageUpdate(
+    current: string | null,
+    next: string | null | undefined,
+  ): Promise<string | null | undefined> {
+    if (next === undefined || next === current) return undefined;
+
+    let resolved: string | null = null;
+    if (next && isValidBase64Image(next)) {
+      try {
+        resolved = await uploadBase64Image(next, {
+          folder: 'clementine-shop/categories',
+          transformation: [
+            { width: 800, height: 600, crop: 'limit' },
+            { quality: 'auto' },
+            { format: 'webp' },
+          ],
+        });
+      } catch (error: any) {
+        throw new Error(`Failed to upload category image: ${error.message}`);
+      }
+    } else if (next) {
+      if (!next.startsWith('http')) throw new Error('Invalid image format. Provide base64 or URL.');
+      resolved = next;
+    }
+
+    if (current?.includes('cloudinary.com')) {
+      await deleteImage(current).catch((error) =>
+        console.error('Failed to delete old category image:', error),
+      );
+    }
+    return resolved;
   }
 }

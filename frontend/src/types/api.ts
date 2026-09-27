@@ -110,6 +110,7 @@ export interface ProductFilters {
   search?: string;
   isFeatured?: boolean;
   isActive?: boolean;
+  stock?: 'low' | 'out';
 }
 
 // Cart Types
