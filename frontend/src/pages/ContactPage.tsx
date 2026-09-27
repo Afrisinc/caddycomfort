@@ -7,12 +7,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { ContactMethod } from '@/components/common/ContactMethod';
 import { ContactForm } from '@/components/contact/ContactForm';
 import { Heading, Text } from '@/components/ui/typography';
-
-const EMAIL = 'caddyumutoniwase@gmail.com';
-const PHONE_DISPLAY = '+250 786 763 654';
-const PHONE_HREF = 'tel:+250786763654';
-const ADDRESS = 'KN 4 Ave, Kigali, Rwanda';
-const MAPS_HREF = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ADDRESS)}`;
+import { CONTACT } from '@/lib/contactInfo';
 
 const QUICK_HELP = [
   { icon: HelpCircle, label: 'FAQ', description: 'Answers to common questions', href: '/faq' },
@@ -44,10 +39,26 @@ export default function ContactPage() {
 
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:py-14 lg:px-8 lg:py-16">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <ContactMethod icon={Mail} label="Email" value={EMAIL} href={`mailto:${EMAIL}`} />
-            <ContactMethod icon={Phone} label="Call us" value={PHONE_DISPLAY} href={PHONE_HREF} />
-            <ContactMethod icon={MapPin} label="Visit" value={ADDRESS} href={MAPS_HREF} external />
-            <ContactMethod icon={Clock} label="Opening hours" value="Mon–Sat: 9AM–8PM" />
+            <ContactMethod
+              icon={Mail}
+              label="Email"
+              value={CONTACT.email}
+              href={CONTACT.emailHref}
+            />
+            <ContactMethod
+              icon={Phone}
+              label="Call us"
+              value={CONTACT.phone}
+              href={CONTACT.phoneHref}
+            />
+            <ContactMethod
+              icon={MapPin}
+              label="Visit"
+              value={CONTACT.address}
+              href={CONTACT.mapsHref}
+              external
+            />
+            <ContactMethod icon={Clock} label="Opening hours" value={CONTACT.hours} />
           </div>
 
           <div className="mt-12 grid grid-cols-1 gap-10 lg:mt-16 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-14">
@@ -102,7 +113,7 @@ export default function ContactPage() {
                     help with personalized styling and expert advice.
                   </Text>
                   <a
-                    href={MAPS_HREF}
+                    href={CONTACT.mapsHref}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 pt-1 text-sm font-medium text-accent-rose underline-offset-4 hover:underline"

@@ -8,6 +8,7 @@ import { CtaBanner } from '@/components/common/CtaBanner';
 import { CategoryCardV2 } from '@/components/products/CategoryCardV2';
 import { Button } from '@/components/ui/button';
 import { Heading, InfoBlock, SectionHeader, Text } from '@/components/ui/typography';
+import { CONTACT } from '@/lib/contactInfo';
 
 const VALUES = [
   {
@@ -39,9 +40,6 @@ const COLLECTIONS = [
   { title: 'Bags', image: '/new-images/bag/bag-1.jpg', href: '/shop?category=bags' },
   { title: 'Wigs', image: '/new-images/wigs/wig-1.jpg', href: '/shop?category=wigs' },
 ];
-
-const ADDRESS = 'KN 4 Ave, Kigali, Rwanda';
-const MAPS_HREF = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ADDRESS)}`;
 
 export default function AboutPage() {
   return (
@@ -166,11 +164,11 @@ export default function AboutPage() {
                 <ContactMethod
                   icon={MapPin}
                   label="Address"
-                  value={ADDRESS}
-                  href={MAPS_HREF}
+                  value={CONTACT.address}
+                  href={CONTACT.mapsHref}
                   external
                 />
-                <ContactMethod icon={Clock} label="Opening hours" value="Mon–Sat: 9AM–8PM" />
+                <ContactMethod icon={Clock} label="Opening hours" value={CONTACT.hours} />
               </div>
             </div>
           </section>

@@ -1,15 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-  Banknote,
-  Clock,
-  PackageCheck,
-  RefreshCw,
-  Search,
-  ShoppingBag,
-  TrendingUp,
-} from 'lucide-react';
+import { Banknote, Clock, PackageCheck, RefreshCw, ShoppingBag, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Pagination } from '@/components/ui/pagination';
 import {
@@ -37,6 +28,7 @@ import {
   PAYMENT_STATUS_STYLES,
 } from '@/lib/orderStatus';
 import type { Order, OrderStatus, PaymentStatus } from '@/types/api';
+import { SearchInput } from '@/components/ui/search-input';
 
 const PAGE_SIZE = 20;
 const ALL = 'all';
@@ -296,17 +288,13 @@ function OrdersManagement() {
         </StatGrid>
 
         <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search by order number, customer name or email"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              aria-label="Search orders"
-              className="h-10 bg-background pl-9"
-            />
-          </div>
+          <SearchInput
+            className="flex-1"
+            label="Search orders"
+            placeholder="Search by order number, customer name or email"
+            value={search}
+            onValueChange={setSearch}
+          />
           <div className="flex flex-wrap gap-3">
             <Select
               value={status}

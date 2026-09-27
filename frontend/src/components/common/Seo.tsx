@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { JsonLd } from '@/components/common/JsonLd';
 
 const SITE_NAME = 'CaddyComfort';
 export const SITE_URL = (import.meta.env.VITE_APP_URL || 'https://caddycomfort.com').replace(
@@ -76,11 +77,5 @@ export function Seo({ title, description, image, type = 'website', noindex, json
     );
   }, [fullTitle, desc, img, type, url, noindex]);
 
-  if (!jsonLd) return null;
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
-    />
-  );
+  return jsonLd ? <JsonLd data={jsonLd} /> : null;
 }

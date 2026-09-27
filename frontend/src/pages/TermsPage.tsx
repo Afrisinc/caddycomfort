@@ -1,6 +1,7 @@
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { FileText } from 'lucide-react';
+import { CONTACT } from '@/lib/contactInfo';
 
 export default function TermsPage() {
   return (
@@ -173,13 +174,13 @@ export default function TermsPage() {
               </p>
               <div className="bg-card border rounded-lg p-6">
                 <p className="mb-2">
-                  <strong className="text-foreground">Email:</strong> caddyumutoniwase@gmail.com
+                  <strong className="text-foreground">Email:</strong> {CONTACT.email}
                 </p>
                 <p className="mb-2">
-                  <strong className="text-foreground">Phone:</strong> +250 786 763 654
+                  <strong className="text-foreground">Phone:</strong> {CONTACT.phone}
                 </p>
                 <p>
-                  <strong className="text-foreground">Address:</strong> KN 4 Ave, Kigali, Rwanda
+                  <strong className="text-foreground">Address:</strong> {CONTACT.address}
                 </p>
               </div>
             </section>

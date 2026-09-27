@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from '@/components/common/Link';
 import { useRouter } from '@/router/compat';
-import { Plus, Search, MoreVertical, Edit, Trash2, FolderTree, Package } from 'lucide-react';
+import { Plus, MoreVertical, Edit, Trash2, FolderTree, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +19,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { categoriesApi } from '@/lib/api';
 import { Category } from '@/types/api';
 import { toast } from 'sonner';
+import { SearchInput } from '@/components/ui/search-input';
 
 function CategoriesManagement() {
   const router = useRouter();
@@ -203,15 +203,12 @@ function CategoriesManagement() {
             {/* Search */}
             <Card className="mb-6">
               <CardContent className="p-6">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search categories..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+                <SearchInput
+                  label="Search categories"
+                  placeholder="Search categories..."
+                  value={searchQuery}
+                  onValueChange={setSearchQuery}
+                />
               </CardContent>
             </Card>
 

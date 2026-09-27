@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
+import { SearchInput } from '@/components/ui/search-input';
 
 export default function ComponentShowcase() {
+  const [demoSearch, setDemoSearch] = useState('');
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-7xl mx-auto space-y-16">
@@ -88,10 +91,12 @@ export default function ComponentShowcase() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Search Products</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input className="pl-10" placeholder="Search..." />
-              </div>
+              <SearchInput
+                label="Search"
+                placeholder="Search..."
+                value={demoSearch}
+                onValueChange={setDemoSearch}
+              />
             </div>
           </div>
         </section>

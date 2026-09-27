@@ -1,102 +1,197 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Package, RefreshCw } from 'lucide-react';
 import { useRouter } from '@/router/compat';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import Link from '@/components/common/Link';
+import { PageHeader } from '@/components/common/PageHeader';
+import { EmptyState } from '@/components/common/EmptyState';
+import { OrderCard } from '@/components/orders/OrderCard';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Pagination } from '@/components/ui/pagination';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthStore } from '@/store/useAuthStore';
-import { ArrowLeft, Package, Truck, CheckCircle } from 'lucide-react';
+import { ordersApi } from '@/lib/api';
+import type { Order, OrderStatus } from '@/types/api';
 
-export default function OrdersPage() {
+const PAGE_SIZE = 10;
+
+const TABS: { value: OrderStatus | 'all'; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'PENDING', label: 'Pending' },
+  { value: 'PROCESSING', label: 'Processing' },
+  { value: 'SHIPPED', label: 'Shipped' },
+  { value: 'DELIVERED', label: 'Delivered' },
+  { value: 'CANCELLED', label: 'Cancelled' },
+];
+
+function OrderCardSkeleton() {
+  return (
+    <div className="space-y-4 rounded-2xl border bg-card p-6" aria-hidden="true">
+      <div className="flex justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-4 w-56" />
+        </div>
+        <Skeleton className="h-6 w-24" />
+      </div>
+      <Skeleton className="h-8 w-full" />
+    </div>
+  );
+}
+
+export default function AccountOrdersPage() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const status = (searchParams.get('status') as OrderStatus | null) ?? 'all';
+  const page = Number(searchParams.get('page')) || 1;
+
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-    }
+    if (!isAuthenticated) router.push('/login?redirect=/account/orders');
   }, [isAuthenticated, router]);
 
-  const orders = [
-    { id: 'ORD-2024-001', date: '2024-01-15', total: 'Rwf 299,000', status: 'Delivered', items: 2 },
-    {
-      id: 'ORD-2024-002',
-      date: '2024-01-20',
-      total: 'Rwf 189,000',
-      status: 'In Transit',
-      items: 1,
-    },
-    {
-      id: 'ORD-2024-003',
-      date: '2024-01-25',
-      total: 'Rwf 450,000',
-      status: 'Processing',
-      items: 3,
-    },
-  ];
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadFailed(false);
+    try {
+      const result = await ordersApi.getAll({
+        page,
+        limit: PAGE_SIZE,
+        status: status === 'all' ? undefined : status,
+      });
+      setOrders(result.orders);
+      setTotalPages(result.pagination.totalPages || 1);
+    } catch {
+      setLoadFailed(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, status]);
 
-  const getStatusIcon = (status: string) => {
-    if (status === 'Delivered') return <CheckCircle className="h-5 w-5" />;
-    if (status === 'In Transit') return <Truck className="h-5 w-5" />;
-    return <Package className="h-5 w-5" />;
-  };
+  useEffect(() => {
+    if (isAuthenticated) load();
+  }, [isAuthenticated, load]);
 
-  const getStatusColor = (status: string) => {
-    if (status === 'Delivered') return 'bg-green-100 text-green-800';
-    if (status === 'In Transit') return 'bg-blue-100 text-blue-800';
-    return 'bg-yellow-100 text-yellow-800';
+  const updateParams = (next: { status?: string; page?: number }) => {
+    const params = new URLSearchParams(searchParams);
+    if (next.status !== undefined) {
+      if (next.status === 'all') params.delete('status');
+      else params.set('status', next.status);
+      params.delete('page');
+    }
+    if (next.page !== undefined) {
+      if (next.page > 1) params.set('page', String(next.page));
+      else params.delete('page');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    setSearchParams(params);
   };
 
   if (!isAuthenticated) return null;
 
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="space-y-4">
+          {Array.from({ length: 3 }, (_, i) => (
+            <OrderCardSkeleton key={i} />
+          ))}
+        </div>
+      );
+    }
+    if (loadFailed) {
+      return (
+        <EmptyState
+          icon={RefreshCw}
+          title="We couldn't load your orders"
+          description="Please check your connection and try again."
+          action={
+            <Button variant="outline" onClick={load}>
+              Try again
+            </Button>
+          }
+        />
+      );
+    }
+    if (orders.length === 0) {
+      const filtered = status !== 'all';
+      return (
+        <EmptyState
+          icon={Package}
+          title={filtered ? 'No orders with this status' : 'No orders yet'}
+          description={
+            filtered
+              ? 'Try another tab to see the rest of your orders.'
+              : 'When you place an order, you can follow it here from payment to delivery.'
+          }
+          action={
+            filtered ? (
+              <Button variant="outline" onClick={() => updateParams({ status: 'all' })}>
+                Show all orders
+              </Button>
+            ) : (
+              <Button asChild className="bg-accent-rose hover:bg-accent-rose-dark">
+                <Link href="/shop">Start shopping</Link>
+              </Button>
+            )
+          }
+        />
+      );
+    }
+    return (
+      <div className="space-y-4">
+        {orders.map((order) => (
+          <OrderCard key={order.id} order={order} />
+        ))}
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={(next) => updateParams({ page: next })}
+          className="pt-4"
+        />
+      </div>
+    );
+  };
+
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-background pt-20">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <Link
-            href="/account"
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6"
+      <main className="min-h-screen bg-background pt-20">
+        <PageHeader
+          title="My orders"
+          description="Track your orders, complete pending payments and see what's due on delivery."
+          breadcrumbs={[
+            { label: 'Home', href: '/' },
+            { label: 'Account', href: '/account' },
+            { label: 'Orders' },
+          ]}
+        />
+        <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 md:py-12 lg:px-8">
+          <Tabs
+            value={status}
+            onValueChange={(value) => updateParams({ status: value })}
+            variant="underline"
+            className="mb-8"
           >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to Account
-          </Link>
-
-          <h1 className="text-4xl font-serif mb-8">Order History</h1>
-
-          <div className="space-y-4">
-            {orders.map((order) => (
-              <div key={order.id} className="bg-card border rounded-lg p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                  <div>
-                    <h3 className="font-semibold text-lg">{order.id}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Placed on {new Date(order.date).toLocaleDateString()} • {order.items} items
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="font-semibold text-lg">{order.total}</p>
-                    </div>
-                    <Badge className={getStatusColor(order.status)}>
-                      <span className="flex items-center gap-1">
-                        {getStatusIcon(order.status)}
-                        {order.status}
-                      </span>
-                    </Badge>
-                  </div>
-                </div>
-                <Link href={`/account/orders/${order.id}`}>
-                  <Button variant="outline" size="sm">
-                    View Details
-                  </Button>
-                </Link>
-              </div>
-            ))}
-          </div>
+            <TabsList aria-label="Filter orders by status">
+              {TABS.map((tab) => (
+                <TabsTrigger key={tab.value} value={tab.value}>
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+          {renderContent()}
         </div>
-      </div>
+      </main>
       <Footer />
     </>
   );

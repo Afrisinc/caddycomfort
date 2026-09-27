@@ -15,11 +15,14 @@ export const ordersApi = {
   /**
    * Get the logged-in user's orders
    */
-  getAll: async (pagination?: PaginationParams): Promise<UserOrdersResult> => {
+  getAll: async (
+    pagination?: PaginationParams & { status?: OrderStatus },
+  ): Promise<UserOrdersResult> => {
     try {
       const params = new URLSearchParams();
       if (pagination?.page) params.append('page', pagination.page.toString());
       if (pagination?.limit) params.append('limit', pagination.limit.toString());
+      if (pagination?.status) params.append('status', pagination.status);
 
       const response = await apiClient.get(`/orders/my-orders?${params.toString()}`);
       return handleApiResponse<UserOrdersResult>(response).data!;

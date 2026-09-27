@@ -1,237 +1,189 @@
+import {
+  Clock,
+  MapPin,
+  PackageCheck,
+  PackageX,
+  RefreshCw,
+  RotateCcw,
+  Truck,
+  Wallet,
+} from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { Package, Truck, Clock, MapPin, RotateCcw, AlertCircle } from 'lucide-react';
+import Link from '@/components/common/Link';
+import { PageHeader } from '@/components/common/PageHeader';
+import { CtaBanner } from '@/components/common/CtaBanner';
+import { Button } from '@/components/ui/button';
+import { CheckList, StepList } from '@/components/ui/lists';
+import { ContentSection, DetailList, Heading, InfoBlock, Text } from '@/components/ui/typography';
+import { CONTACT } from '@/lib/contactInfo';
+import { formatRwf } from '@/lib/pricing';
+import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING } from '@/lib/checkout';
+
+const HIGHLIGHTS = [
+  { icon: Truck, title: 'Delivery in 5–7 days', text: 'Across Rwanda' },
+  {
+    icon: PackageCheck,
+    title: `Free over ${formatRwf(FREE_SHIPPING_THRESHOLD)}`,
+    text: `Otherwise ${formatRwf(STANDARD_SHIPPING)}`,
+  },
+  { icon: Clock, title: '1–2 day processing', text: 'Monday to Friday' },
+  { icon: RotateCcw, title: '30-day returns', text: 'Unworn items with tags' },
+];
 
 export default function ShippingPage() {
   return (
     <>
       <Navbar />
 
-      <div className="min-h-screen bg-background pt-20">
-        <div className="bg-gradient-to-br from-accent-rose-subtle via-background to-accent-rose-muted/30 py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="text-5xl font-serif text-center mb-4">Shipping & Returns</h1>
-            <p className="text-center text-muted-foreground max-w-2xl mx-auto">
-              Learn about our shipping policies and hassle-free return process
-            </p>
-          </div>
+      <main className="min-h-screen bg-background pt-20">
+        <PageHeader
+          title="Shipping & returns"
+          description="How we deliver your order, what it costs, and how returns work."
+          breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Shipping & returns' }]}
+          actions={
+            <nav aria-label="On this page" className="flex gap-2">
+              <Button asChild variant="outline" size="sm">
+                <a href="#shipping">Shipping</a>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <a href="#returns">Returns</a>
+              </Button>
+            </nav>
+          }
+        />
+
+        <div className="mx-auto max-w-5xl space-y-16 px-4 py-10 sm:px-6 md:space-y-20 md:py-14 lg:px-8">
+          <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {HIGHLIGHTS.map(({ icon: Icon, title, text }) => (
+              <li key={title} className="rounded-2xl border bg-card p-4 sm:p-5">
+                <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-accent-rose/10 text-accent-rose">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <p className="text-sm font-semibold">{title}</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">{text}</p>
+              </li>
+            ))}
+          </ul>
+
+          <ContentSection
+            title="Shipping"
+            description="We currently deliver to addresses within Rwanda."
+            className="scroll-mt-28"
+          >
+            <div id="shipping" className="scroll-mt-28 space-y-4">
+              <DetailList
+                items={[
+                  {
+                    label: 'Standard delivery',
+                    value: `${formatRwf(STANDARD_SHIPPING)} · 5–7 business days`,
+                  },
+                  {
+                    label: 'Free delivery',
+                    value: `On orders over ${formatRwf(FREE_SHIPPING_THRESHOLD)}`,
+                  },
+                  {
+                    label: 'Order processing',
+                    value: '1–2 business days, Monday to Friday, excluding public holidays',
+                  },
+                ]}
+              />
+              <div className="grid gap-4 md:grid-cols-2">
+                <InfoBlock icon={MapPin} title="Where we deliver">
+                  We deliver to all major cities in Rwanda, including Kigali, Huye, Musanze and
+                  Rubavu. Remote areas may need extra time — contact us for details.
+                </InfoBlock>
+                <InfoBlock icon={PackageCheck} title="Following your order">
+                  Sign in and open My orders to see each order&apos;s status, from placed to shipped
+                  and delivered.
+                </InfoBlock>
+                <InfoBlock icon={Wallet} title="Cash on delivery" className="md:col-span-2">
+                  Pay a 50% deposit online when you order, and the remaining 50% in cash when your
+                  order arrives. Nothing is owed after delivery.{' '}
+                  <Link
+                    href="/faq#cash-on-delivery"
+                    className="font-medium text-accent-rose underline-offset-4 hover:underline"
+                  >
+                    How it works
+                  </Link>
+                </InfoBlock>
+              </div>
+            </div>
+          </ContentSection>
+
+          <ContentSection
+            title="Returns & exchanges"
+            description="We want you to love what you ordered."
+          >
+            <div id="returns" className="scroll-mt-28 grid gap-6 lg:grid-cols-2">
+              <section className="rounded-2xl border bg-card p-5 sm:p-6">
+                <Heading as="h3" size="xs" className="mb-1">
+                  30-day return policy
+                </Heading>
+                <Text variant="small" className="mb-5">
+                  Return items within 30 days of delivery for a refund or exchange, as long as:
+                </Text>
+                <CheckList
+                  items={[
+                    'Items are unworn, unwashed and in their original condition with all tags attached',
+                    'Original packaging and receipts are included',
+                    'The item was not bought as a sale or final-sale product',
+                  ]}
+                />
+              </section>
+              <section className="rounded-2xl border bg-card p-5 sm:p-6">
+                <Heading as="h3" size="xs" className="mb-5">
+                  How to return an item
+                </Heading>
+                <StepList
+                  items={[
+                    <>
+                      Email{' '}
+                      <a
+                        href={CONTACT.emailHref}
+                        className="font-medium text-foreground underline-offset-4 hover:underline"
+                      >
+                        {CONTACT.email}
+                      </a>{' '}
+                      with your order number
+                    </>,
+                    'We send you a return authorization number and instructions',
+                    'Pack your items securely with all original materials',
+                    'Send the package to the return address we provide',
+                    'Your refund is processed within 7–10 business days after we receive it',
+                  ]}
+                />
+              </section>
+              <InfoBlock icon={RefreshCw} title="Exchanges">
+                Exchanges depend on availability. For the fastest service, return the item for a
+                refund and place a new order for the size or color you want.
+              </InfoBlock>
+              <InfoBlock icon={PackageX} title="Damaged or defective items">
+                Contact us within 48 hours of delivery with photos of the damage. We will arrange a
+                replacement or a full refund at no extra cost, including return shipping.
+              </InfoBlock>
+            </div>
+          </ContentSection>
+
+          <CtaBanner
+            title="Need help with a delivery or return?"
+            description="Our customer service team is happy to help with any question about shipping or returns."
+            actions={
+              <>
+                <Button asChild size="lg" className="h-11 bg-accent-rose hover:bg-accent-rose-dark">
+                  <a href={CONTACT.emailHref}>Email us</a>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="h-11 bg-background/80">
+                  <a href={CONTACT.phoneHref}>Call {CONTACT.phone}</a>
+                </Button>
+                <Button asChild size="lg" variant="ghost" className="h-11">
+                  <Link href="/faq">Read the FAQ</Link>
+                </Button>
+              </>
+            }
+          />
         </div>
-
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          {/* Shipping Information */}
-          <div className="mb-16">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-12 w-12 rounded-full bg-accent-rose-subtle flex items-center justify-center">
-                <Truck className="h-6 w-6 text-accent-rose" />
-              </div>
-              <h2 className="text-3xl font-serif">Shipping Information</h2>
-            </div>
-
-            <div className="space-y-6">
-              <div className="bg-card border rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-3">Domestic Shipping</h3>
-                <div className="space-y-3 text-muted-foreground">
-                  <p>
-                    <strong className="text-foreground">
-                      Standard Delivery (5-7 business days):
-                    </strong>{' '}
-                    Rwf 5,000
-                  </p>
-                  <p>
-                    <strong className="text-foreground">
-                      Express Delivery (2-3 business days):
-                    </strong>{' '}
-                    Rwf 10,000
-                  </p>
-                  <p className="flex items-start gap-2">
-                    <Package className="h-5 w-5 text-accent-rose shrink-0 mt-0.5" />
-                    <span>Free standard shipping on all orders over Rwf 100,000</span>
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-card border rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-3">International Shipping</h3>
-                <div className="space-y-3 text-muted-foreground">
-                  <p>
-                    We ship to select countries worldwide. International shipping rates vary by
-                    destination and are calculated at checkout.
-                  </p>
-                  <p>
-                    <strong className="text-foreground">Delivery time:</strong> 10-20 business days
-                    depending on location
-                  </p>
-                  <p className="flex items-start gap-2">
-                    <AlertCircle className="h-5 w-5 text-accent-rose shrink-0 mt-0.5" />
-                    <span>
-                      Additional customs duties and taxes may apply based on your country&apos;s
-                      regulations.
-                    </span>
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-card border rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-3">Order Processing</h3>
-                <div className="space-y-3 text-muted-foreground">
-                  <p className="flex items-start gap-2">
-                    <Clock className="h-5 w-5 text-accent-rose shrink-0 mt-0.5" />
-                    <span>
-                      Orders are processed within 1-2 business days (Monday-Friday, excluding public
-                      holidays).
-                    </span>
-                  </p>
-                  <p>
-                    You will receive a confirmation email with tracking information once your order
-                    has been shipped.
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-card border rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-3">Delivery Locations</h3>
-                <div className="space-y-3 text-muted-foreground">
-                  <p className="flex items-start gap-2">
-                    <MapPin className="h-5 w-5 text-accent-rose shrink-0 mt-0.5" />
-                    <span>
-                      We deliver to all major cities in Rwanda: Kigali, Huye, Musanze, Rubavu, and
-                      more.
-                    </span>
-                  </p>
-                  <p>
-                    For remote areas, additional delivery time may be required. Please contact our
-                    customer service for more information.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Returns & Exchanges */}
-          <div>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-12 w-12 rounded-full bg-accent-rose-subtle flex items-center justify-center">
-                <RotateCcw className="h-6 w-6 text-accent-rose" />
-              </div>
-              <h2 className="text-3xl font-serif">Returns & Exchanges</h2>
-            </div>
-
-            <div className="space-y-6">
-              <div className="bg-card border rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-3">30-Day Return Policy</h3>
-                <p className="text-muted-foreground mb-4">
-                  We want you to be completely satisfied with your purchase. If you&apos;re not
-                  happy with your order, you can return it within 30 days of delivery for a full
-                  refund or exchange.
-                </p>
-                <ul className="space-y-2 text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <span className="text-accent-rose">•</span>
-                    <span>
-                      Items must be unworn, unwashed, and in original condition with all tags
-                      attached
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-accent-rose">•</span>
-                    <span>Original packaging and receipts must be included</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-accent-rose">•</span>
-                    <span>Sale items and final sale products cannot be returned</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-accent-rose">•</span>
-                    <span>Gift cards are non-refundable</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="bg-card border rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-3">How to Return</h3>
-                <ol className="space-y-3 text-muted-foreground">
-                  <li className="flex gap-3">
-                    <span className="font-semibold text-accent-rose shrink-0">1.</span>
-                    <span>
-                      Contact our customer service team at caddyumutoniwase@gmail.com to initiate a
-                      return
-                    </span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="font-semibold text-accent-rose shrink-0">2.</span>
-                    <span>
-                      You will receive a return authorization number and shipping instructions
-                    </span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="font-semibold text-accent-rose shrink-0">3.</span>
-                    <span>Pack your items securely with all original materials</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="font-semibold text-accent-rose shrink-0">4.</span>
-                    <span>Ship the package to the provided return address</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="font-semibold text-accent-rose shrink-0">5.</span>
-                    <span>
-                      Refunds will be processed within 7-10 business days after we receive your
-                      return
-                    </span>
-                  </li>
-                </ol>
-              </div>
-
-              <div className="bg-card border rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-3">Exchanges</h3>
-                <p className="text-muted-foreground mb-3">
-                  If you need a different size or color, we&apos;re happy to help! Exchanges are
-                  subject to product availability.
-                </p>
-                <p className="text-muted-foreground">
-                  For the fastest service, we recommend returning your original item for a refund
-                  and placing a new order for the item you want.
-                </p>
-              </div>
-
-              <div className="bg-card border rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-3">Damaged or Defective Items</h3>
-                <p className="text-muted-foreground mb-3">
-                  If you receive a damaged or defective item, please contact us within 48 hours of
-                  delivery with photos of the damage.
-                </p>
-                <p className="text-muted-foreground">
-                  We will arrange for a replacement or full refund at no additional cost to you,
-                  including return shipping.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Contact Section */}
-          <div className="mt-16 bg-accent-rose-subtle/20 border border-accent-rose-subtle rounded-lg p-8 text-center">
-            <h3 className="text-2xl font-serif mb-3">Need Help?</h3>
-            <p className="text-muted-foreground mb-6">
-              Our customer service team is here to assist you with any questions about shipping or
-              returns.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="mailto:caddyumutoniwase@gmail.com"
-                className="text-accent-rose hover:underline font-semibold"
-              >
-                caddyumutoniwase@gmail.com
-              </a>
-              <span className="hidden sm:inline text-muted-foreground">|</span>
-              <a
-                href="tel:+250786763654"
-                className="text-accent-rose hover:underline font-semibold"
-              >
-                +250 786 763 654
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
+      </main>
 
       <Footer />
     </>

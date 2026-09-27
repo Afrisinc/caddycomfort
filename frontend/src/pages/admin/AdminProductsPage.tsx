@@ -5,7 +5,6 @@ import { ImageLightbox } from '@/components/common/ImageLightbox';
 import { useImageLightbox } from '@/hooks/useImageLightbox';
 import {
   Plus,
-  Search,
   Filter,
   MoreVertical,
   Edit,
@@ -16,7 +15,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -48,6 +46,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { productsApi, categoriesApi } from '@/lib/api';
 import { Product, Category } from '@/types/api';
 import { toast } from 'sonner';
+import { SearchInput } from '@/components/ui/search-input';
 
 function ProductThumb({
   images,
@@ -220,15 +219,13 @@ function ProductsManagement() {
       <div className="px-4 sm:px-8 py-8">
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search products by name or SKU..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <SearchInput
+            className="flex-1"
+            label="Search products"
+            placeholder="Search products by name or SKU..."
+            value={searchQuery}
+            onValueChange={setSearchQuery}
+          />
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Category" />

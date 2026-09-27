@@ -14,6 +14,7 @@ import { Order, OrderStatus } from '@/types/api';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, MapPin, Ban } from 'lucide-react';
 import { OrderStatusBadge } from '@/components/orders/StatusBadge';
+import { OrderProgress } from '@/components/orders/OrderProgress';
 
 const CANCELLABLE_STATUSES: OrderStatus[] = ['PENDING', 'PROCESSING'];
 
@@ -106,6 +107,8 @@ function OrderDetailView({ id }: { id: string }) {
           </div>
           <OrderStatusBadge status={order.status} />
         </div>
+
+        <OrderProgress status={order.status} className="mb-8" />
 
         {order.paymentMethod === 'CASH_ON_DELIVERY' &&
           (order.depositAmount ?? 0) > 0 &&
