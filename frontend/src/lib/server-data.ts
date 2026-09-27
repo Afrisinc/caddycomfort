@@ -1,4 +1,5 @@
 import apiClient from '@/lib/api-client';
+import { getProductPricing } from '@/lib/pricing';
 import { Category, Product } from '@/types/api';
 
 export async function fetchApi<T>(path: string): Promise<T> {
@@ -7,8 +8,7 @@ export async function fetchApi<T>(path: string): Promise<T> {
 }
 
 function discountPercent(product: Product): number {
-  if (!product.comparePrice || product.comparePrice <= product.price) return 0;
-  return Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100);
+  return getProductPricing(product).discountPct;
 }
 
 export async function getHomeCategories(): Promise<Category[]> {

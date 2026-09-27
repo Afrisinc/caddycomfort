@@ -86,8 +86,8 @@
   --secondary-foreground: #111827;
 
   /* Accent - Rose (6 variations) */
-  --accent: #c2185b;
-  --accent-foreground: #fafafa;
+  --accent: #f4f4f5;
+  --accent-foreground: #111827;
   --accent-rose: #c2185b;
   --accent-rose-light: #e91e63;
   --accent-rose-dark: #880e4f;
@@ -131,7 +131,7 @@
   --secondary-foreground: #f8fafc;
 
   /* Accent - Rose (adjusted for dark) */
-  --accent: #e91e63;
+  --accent: #1e293b;
   --accent-foreground: #f8fafc;
   --accent-rose: #e91e63;
   --accent-rose-light: #f06292;

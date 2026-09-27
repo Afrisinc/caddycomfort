@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getProductPricing } from '@/lib/pricing';
 import { useRouter } from '@/router/compat';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -66,7 +67,7 @@ export default function WishlistPage() {
     addItem({
       id: product.id,
       name: product.name,
-      price: product.salePrice ?? product.price,
+      price: getProductPricing(product).current,
       image: product.imageUrl || product.images[0] || '',
       quantity: 1,
       size: product.sizes[0] || '',

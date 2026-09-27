@@ -5,9 +5,21 @@ import { Footer } from '@/components/layout/Footer';
 import { ProductCard } from '@/components/products/ProductCard';
 import { ProductGallery } from '@/components/products/ProductGallery';
 import { ProductInfoPanel } from '@/components/products/ProductInfoPanel';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsCount, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  ContentSection,
+  DetailList,
+  Heading,
+  InfoBlock,
+  SectionHeader,
+  Text,
+} from '@/components/ui/typography';
+import { ProductDetailSkeleton } from '@/components/products/ProductDetailSkeleton';
+import { getProductPricing } from '@/lib/pricing';
+import { RatingStars } from '@/components/products/RatingStars';
+import Link from '@/components/common/Link';
 import { Badge } from '@/components/ui/badge';
-import { Star, Check } from 'lucide-react';
+import { ArrowRight, Check, FileText, MessageSquare, RotateCcw, Truck } from 'lucide-react';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -20,7 +32,6 @@ import { getProductById, getRelatedProducts, getProductReviews } from '@/lib/sho
 import { toProductCardProps } from '@/lib/productCard';
 import { Product, ProductReviewStats } from '@/types/api';
 import NotFoundPage from '@/pages/NotFoundPage';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Seo, SITE_URL } from '@/components/common/Seo';
 
 export default function ShopProductPage() {
@@ -30,6 +41,12 @@ export default function ShopProductPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [reviewStats, setReviewStats] = useState<ProductReviewStats | null>(null);
+  const [activeTab, setActiveTab] = useState('description');
+
+  const viewReviews = () => {
+    setActiveTab('reviews');
+    document.getElementById('product-details')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -37,6 +54,7 @@ export default function ShopProductPage() {
 
     (async () => {
       setLoading(true);
+      setActiveTab('description');
       const fetchedProduct = await getProductById(id);
 
       if (cancelled) return;
@@ -68,21 +86,9 @@ export default function ShopProductPage() {
     return (
       <>
         <Navbar />
-        <div className="min-h-screen bg-background pt-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <Skeleton className="h-5 w-64 mb-6" />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-16">
-              <Skeleton className="aspect-square w-full rounded-lg" />
-              <div className="space-y-4">
-                <Skeleton className="h-8 w-3/4" />
-                <Skeleton className="h-5 w-1/3" />
-                <Skeleton className="h-6 w-1/4" />
-                <Skeleton className="h-24 w-full" />
-                <Skeleton className="h-11 w-40" />
-              </div>
-            </div>
-          </div>
-        </div>
+        <main className="min-h-screen bg-background pt-20">
+          <ProductDetailSkeleton />
+        </main>
         <Footer />
       </>
     );
@@ -91,10 +97,7 @@ export default function ShopProductPage() {
 
   const images =
     product.images.length > 0 ? product.images : product.imageUrl ? [product.imageUrl] : [];
-  const hasDiscount = product.comparePrice != null && product.comparePrice > product.price;
-  const discountPct = hasDiscount
-    ? Math.round(((product.comparePrice! - product.price) / product.comparePrice!) * 100)
-    : 0;
+  const pricing = getProductPricing(product);
   const averageRating = reviewStats?.stats.averageRating ?? 0;
   const reviewCount = reviewStats?.stats.totalReviews ?? 0;
 
@@ -111,7 +114,7 @@ export default function ShopProductPage() {
       '@type': 'Offer',
       url: `${SITE_URL}/shop/${product.id}`,
       priceCurrency: 'RWF',
-      price: product.salePrice ?? product.price,
+      price: pricing.current,
       availability:
         product.stockQuantity > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
     },
@@ -135,10 +138,10 @@ export default function ShopProductPage() {
       />
       <Navbar />
 
-      <div className="min-h-screen bg-background pt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Breadcrumb className="mb-6">
-            <BreadcrumbList>
+      <main className="min-h-screen bg-background pt-20">
+        <div className="mx-auto max-w-7xl px-4 pt-6 pb-16 sm:px-6 lg:px-8 lg:pt-8 lg:pb-24">
+          <Breadcrumb className="mb-6 lg:mb-8">
+            <BreadcrumbList className="flex-nowrap">
               <BreadcrumbItem>
                 <BreadcrumbLink href="/">Home</BreadcrumbLink>
               </BreadcrumbItem>
@@ -149,158 +152,204 @@ export default function ShopProductPage() {
               {product.category && (
                 <>
                   <BreadcrumbSeparator />
-                  <BreadcrumbItem>
+                  <BreadcrumbItem className="hidden sm:inline-flex">
                     <BreadcrumbLink href={`/shop?category=${product.category.slug}`}>
                       {product.category.name}
                     </BreadcrumbLink>
                   </BreadcrumbItem>
+                  <BreadcrumbSeparator className="hidden sm:inline-flex" />
                 </>
               )}
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>{product.name}</BreadcrumbPage>
+              {!product.category && <BreadcrumbSeparator />}
+              <BreadcrumbItem className="min-w-0">
+                <BreadcrumbPage className="truncate">{product.name}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-16">
-            <ProductGallery
-              images={images}
-              name={product.name}
-              hasDiscount={hasDiscount}
-              discountPct={discountPct}
-            />
+          <div className="mb-16 grid grid-cols-1 gap-8 lg:mb-24 lg:grid-cols-2 lg:gap-14 xl:gap-20">
+            <div className="lg:sticky lg:top-28 lg:self-start">
+              <ProductGallery
+                images={images}
+                name={product.name}
+                hasDiscount={pricing.discountPct > 0}
+                discountPct={pricing.discountPct}
+              />
+            </div>
             <ProductInfoPanel
+              key={product.id}
               product={product}
               averageRating={averageRating}
               reviewCount={reviewCount}
+              onViewReviews={viewReviews}
             />
           </div>
 
-          <Tabs defaultValue="description" className="mb-16">
-            <TabsList className="grid w-full max-w-md grid-cols-3">
-              <TabsTrigger value="description">Description</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews ({reviewCount})</TabsTrigger>
-              <TabsTrigger value="shipping">Shipping</TabsTrigger>
+          <Tabs
+            id="product-details"
+            value={activeTab}
+            onValueChange={setActiveTab}
+            variant="underline"
+            className="scroll-mt-28"
+          >
+            <TabsList aria-label="Product information">
+              <TabsTrigger value="description">
+                <FileText />
+                Description
+              </TabsTrigger>
+              <TabsTrigger value="reviews">
+                <MessageSquare />
+                Reviews
+                <TabsCount>{reviewCount}</TabsCount>
+              </TabsTrigger>
+              <TabsTrigger value="shipping">
+                <Truck />
+                Shipping & Returns
+              </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="description" className="mt-6">
-              <div className="prose max-w-none">
-                <h3 className="text-xl font-serif mb-4">Product Details</h3>
-                <p className="text-muted-foreground mb-6">{product.description}</p>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>
-                    <span className="font-medium text-foreground">SKU:</span> {product.sku}
-                  </li>
-                  <li>
-                    <span className="font-medium text-foreground">Category:</span>{' '}
-                    {product.category?.name || 'Uncategorized'}
-                  </li>
-                  {product.sizes.length > 0 && (
-                    <li>
-                      <span className="font-medium text-foreground">Available sizes:</span>{' '}
-                      {product.sizes.join(', ')}
-                    </li>
-                  )}
-                  {product.colors.length > 0 && (
-                    <li>
-                      <span className="font-medium text-foreground">Available colors:</span>{' '}
-                      {product.colors.join(', ')}
-                    </li>
-                  )}
-                </ul>
+            <TabsContent value="description">
+              <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:gap-16">
+                <ContentSection title="About this product">
+                  <Text variant="lead" className="whitespace-pre-line">
+                    {product.description}
+                  </Text>
+                </ContentSection>
+                <ContentSection title="Details">
+                  <DetailList
+                    items={[
+                      { label: 'SKU', value: product.sku },
+                      { label: 'Category', value: product.category?.name || 'Uncategorized' },
+                      ...(product.sizes.length > 0
+                        ? [{ label: 'Sizes', value: product.sizes.join(', ') }]
+                        : []),
+                      ...(product.colors.length > 0
+                        ? [{ label: 'Colors', value: product.colors.join(', ') }]
+                        : []),
+                    ]}
+                  />
+                </ContentSection>
               </div>
             </TabsContent>
 
-            <TabsContent value="reviews" className="mt-6">
-              <div className="space-y-6">
-                {reviewCount === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
-                    No reviews yet — be the first to review this product.
-                  </p>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-3 mb-8">
-                      <span className="text-4xl font-bold">{averageRating.toFixed(1)}</span>
-                      <div>
-                        <div className="flex">
-                          {Array.from({ length: 5 }, (_, i) => (
-                            <Star
-                              key={i}
-                              className={`w-4 h-4 ${i < Math.round(averageRating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                            />
-                          ))}
-                        </div>
-                        <p className="text-sm text-muted-foreground">{reviewCount} reviews</p>
-                      </div>
-                    </div>
-                    <div className="space-y-6">
-                      {reviewStats!.reviews.map((review) => (
-                        <div key={review.id} className="border-b pb-6 last:border-0">
-                          <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-semibold">
-                                  {review.user.name || review.user.firstName || 'Customer'}
-                                </span>
-                                {review.isVerified && (
-                                  <Badge variant="outline" className="text-xs">
-                                    <Check className="w-3 h-3 mr-1" />
-                                    Verified Purchase
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="flex">
-                                {Array.from({ length: 5 }, (_, i) => (
-                                  <Star
-                                    key={i}
-                                    className={`w-4 h-4 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                            <span className="text-sm text-muted-foreground">
-                              {new Date(review.createdAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <p className="text-muted-foreground">{review.comment}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="shipping" className="mt-6">
-              <div className="prose max-w-none">
-                <h3 className="text-xl font-serif mb-4">Shipping & Returns</h3>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold mb-2">Shipping Information</h4>
-                    <p className="text-muted-foreground">
-                      We offer free standard shipping on all orders over Rwf 100,000. Orders are
-                      typically processed within 1-2 business days and delivered within 5-7 business
-                      days.
-                    </p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold mb-2">Return Policy</h4>
-                    <p className="text-muted-foreground">
-                      We accept returns within 30 days of delivery. Items must be unworn, unwashed,
-                      and in their original condition with all tags attached. Please contact our
-                      customer service team to initiate a return.
-                    </p>
-                  </div>
+            <TabsContent value="reviews">
+              {reviewCount === 0 ? (
+                <div className="flex flex-col items-center rounded-2xl border border-dashed bg-card px-6 py-14 text-center">
+                  <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent-rose/10 text-accent-rose">
+                    <MessageSquare className="h-6 w-6" />
+                  </span>
+                  <Heading as="h3" size="sm">
+                    No reviews yet
+                  </Heading>
+                  <Text variant="small" className="mt-1.5">
+                    Be the first to share your thoughts on this product.
+                  </Text>
                 </div>
-              </div>
+              ) : (
+                <div className="grid gap-10 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-16">
+                  <div className="h-fit rounded-2xl border bg-card p-6 text-center lg:sticky lg:top-24">
+                    <p className="font-serif text-5xl font-semibold tabular-nums">
+                      {averageRating.toFixed(1)}
+                    </p>
+                    <RatingStars rating={averageRating} size="md" className="mt-3 justify-center" />
+                    <Text variant="small" className="mt-2">
+                      Based on {reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}
+                    </Text>
+                  </div>
+                  <ul className="divide-y">
+                    {reviewStats!.reviews.map((review) => {
+                      const author = review.user.name || review.user.firstName || 'Customer';
+                      return (
+                        <li key={review.id} className="py-6 first:pt-0 last:pb-0">
+                          <div className="flex items-start gap-4">
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold uppercase">
+                              {author.charAt(0)}
+                            </span>
+                            <div className="min-w-0 flex-1 space-y-2">
+                              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="font-semibold">{author}</span>
+                                  {review.isVerified && (
+                                    <Badge
+                                      variant="outline"
+                                      className="gap-1 border-emerald-200 bg-emerald-50 text-xs text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-400"
+                                    >
+                                      <Check className="h-3 w-3" />
+                                      Verified purchase
+                                    </Badge>
+                                  )}
+                                </div>
+                                <time
+                                  dateTime={review.createdAt}
+                                  className="text-xs text-muted-foreground"
+                                >
+                                  {new Date(review.createdAt).toLocaleDateString(undefined, {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                  })}
+                                </time>
+                              </div>
+                              <RatingStars rating={review.rating} />
+                              {review.comment && <Text>{review.comment}</Text>}
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="shipping">
+              <ContentSection
+                title="Shipping & Returns"
+                description="Everything you need to know about delivery and returns."
+                action={
+                  <Link
+                    href="/shipping"
+                    className="text-sm font-medium text-accent-rose underline-offset-4 hover:underline"
+                  >
+                    Full shipping policy →
+                  </Link>
+                }
+              >
+                <div className="grid gap-4 md:grid-cols-2">
+                  <InfoBlock icon={Truck} title="Shipping information">
+                    We offer free standard shipping on all orders over Rwf 100,000. Orders are
+                    typically processed within 1-2 business days and delivered within 5-7 business
+                    days.
+                  </InfoBlock>
+                  <InfoBlock icon={RotateCcw} title="Return policy">
+                    We accept returns within 30 days of delivery. Items must be unworn, unwashed,
+                    and in their original condition with all tags attached. Please contact our
+                    customer service team to initiate a return.
+                  </InfoBlock>
+                </div>
+              </ContentSection>
             </TabsContent>
           </Tabs>
 
           {relatedProducts.length > 0 && (
-            <div>
-              <h2 className="text-3xl font-serif mb-8 text-center">You May Also Like</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <section className="mt-20 border-t pt-16 lg:mt-24 lg:pt-20">
+              <SectionHeader
+                eyebrow="Complete the look"
+                title="You may also like"
+                className="mb-8 lg:mb-10"
+                action={
+                  product.category && (
+                    <Link
+                      href={`/shop?category=${product.category.slug}`}
+                      className="group inline-flex items-center gap-1.5 text-sm font-medium text-foreground/80 transition-colors hover:text-accent-rose"
+                    >
+                      View all {product.category.name}
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    </Link>
+                  )
+                }
+              />
+              <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
                 {relatedProducts.map((related) => (
                   <ProductCard
                     key={related.id}
@@ -309,10 +358,10 @@ export default function ShopProductPage() {
                   />
                 ))}
               </div>
-            </div>
+            </section>
           )}
         </div>
-      </div>
+      </main>
 
       <Footer />
     </>

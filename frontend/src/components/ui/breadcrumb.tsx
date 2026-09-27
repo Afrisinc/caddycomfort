@@ -2,6 +2,7 @@ import * as React from 'react';
 import { ChevronRight, MoreHorizontal } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import Link from '@/components/common/Link';
 
 const Breadcrumb = React.forwardRef<
   HTMLElement,
@@ -37,10 +38,12 @@ const BreadcrumbLink = React.forwardRef<
   React.ComponentPropsWithoutRef<'a'> & {
     asChild?: boolean;
   }
->(({ className, ...props }, ref) => {
-  return (
-    <a ref={ref} className={cn('transition-colors hover:text-foreground', className)} {...props} />
-  );
+>(({ className, href, asChild: _asChild, ...props }, ref) => {
+  const classes = cn('transition-colors hover:text-foreground', className);
+  if (href && href.startsWith('/')) {
+    return <Link ref={ref} href={href} className={classes} {...props} />;
+  }
+  return <a ref={ref} href={href} className={classes} {...props} />;
 });
 BreadcrumbLink.displayName = 'BreadcrumbLink';
 

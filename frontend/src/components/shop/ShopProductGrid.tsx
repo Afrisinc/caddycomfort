@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getProductPricing } from '@/lib/pricing';
 import { useRouter } from '@/router/compat';
 import { ProductCard } from '@/components/products/ProductCard';
 import { toProductCardProps } from '@/lib/productCard';
@@ -33,7 +34,7 @@ export function ShopProductGrid({ products }: { products: Product[] }) {
     addItem({
       id: product.id,
       name: product.name,
-      price: product.salePrice ?? product.price,
+      price: getProductPricing(product).current,
       image: product.imageUrl || product.images[0] || '',
       quantity: 1,
       size: product.sizes[0] || '',
