@@ -398,23 +398,22 @@ export function ProductForm({
         </div>
       </div>
 
-      <div className="mt-6">
-        <FormActionBar
-          visible={mode === 'create' || dirty}
-          saving={saving}
-          message={mode === 'create' ? 'Ready to add this product?' : 'You have unsaved changes'}
-          submitLabel={mode === 'create' ? 'Create product' : 'Save changes'}
-          secondaryLabel={mode === 'create' ? 'Cancel' : 'Discard'}
-          onSecondary={
-            mode === 'create'
-              ? onCancel
-              : () => {
-                  setValues(baseline);
-                  setErrors({});
-                }
-          }
-        />
-      </div>
+      <FormActionBar
+        className="mt-6"
+        visible={mode === 'create' || dirty}
+        saving={saving}
+        message={mode === 'create' ? 'Ready to add this product?' : 'You have unsaved changes'}
+        submitLabel={mode === 'create' ? 'Create product' : 'Save changes'}
+        secondaryLabel={mode === 'create' ? 'Cancel' : 'Discard'}
+        onSecondary={
+          mode === 'create'
+            ? onCancel
+            : () => {
+                setValues(baseline);
+                setErrors({});
+              }
+        }
+      />
     </form>
   );
 }

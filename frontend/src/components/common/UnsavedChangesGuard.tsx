@@ -1,15 +1,6 @@
 import { useEffect } from 'react';
 import { useBlocker } from 'react-router-dom';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface UnsavedChangesGuardProps {
   readonly when: boolean;
@@ -29,27 +20,15 @@ export function UnsavedChangesGuard({ when }: UnsavedChangesGuardProps) {
   }, [when]);
 
   return (
-    <AlertDialog
+    <ConfirmDialog
       open={blocker.state === 'blocked'}
       onOpenChange={(open) => !open && blocker.reset?.()}
-    >
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Leave without saving?</AlertDialogTitle>
-          <AlertDialogDescription>
-            You have unsaved changes on this page. If you leave now, they will be lost.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => blocker.reset?.()}>Keep editing</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={() => blocker.proceed?.()}
-            className="bg-red-600 hover:bg-red-700"
-          >
-            Leave page
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      tone="warning"
+      title="Discard unsaved changes?"
+      description="You’ve made changes that haven’t been saved. If you leave now, they’ll be lost."
+      cancelLabel="Keep editing"
+      confirmLabel="Discard"
+      onConfirm={() => blocker.proceed?.()}
+    />
   );
 }
