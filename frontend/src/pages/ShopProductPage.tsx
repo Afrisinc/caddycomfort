@@ -34,6 +34,8 @@ import { toProductCardProps } from '@/lib/productCard';
 import { Product, ProductReviewStats } from '@/types/api';
 import NotFoundPage from '@/pages/NotFoundPage';
 import { Seo, SITE_URL } from '@/components/common/Seo';
+import { useStoreSettings } from '@/store/useSettingsStore';
+import { freeShippingText } from '@/lib/storeSettings';
 
 export default function ShopProductPage() {
   const { id } = useParams<{ id: string }>();
@@ -43,6 +45,7 @@ export default function ShopProductPage() {
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [reviewStats, setReviewStats] = useState<ProductReviewStats | null>(null);
   const [activeTab, setActiveTab] = useState('description');
+  const settings = useStoreSettings();
 
   const viewReviews = () => {
     setActiveTab('reviews');
@@ -318,7 +321,7 @@ export default function ShopProductPage() {
               >
                 <div className="grid gap-4 md:grid-cols-2">
                   <InfoBlock icon={Truck} title="Shipping information">
-                    We offer free standard shipping on all orders over Rwf 100,000. Orders are
+                    Free standard shipping {freeShippingText(settings).toLowerCase()}. Orders are
                     typically processed within 1-2 business days and delivered within 5-7 business
                     days.
                   </InfoBlock>

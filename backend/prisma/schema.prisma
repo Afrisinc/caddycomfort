@@ -328,3 +328,18 @@ enum InventoryLogType {
   DAMAGED
   ADJUSTMENT
 }
+
+model StoreSettings {
+  id                    String   @id @default("default")
+  storeName             String   @default("CaddyComfort")
+  description           String   @default("")
+  email                 String
+  phone                 String
+  address               String
+  openingHours          String
+  standardShippingFee   Float    @default(5000)
+  freeShippingThreshold Float    @default(100000)
+  taxRate               Float    @default(18)
+  codDepositPercent     Float    @default(50)
+  updatedAt             DateTime @updatedAt
+}

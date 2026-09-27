@@ -25,6 +25,8 @@ import { formatRwf, getProductPricing } from '@/lib/pricing';
 import { cn } from '@/lib/utils';
 import { Product } from '@/types/api';
 import { toast } from 'sonner';
+import { useStoreSettings } from '@/store/useSettingsStore';
+import { freeShippingText } from '@/lib/storeSettings';
 
 interface ProductInfoPanelProps {
   readonly product: Product;
@@ -53,6 +55,7 @@ export function ProductInfoPanel({
   const ctaRef = useRef<HTMLDivElement>(null);
 
   const pricing = getProductPricing(product);
+  const settings = useStoreSettings();
   const inStock = product.stockQuantity > 0;
 
   useEffect(() => {
@@ -220,7 +223,7 @@ export function ProductInfoPanel({
       </div>
 
       <div className="grid gap-4 rounded-xl border bg-muted/30 p-5 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-        <FeatureItem icon={Truck} title="Free shipping" description="On orders over Rwf 100,000" />
+        <FeatureItem icon={Truck} title="Free shipping" description={freeShippingText(settings)} />
         <FeatureItem icon={ShieldCheck} title="Secure payment" description="Protected checkout" />
         <FeatureItem icon={RotateCcw} title="Easy returns" description="30-day return policy" />
       </div>

@@ -1,9 +1,6 @@
 import type { Order, PaymentMethod } from '@/types/api';
 import { isValidEmail } from '@/lib/forms';
-
-export const FREE_SHIPPING_THRESHOLD = 100000;
-export const STANDARD_SHIPPING = 5000;
-export const TAX_RATE = 0.18;
+import type { StoreSettings } from '@/lib/storeSettings';
 
 export interface OrderTotals {
   subtotal: number;
@@ -15,10 +12,12 @@ export interface OrderTotals {
 
 export function calculateTotals(
   subtotal: number,
+  settings: Pick<StoreSettings, 'standardShippingFee' | 'freeShippingThreshold' | 'taxRate'>,
   { discount = 0, freeShipping = false }: { discount?: number; freeShipping?: boolean } = {},
 ): OrderTotals {
-  const shipping = freeShipping || subtotal > FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING;
-  const tax = (subtotal - discount) * TAX_RATE;
+  const shipping =
+    freeShipping || subtotal > settings.freeShippingThreshold ? 0 : settings.standardShippingFee;
+  const tax = (subtotal - discount) * (settings.taxRate / 100);
   return { subtotal, discount, shipping, tax, total: subtotal - discount + shipping + tax };
 }
 
@@ -33,7 +32,7 @@ export const PAYMENT_METHOD_MAP: Record<CheckoutPaymentMethod, PaymentMethod> = 
 export const PAYMENT_METHOD_LABELS: Record<CheckoutPaymentMethod, string> = {
   card: 'Credit / debit card',
   momo: 'Mobile Money',
-  cod: 'Cash on delivery (50% deposit)',
+  cod: 'Cash on delivery',
 };
 
 export function normalizePhone(value: string): string {
@@ -75,8 +74,6 @@ export function formatVariant(item: { size?: string; color?: string }): string {
   return [item.size && `Size ${item.size}`, item.color].filter(Boolean).join(' · ');
 }
 
-export const COD_DEPOSIT_RATE = 0.5;
-
 export type DepositChannel = 'momo' | 'card';
 
 export const DEPOSIT_CHANNEL_MAP: Record<DepositChannel, PaymentMethod> = {
@@ -89,8 +86,14 @@ export const DEPOSIT_CHANNEL_LABELS: Record<DepositChannel, string> = {
   card: 'Card',
 };
 
-export function calculateDeposit(total: number): number {
-  return Math.round(total * COD_DEPOSIT_RATE);
+export function calculateDeposit(total: number, depositPercent: number): number {
+  return Math.round((total * depositPercent) / 100);
+}
+
+export function codLabel(depositPercent: number): string {
+  return depositPercent > 0
+    ? `${PAYMENT_METHOD_LABELS.cod} (${depositPercent}% deposit)`
+    : PAYMENT_METHOD_LABELS.cod;
 }
 
 const ONLINE_METHODS = new Set<PaymentMethod>(['CREDIT_CARD', 'DEBIT_CARD', 'MOBILE_MONEY']);

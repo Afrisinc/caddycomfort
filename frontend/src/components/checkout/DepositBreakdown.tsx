@@ -6,6 +6,7 @@ interface DepositBreakdownProps {
   readonly deposit: number;
   readonly balance: number;
   readonly depositPaid?: boolean;
+  readonly percent?: number;
   readonly className?: string;
 }
 
@@ -13,13 +14,15 @@ export function DepositBreakdown({
   deposit,
   balance,
   depositPaid,
+  percent,
   className,
 }: DepositBreakdownProps) {
+  const payNowLabel = percent ? `Pay now (${percent}% deposit)` : 'Pay now (deposit)';
   const rows = [
     {
       id: 'now',
       icon: Smartphone,
-      label: depositPaid ? 'Deposit paid' : 'Pay now (50% deposit)',
+      label: depositPaid ? 'Deposit paid' : payNowLabel,
       value: deposit,
       tone: depositPaid ? 'text-emerald-700 dark:text-emerald-400' : 'text-foreground',
     },

@@ -7,7 +7,7 @@ export const CACHE_TTL = {
   long: 3600,
 } as const;
 
-export type CacheNamespace = 'products' | 'categories' | 'reviews';
+export type CacheNamespace = 'products' | 'categories' | 'reviews' | 'settings';
 
 const versionKey = (namespace: CacheNamespace) => `${namespace}:version`;
 

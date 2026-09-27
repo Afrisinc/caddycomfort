@@ -1,7 +1,5 @@
 import type { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 
-export const COD_DEPOSIT_RATE = 0.5;
-
 export const DEPOSIT_METHODS: PaymentMethod[] = ['MOBILE_MONEY', 'CREDIT_CARD'];
 
 export const ONLINE_METHODS: PaymentMethod[] = ['CREDIT_CARD', 'DEBIT_CARD', 'MOBILE_MONEY'];
@@ -15,8 +13,8 @@ interface PayableOrder {
   status: OrderStatus;
 }
 
-export function calculateDeposit(total: number): number {
-  return Math.round(total * COD_DEPOSIT_RATE);
+export function calculateDeposit(total: number, depositPercent: number): number {
+  return Math.round((total * depositPercent) / 100);
 }
 
 export function isCashOnDelivery(order: Pick<PayableOrder, 'paymentMethod'>): boolean {

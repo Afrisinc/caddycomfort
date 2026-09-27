@@ -31,6 +31,7 @@ import { ChipGroup } from '@/components/ui/option-group';
 import { ShippingForm } from '@/components/checkout/ShippingForm';
 import { usePayment } from '@/hooks/usePayment';
 import { useCartStore } from '@/store/useCartStore';
+import { useStoreSettings } from '@/store/useSettingsStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { addressesApi, cartApi, ordersApi } from '@/lib/api';
 import { formatRwf } from '@/lib/pricing';
@@ -42,6 +43,7 @@ import {
   calculateDeposit,
   type DepositChannel,
   calculateTotals,
+  codLabel,
   isValidRwandaPhone,
   normalizePhone,
   type CheckoutPaymentMethod,
@@ -102,12 +104,14 @@ export default function CheckoutPage() {
   }, [isAuthenticated]);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const totals = calculateTotals(subtotal);
+  const settings = useStoreSettings();
+  const totals = calculateTotals(subtotal, settings);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const isCod = method === 'cod';
-  const usesMomo = method === 'momo' || (isCod && depositChannel === 'momo');
-  const deposit = calculateDeposit(totals.total);
+  const deposit = calculateDeposit(totals.total, settings.codDepositPercent);
   const balance = totals.total - deposit;
+  const needsDeposit = isCod && deposit > 0;
+  const usesMomo = method === 'momo' || (needsDeposit && depositChannel === 'momo');
 
   const initialShipping = useMemo<ShippingDetails>(
     () =>
@@ -188,11 +192,16 @@ export default function CheckoutPage() {
           phone: normalizePhone(shipping.phone),
         },
         paymentMethod: PAYMENT_METHOD_MAP[method],
-        depositMethod: isCod ? DEPOSIT_CHANNEL_MAP[depositChannel] : undefined,
+        depositMethod: needsDeposit ? DEPOSIT_CHANNEL_MAP[depositChannel] : undefined,
       });
       clearCart();
       setOrder(placed);
 
+      if (!needsDeposit && isCod) {
+        toast.success('Order placed! You will pay in cash on delivery.');
+        navigate(`/account/orders/${placed.id}`);
+        return;
+      }
       await startPayment(placed);
     } catch (error: any) {
       toast.error(error.message || 'We could not place your order. Please try again.');
@@ -316,13 +325,18 @@ export default function CheckoutPage() {
     },
     {
       value: 'cod',
-      title: PAYMENT_METHOD_LABELS.cod,
-      description:
-        'Pay half now by Mobile Money or card, and the rest in cash when your order arrives.',
+      title: codLabel(settings.codDepositPercent),
+      description: needsDeposit
+        ? `Pay ${settings.codDepositPercent}% now by Mobile Money or card, and the rest in cash when your order arrives.`
+        : 'Pay in cash when your order arrives.',
       icon: Banknote,
-      content: (
+      content: needsDeposit && (
         <div className="space-y-5">
-          <DepositBreakdown deposit={deposit} balance={balance} />
+          <DepositBreakdown
+            deposit={deposit}
+            balance={balance}
+            percent={settings.codDepositPercent}
+          />
           <ChipGroup
             label="Pay the deposit with"
             value={DEPOSIT_CHANNEL_LABELS[depositChannel]}
@@ -347,6 +361,10 @@ export default function CheckoutPage() {
     },
   ];
 
+  let placeOrderLabel = 'Place order & pay';
+  if (needsDeposit) placeOrderLabel = 'Place order & pay deposit';
+  else if (isCod) placeOrderLabel = 'Place order';
+
   const summaryLines: SummaryLine[] = [
     {
       id: 'subtotal',
@@ -359,7 +377,7 @@ export default function CheckoutPage() {
       value: totals.shipping === 0 ? 'Free' : formatRwf(totals.shipping),
       tone: totals.shipping === 0 ? 'positive' : 'default',
     },
-    { id: 'tax', label: 'Tax (18%)', value: formatRwf(totals.tax) },
+    { id: 'tax', label: `Tax (${settings.taxRate}%)`, value: formatRwf(totals.tax) },
   ];
 
   return (
@@ -455,7 +473,7 @@ export default function CheckoutPage() {
               </div>
               <ReviewBlock title="Payment" icon={Wallet} onEdit={() => goTo('payment')}>
                 <p className="font-medium text-foreground">
-                  {PAYMENT_METHOD_LABELS[method]}
+                  {isCod ? codLabel(settings.codDepositPercent) : PAYMENT_METHOD_LABELS[method]}
                   {usesMomo && ` · ${momoNumber}`}
                 </p>
                 <p>
@@ -464,6 +482,9 @@ export default function CheckoutPage() {
                   {method === 'momo' &&
                     'After placing your order you will receive a request on your phone.'}
                   {isCod &&
+                    !needsDeposit &&
+                    'Have the amount ready in cash when your order arrives.'}
+                  {needsDeposit &&
                     `You pay ${formatRwf(deposit)} now by ${DEPOSIT_CHANNEL_LABELS[depositChannel]} and ${formatRwf(balance)} in cash when your order arrives. Nothing is owed after delivery.`}
                 </p>
               </ReviewBlock>
@@ -490,7 +511,7 @@ export default function CheckoutPage() {
                     <Lock className="h-4 w-4" />
                   )}
                   {isPlacing && 'Placing order…'}
-                  {!isPlacing && (isCod ? 'Place order & pay deposit' : 'Place order & pay')}
+                  {!isPlacing && placeOrderLabel}
                 </Button>
               </div>
             </section>
@@ -501,7 +522,15 @@ export default function CheckoutPage() {
           <OrderSummary
             lines={summaryLines}
             total={totals.total}
-            footer={isCod ? <DepositBreakdown deposit={deposit} balance={balance} /> : undefined}
+            footer={
+              needsDeposit ? (
+                <DepositBreakdown
+                  deposit={deposit}
+                  balance={balance}
+                  percent={settings.codDepositPercent}
+                />
+              ) : undefined
+            }
           >
             <OrderItemsList items={items} />
           </OrderSummary>

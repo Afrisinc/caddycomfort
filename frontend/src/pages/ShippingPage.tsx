@@ -16,22 +16,24 @@ import { CtaBanner } from '@/components/common/CtaBanner';
 import { Button } from '@/components/ui/button';
 import { CheckList, StepList } from '@/components/ui/lists';
 import { ContentSection, DetailList, Heading, InfoBlock, Text } from '@/components/ui/typography';
-import { CONTACT } from '@/lib/contactInfo';
+import { useContactInfo } from '@/hooks/useContactInfo';
 import { formatRwf } from '@/lib/pricing';
-import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING } from '@/lib/checkout';
-
-const HIGHLIGHTS = [
-  { icon: Truck, title: 'Delivery in 5–7 days', text: 'Across Rwanda' },
-  {
-    icon: PackageCheck,
-    title: `Free over ${formatRwf(FREE_SHIPPING_THRESHOLD)}`,
-    text: `Otherwise ${formatRwf(STANDARD_SHIPPING)}`,
-  },
-  { icon: Clock, title: '1–2 day processing', text: 'Monday to Friday' },
-  { icon: RotateCcw, title: '30-day returns', text: 'Unworn items with tags' },
-];
+import { useStoreSettings } from '@/store/useSettingsStore';
+import { cashOnDeliveryText } from '@/lib/storeSettings';
 
 export default function ShippingPage() {
+  const contact = useContactInfo();
+  const settings = useStoreSettings();
+  const highlights = [
+    { icon: Truck, title: 'Delivery in 5–7 days', text: 'Across Rwanda' },
+    {
+      icon: PackageCheck,
+      title: `Free over ${formatRwf(settings.freeShippingThreshold)}`,
+      text: `Otherwise ${formatRwf(settings.standardShippingFee)}`,
+    },
+    { icon: Clock, title: '1–2 day processing', text: 'Monday to Friday' },
+    { icon: RotateCcw, title: '30-day returns', text: 'Unworn items with tags' },
+  ];
   return (
     <>
       <Navbar />
@@ -55,7 +57,7 @@ export default function ShippingPage() {
 
         <div className="mx-auto max-w-5xl space-y-16 px-4 py-10 sm:px-6 md:space-y-20 md:py-14 lg:px-8">
           <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {HIGHLIGHTS.map(({ icon: Icon, title, text }) => (
+            {highlights.map(({ icon: Icon, title, text }) => (
               <li key={title} className="rounded-2xl border bg-card p-4 sm:p-5">
                 <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-accent-rose/10 text-accent-rose">
                   <Icon className="h-5 w-5" aria-hidden="true" />
@@ -76,11 +78,11 @@ export default function ShippingPage() {
                 items={[
                   {
                     label: 'Standard delivery',
-                    value: `${formatRwf(STANDARD_SHIPPING)} · 5–7 business days`,
+                    value: `${formatRwf(settings.standardShippingFee)} · 5–7 business days`,
                   },
                   {
                     label: 'Free delivery',
-                    value: `On orders over ${formatRwf(FREE_SHIPPING_THRESHOLD)}`,
+                    value: `On orders over ${formatRwf(settings.freeShippingThreshold)}`,
                   },
                   {
                     label: 'Order processing',
@@ -98,8 +100,7 @@ export default function ShippingPage() {
                   and delivered.
                 </InfoBlock>
                 <InfoBlock icon={Wallet} title="Cash on delivery" className="md:col-span-2">
-                  Pay a 50% deposit online when you order, and the remaining 50% in cash when your
-                  order arrives. Nothing is owed after delivery.{' '}
+                  {cashOnDeliveryText(settings)}{' '}
                   <Link
                     href="/faq#cash-on-delivery"
                     className="font-medium text-accent-rose underline-offset-4 hover:underline"
@@ -140,10 +141,10 @@ export default function ShippingPage() {
                     <>
                       Email{' '}
                       <a
-                        href={CONTACT.emailHref}
+                        href={contact.emailHref}
                         className="font-medium text-foreground underline-offset-4 hover:underline"
                       >
-                        {CONTACT.email}
+                        {contact.email}
                       </a>{' '}
                       with your order number
                     </>,
@@ -171,10 +172,10 @@ export default function ShippingPage() {
             actions={
               <>
                 <Button asChild size="lg" className="h-11 bg-accent-rose hover:bg-accent-rose-dark">
-                  <a href={CONTACT.emailHref}>Email us</a>
+                  <a href={contact.emailHref}>Email us</a>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="h-11 bg-background/80">
-                  <a href={CONTACT.phoneHref}>Call {CONTACT.phone}</a>
+                  <a href={contact.phoneHref}>Call {contact.phone}</a>
                 </Button>
                 <Button asChild size="lg" variant="ghost" className="h-11">
                   <Link href="/faq">Read the FAQ</Link>

@@ -1,9 +1,10 @@
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { Outlet, useMatches } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { RouteLoadingBar } from '@/components/common/RouteLoadingBar';
 import { Seo } from '@/components/common/Seo';
+import { useSettingsStore } from '@/store/useSettingsStore';
 
 export interface RouteSeo {
   title?: string;
@@ -21,6 +22,12 @@ function RouteSeoTags() {
 }
 
 export default function App() {
+  const loadSettings = useSettingsStore((state) => state.load);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
   return (
     <>
       <ScrollToTop />

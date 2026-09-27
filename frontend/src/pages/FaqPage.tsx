@@ -11,24 +11,30 @@ import { JsonLd } from '@/components/common/JsonLd';
 import { FaqAccordion } from '@/components/faq/FaqAccordion';
 import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/typography';
-import { FAQ_CATEGORIES } from '@/lib/faqContent';
+import { getFaqCategories } from '@/lib/faqContent';
+import { useStoreSettings } from '@/store/useSettingsStore';
 import { cn } from '@/lib/utils';
 import { SearchInput } from '@/components/ui/search-input';
-import { CONTACT } from '@/lib/contactInfo';
-
-const FAQ_JSON_LD = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: FAQ_CATEGORIES.flatMap((category) =>
-    category.items.map((item) => ({
-      '@type': 'Question',
-      name: item.question,
-      acceptedAnswer: { '@type': 'Answer', text: item.answer },
-    })),
-  ),
-};
+import { useContactInfo } from '@/hooks/useContactInfo';
 
 export default function FaqPage() {
+  const contact = useContactInfo();
+  const settings = useStoreSettings();
+  const allCategories = useMemo(() => getFaqCategories(settings), [settings]);
+  const faqJsonLd = useMemo(
+    () => ({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: allCategories.flatMap((category) =>
+        category.items.map((item) => ({
+          '@type': 'Question',
+          name: item.question,
+          acceptedAnswer: { '@type': 'Answer', text: item.answer },
+        })),
+      ),
+    }),
+    [allCategories],
+  );
   const { hash } = useLocation();
   const [query, setQuery] = useState('');
   const [openIds, setOpenIds] = useState<string[]>([]);
@@ -37,20 +43,22 @@ export default function FaqPage() {
   useEffect(() => {
     const id = decodeURIComponent(hash.replace('#', ''));
     if (!id) return;
-    const isQuestion = FAQ_CATEGORIES.some((c) => c.items.some((item) => item.id === id));
+    const isQuestion = allCategories.some((c) => c.items.some((item) => item.id === id));
     if (isQuestion) setOpenIds((ids) => (ids.includes(id) ? ids : [...ids, id]));
     requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }));
-  }, [hash]);
+  }, [hash, allCategories]);
 
   const categories = useMemo(() => {
-    if (!term) return FAQ_CATEGORIES;
-    return FAQ_CATEGORIES.map((category) => ({
-      ...category,
-      items: category.items.filter((item) =>
-        `${item.question} ${item.answer}`.toLowerCase().includes(term),
-      ),
-    })).filter((category) => category.items.length > 0);
-  }, [term]);
+    if (!term) return allCategories;
+    return allCategories
+      .map((category) => ({
+        ...category,
+        items: category.items.filter((item) =>
+          `${item.question} ${item.answer}`.toLowerCase().includes(term),
+        ),
+      }))
+      .filter((category) => category.items.length > 0);
+  }, [term, allCategories]);
 
   const matchCount = categories.reduce((sum, category) => sum + category.items.length, 0);
   const visibleOpenIds = term
@@ -60,7 +68,7 @@ export default function FaqPage() {
   return (
     <>
       <Navbar />
-      <JsonLd data={FAQ_JSON_LD} />
+      <JsonLd data={faqJsonLd} />
 
       <main className="min-h-screen bg-background pt-20">
         <PageHeader
@@ -88,7 +96,7 @@ export default function FaqPage() {
           <div className="grid gap-10 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-14">
             <nav aria-label="FAQ topics" className="lg:sticky lg:top-28 lg:self-start">
               <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:mx-0 lg:flex-col lg:gap-1 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
-                {FAQ_CATEGORIES.map((category) => {
+                {allCategories.map((category) => {
                   const hidden = !categories.some((c) => c.id === category.id);
                   return (
                     <li key={category.id} className="shrink-0">
@@ -167,9 +175,9 @@ export default function FaqPage() {
                   <Link href="/contact">Contact us</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="h-11 gap-2 bg-background/80">
-                  <a href={CONTACT.phoneHref}>
+                  <a href={contact.phoneHref}>
                     <Phone className="h-4 w-4" />
-                    {CONTACT.phone}
+                    {contact.phone}
                   </a>
                 </Button>
               </>

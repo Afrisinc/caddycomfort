@@ -1,11 +1,23 @@
-const ADDRESS = 'KN 4 Ave, Kigali, Rwanda';
+import type { StoreSettings } from '@/lib/storeSettings';
 
-export const CONTACT = {
-  email: 'caddyumutoniwase@gmail.com',
-  emailHref: 'mailto:caddyumutoniwase@gmail.com',
-  phone: '+250 786 763 654',
-  phoneHref: 'tel:+250786763654',
-  address: ADDRESS,
-  mapsHref: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ADDRESS)}`,
-  hours: 'Mon–Sat: 9AM–8PM',
-} as const;
+export interface ContactInfo {
+  email: string;
+  emailHref: string;
+  phone: string;
+  phoneHref: string;
+  address: string;
+  mapsHref: string;
+  hours: string;
+}
+
+export function toContactInfo(settings: StoreSettings): ContactInfo {
+  return {
+    email: settings.email,
+    emailHref: `mailto:${settings.email}`,
+    phone: settings.phone,
+    phoneHref: `tel:${settings.phone.replace(/[^\d+]/g, '')}`,
+    address: settings.address,
+    mapsHref: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.address)}`,
+    hours: settings.openingHours,
+  };
+}

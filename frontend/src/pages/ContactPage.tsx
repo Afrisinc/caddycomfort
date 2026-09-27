@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { ContactMethod } from '@/components/common/ContactMethod';
 import { ContactForm } from '@/components/contact/ContactForm';
 import { Heading, Text } from '@/components/ui/typography';
-import { CONTACT } from '@/lib/contactInfo';
+import { useContactInfo } from '@/hooks/useContactInfo';
 
 const QUICK_HELP = [
   { icon: HelpCircle, label: 'FAQ', description: 'Answers to common questions', href: '/faq' },
@@ -26,6 +26,7 @@ const QUICK_HELP = [
 ];
 
 export default function ContactPage() {
+  const contact = useContactInfo();
   return (
     <>
       <Navbar />
@@ -42,23 +43,23 @@ export default function ContactPage() {
             <ContactMethod
               icon={Mail}
               label="Email"
-              value={CONTACT.email}
-              href={CONTACT.emailHref}
+              value={contact.email}
+              href={contact.emailHref}
             />
             <ContactMethod
               icon={Phone}
               label="Call us"
-              value={CONTACT.phone}
-              href={CONTACT.phoneHref}
+              value={contact.phone}
+              href={contact.phoneHref}
             />
             <ContactMethod
               icon={MapPin}
               label="Visit"
-              value={CONTACT.address}
-              href={CONTACT.mapsHref}
+              value={contact.address}
+              href={contact.mapsHref}
               external
             />
-            <ContactMethod icon={Clock} label="Opening hours" value={CONTACT.hours} />
+            <ContactMethod icon={Clock} label="Opening hours" value={contact.hours} />
           </div>
 
           <div className="mt-12 grid grid-cols-1 gap-10 lg:mt-16 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-14">
@@ -113,7 +114,7 @@ export default function ContactPage() {
                     help with personalized styling and expert advice.
                   </Text>
                   <a
-                    href={CONTACT.mapsHref}
+                    href={contact.mapsHref}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 pt-1 text-sm font-medium text-accent-rose underline-offset-4 hover:underline"

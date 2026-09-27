@@ -17,7 +17,8 @@ import { useCartStore, type CartItem } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { couponsApi } from '@/lib/api';
 import { formatRwf } from '@/lib/pricing';
-import { FREE_SHIPPING_THRESHOLD, calculateTotals } from '@/lib/checkout';
+import { calculateTotals } from '@/lib/checkout';
+import { useStoreSettings } from '@/store/useSettingsStore';
 import { Coupon } from '@/types/api';
 
 interface AppliedCoupon {
@@ -34,7 +35,8 @@ export default function CartPage() {
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const discount = appliedCoupon?.discount ?? 0;
-  const { shipping, tax, total } = calculateTotals(subtotal, {
+  const settings = useStoreSettings();
+  const { shipping, tax, total } = calculateTotals(subtotal, settings, {
     discount,
     freeShipping: appliedCoupon?.coupon.discountType === 'FREE_SHIPPING',
   });
@@ -106,7 +108,7 @@ export default function CartPage() {
       value: shipping === 0 ? 'Free' : formatRwf(shipping),
       tone: shipping === 0 ? ('positive' as const) : ('default' as const),
     },
-    { id: 'tax', label: 'Tax (18%)', value: formatRwf(tax) },
+    { id: 'tax', label: `Tax (${settings.taxRate}%)`, value: formatRwf(tax) },
   ];
 
   if (items.length === 0) {
@@ -162,7 +164,7 @@ export default function CartPage() {
             <section aria-label="Cart items">
               <FreeShippingProgress
                 subtotal={subtotal}
-                threshold={FREE_SHIPPING_THRESHOLD}
+                threshold={settings.freeShippingThreshold}
                 unlocked={shipping === 0}
                 className="mb-8"
               />

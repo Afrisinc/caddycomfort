@@ -1,9 +1,10 @@
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { FileText } from 'lucide-react';
-import { CONTACT } from '@/lib/contactInfo';
+import { useContactInfo } from '@/hooks/useContactInfo';
 
 export default function TermsPage() {
+  const contact = useContactInfo();
   return (
     <>
       <Navbar />
@@ -174,13 +175,13 @@ export default function TermsPage() {
               </p>
               <div className="bg-card border rounded-lg p-6">
                 <p className="mb-2">
-                  <strong className="text-foreground">Email:</strong> {CONTACT.email}
+                  <strong className="text-foreground">Email:</strong> {contact.email}
                 </p>
                 <p className="mb-2">
-                  <strong className="text-foreground">Phone:</strong> {CONTACT.phone}
+                  <strong className="text-foreground">Phone:</strong> {contact.phone}
                 </p>
                 <p>
-                  <strong className="text-foreground">Address:</strong> {CONTACT.address}
+                  <strong className="text-foreground">Address:</strong> {contact.address}
                 </p>
               </div>
             </section>

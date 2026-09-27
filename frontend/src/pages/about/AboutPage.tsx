@@ -8,7 +8,7 @@ import { CtaBanner } from '@/components/common/CtaBanner';
 import { CategoryCardV2 } from '@/components/products/CategoryCardV2';
 import { Button } from '@/components/ui/button';
 import { Heading, InfoBlock, SectionHeader, Text } from '@/components/ui/typography';
-import { CONTACT } from '@/lib/contactInfo';
+import { useContactInfo } from '@/hooks/useContactInfo';
 
 const VALUES = [
   {
@@ -42,6 +42,7 @@ const COLLECTIONS = [
 ];
 
 export default function AboutPage() {
+  const contact = useContactInfo();
   return (
     <>
       <Navbar />
@@ -164,11 +165,11 @@ export default function AboutPage() {
                 <ContactMethod
                   icon={MapPin}
                   label="Address"
-                  value={CONTACT.address}
-                  href={CONTACT.mapsHref}
+                  value={contact.address}
+                  href={contact.mapsHref}
                   external
                 />
-                <ContactMethod icon={Clock} label="Opening hours" value={CONTACT.hours} />
+                <ContactMethod icon={Clock} label="Opening hours" value={contact.hours} />
               </div>
             </div>
           </section>

@@ -2,6 +2,7 @@ import prisma from '../config/database';
 import { cache } from '../utils/cache';
 import { Prisma, OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 import { DEPOSIT_METHODS, calculateDeposit } from '../utils/payment/payment-rules';
+import { SettingsService } from './settings.service';
 
 export interface CreateOrderInput {
   userId: string;
@@ -61,13 +62,6 @@ export class OrderService {
    */
   static async createOrder(input: CreateOrderInput): Promise<OrderWithDetails> {
     const { userId, shippingAddress, paymentMethod, depositMethod, notes } = input;
-
-    if (
-      paymentMethod === 'CASH_ON_DELIVERY' &&
-      (!depositMethod || !DEPOSIT_METHODS.includes(depositMethod))
-    ) {
-      throw new Error('Choose Mobile Money or card to pay the cash on delivery deposit');
-    }
 
     // Get user's cart
     const cart = await prisma.cart.findUnique({
@@ -131,14 +125,17 @@ export class OrderService {
       }
     }
 
-    // Calculate shipping (simplified - could be based on weight, location, etc.)
-    const shippingCost = cart.coupon?.discountType === 'FREE_SHIPPING' ? 0 : 10;
-
-    // Calculate tax (simplified - 10% tax rate)
-    const tax = (subtotal - discount) * 0.1;
-
-    const total = subtotal - discount + shippingCost + tax;
+    const settings = await SettingsService.get();
+    const { shippingCost, tax, total } = SettingsService.calculateCharges(settings, {
+      subtotal,
+      discount,
+      freeShipping: cart.coupon?.discountType === 'FREE_SHIPPING',
+    });
     const isCod = paymentMethod === 'CASH_ON_DELIVERY';
+    const depositAmount = isCod ? calculateDeposit(total, settings.codDepositPercent) : 0;
+    if (depositAmount > 0 && (!depositMethod || !DEPOSIT_METHODS.includes(depositMethod))) {
+      throw new Error('Choose Mobile Money or card to pay the cash on delivery deposit');
+    }
 
     // Generate order number
     const orderNumber = await this.generateOrderNumber();
@@ -159,8 +156,8 @@ export class OrderService {
           couponId,
           paymentMethod,
           paymentStatus: 'PENDING',
-          depositMethod: isCod ? depositMethod : null,
-          depositAmount: isCod ? calculateDeposit(total) : 0,
+          depositMethod: depositAmount > 0 ? depositMethod : null,
+          depositAmount,
           shippingAddress: shippingAddress as Prisma.JsonObject,
           notes,
           items: {
