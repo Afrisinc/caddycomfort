@@ -12,6 +12,17 @@ import { wishlistApi } from '@/lib/api';
 export function Navbar() {
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
   const [wishlistCount, setWishlistCount] = React.useState(0);
   const items = useCartStore((state) => state.items);
   const { isAuthenticated, user } = useAuthStore();
@@ -116,6 +127,8 @@ export function Navbar() {
               size="icon"
               onClick={() => setSearchOpen(true)}
               className="hidden md:flex"
+              aria-label="Search products (Ctrl+K)"
+              title="Search (Ctrl+K)"
             >
               <Search className="h-5 w-5" />
             </Button>

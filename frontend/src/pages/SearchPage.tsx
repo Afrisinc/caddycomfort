@@ -17,11 +17,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ProductCard } from '@/components/products/ProductCard';
 import { ProductGridSkeleton } from '@/components/products/ProductCardSkeleton';
+import { ProductGrid } from '@/components/products/ProductGrid';
 import { productsApi, categoriesApi, wishlistApi } from '@/lib/api';
 import { toProductCardProps } from '@/lib/productCard';
 import { Category, Product } from '@/types/api';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useCartStore } from '@/store/useCartStore';
+import { useQuickAdd } from '@/hooks/useQuickAdd';
 import { toast } from 'sonner';
 
 const MAX_PRICE = 1000000;
@@ -31,7 +32,7 @@ function SearchContent() {
   const router = useRouter();
   const query = searchParams.get('q') || '';
   const { isAuthenticated } = useAuthStore();
-  const { addItem } = useCartStore();
+  const quickAdd = useQuickAdd();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -111,23 +112,6 @@ function SearchContent() {
     setPriceRange([0, MAX_PRICE]);
     setSelectedCategoryIds([]);
     setSortBy('relevance');
-  };
-
-  const handleQuickAddToCart = (product: Product) => {
-    if (product.stockQuantity <= 0) {
-      toast.error('This item is out of stock');
-      return;
-    }
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.salePrice ?? product.price,
-      image: product.imageUrl || product.images[0] || '',
-      quantity: 1,
-      size: product.sizes[0] || '',
-      color: product.colors[0] || '',
-    });
-    toast.success(`${product.name} added to cart`);
   };
 
   const handleToggleWishlist = async (product: Product) => {
@@ -264,19 +248,18 @@ function SearchContent() {
             {isLoading ? (
               <ProductGridSkeleton count={6} />
             ) : filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <ProductGrid>
                 {filteredProducts.map((product) => (
                   <ProductCard
                     key={product.id}
                     {...toProductCardProps(product)}
                     href={`/shop/${product.id}`}
                     isWishlisted={wishlistIds.has(product.id)}
-                    onAddToCart={() => handleQuickAddToCart(product)}
+                    onAddToCart={() => quickAdd(product)}
                     onWishlist={() => handleToggleWishlist(product)}
-                    onQuickView={() => router.push(`/shop/${product.id}`)}
                   />
                 ))}
-              </div>
+              </ProductGrid>
             ) : (
               <div className="text-center py-20">
                 <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

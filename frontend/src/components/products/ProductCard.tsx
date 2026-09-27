@@ -1,31 +1,34 @@
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Heart, ShoppingBag, Eye, Star, TrendingUp } from 'lucide-react';
+import { Heart, Package, ShoppingBag } from 'lucide-react';
 import Link from '@/components/common/Link';
 import Image from '@/components/common/Image';
+import { RatingStars } from '@/components/products/RatingStars';
+import { cn } from '@/lib/utils';
 
 interface ProductCardProps {
-  id: string;
-  title: string;
-  category: string;
-  categorySlug?: string;
-  price: string;
-  originalPrice?: string;
-  discount?: string;
-  image: string;
-  imageAlt?: string;
-  href?: string;
-  rating?: number;
-  isNew?: boolean;
-  isBestSeller?: boolean;
-  isWishlisted?: boolean;
-  onAddToCart?: () => void;
-  onWishlist?: () => void;
-  onQuickView?: () => void;
+  readonly id: string;
+  readonly title: string;
+  readonly category: string;
+  readonly categorySlug?: string;
+  readonly price: string;
+  readonly originalPrice?: string;
+  readonly discount?: string;
+  readonly image: string;
+  readonly imageAlt?: string;
+  readonly href?: string;
+  readonly rating?: number;
+  readonly isNew?: boolean;
+  readonly isBestSeller?: boolean;
+  readonly isWishlisted?: boolean;
+  readonly soldOut?: boolean;
+  readonly requiresOptions?: boolean;
+  readonly onAddToCart?: () => void;
+  readonly onWishlist?: () => void;
 }
 
+const floatingButton =
+  'flex items-center justify-center rounded-full bg-background/95 text-foreground shadow-md backdrop-blur-sm transition-all duration-200 outline-none hover:scale-105 focus-visible:ring-2 focus-visible:ring-accent-rose/50';
+
 export function ProductCard({
-  id,
   title,
   category,
   categorySlug,
@@ -39,141 +42,139 @@ export function ProductCard({
   isNew = false,
   isBestSeller = false,
   isWishlisted = false,
+  soldOut = false,
+  requiresOptions = false,
   onAddToCart,
   onWishlist,
-  onQuickView,
 }: ProductCardProps) {
+  const placeholder = (
+    <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground/50">
+      <Package className="h-10 w-10" />
+    </div>
+  );
+
   return (
-    <div className="group relative">
-      <Card className="overflow-hidden border border-border/50 hover:border-accent-rose/30 shadow-sm hover:shadow-luxury transition-all duration-300 bg-card">
-        {/* Badges - Top Left */}
-        <div className="absolute top-3 left-3 z-20 flex flex-col gap-2">
+    <article className="group relative flex h-full flex-col">
+      <div className="relative aspect-4/5 overflow-hidden rounded-xl bg-muted">
+        <Link
+          href={href}
+          className="absolute inset-0 outline-none"
+          tabIndex={-1}
+          aria-hidden="true"
+        >
+          {image ? (
+            <Image
+              src={image}
+              alt={imageAlt}
+              fill
+              className={cn(
+                'object-cover transition-transform duration-700 ease-out group-hover:scale-105',
+                soldOut && 'grayscale-[40%]',
+              )}
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 33vw"
+              fallback={placeholder}
+            />
+          ) : (
+            placeholder
+          )}
+        </Link>
+
+        <div className="pointer-events-none absolute top-3 left-3 flex flex-col items-start gap-1.5">
+          {discount && (
+            <span className="rounded-full bg-accent-rose px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
+              -{discount}
+            </span>
+          )}
           {isNew && (
-            <span className="bg-green-500 text-white px-2.5 py-1 rounded-full text-xs font-semibold shadow-md">
+            <span className="rounded-full bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
               New
             </span>
           )}
           {isBestSeller && (
-            <span className="bg-accent-rose text-white px-2.5 py-1 rounded-full text-xs font-semibold shadow-md flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" />
-              Best
+            <span className="rounded-full bg-foreground px-2.5 py-1 text-[11px] font-semibold text-background shadow-sm">
+              Bestseller
             </span>
           )}
         </div>
 
-        {/* Product Header - Price and Discount */}
-        <div className="absolute top-3 left-3 right-3 z-20 flex justify-between items-start gap-2">
-          <span className="text-base font-bold text-foreground bg-card/95 backdrop-blur-md px-3 py-1.5 rounded-lg shadow-sm">
-            {price}
-            {originalPrice && (
-              <span className="ml-2 text-xs text-muted-foreground line-through font-normal">
-                {originalPrice}
-              </span>
-            )}
-          </span>
-          {discount && (
-            <span className="bg-accent-rose text-white px-2.5 py-1 rounded-full text-xs font-semibold shadow-md animate-pulse shrink-0">
-              {discount} Off
-            </span>
-          )}
-        </div>
-
-        {/* Product Image */}
-        <Link href={href}>
-          <div className="relative h-[300px] md:h-[350px] overflow-visible bg-transparent p-4">
-            <div className="relative w-full h-full overflow-hidden rounded-lg bg-gradient-to-br from-muted to-muted/50">
-              {/* Hover overlay gradient */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
-
-              {image ? (
-                <Image
-                  src={image}
-                  alt={imageAlt}
-                  fill
-                  className="object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-accent-rose-subtle to-accent-rose-muted flex items-center justify-center">
-                  <span className="text-4xl opacity-50">📦</span>
-                </div>
-              )}
-
-              {/* Quick view badge on hover */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                <div className="bg-card/95 backdrop-blur-md px-4 py-2 rounded-full shadow-lg border border-border/50">
-                  <span className="text-sm font-medium text-foreground">Quick View</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Link>
-
-        {/* Product Actions - Visible on Hover */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 z-20">
-          <Button
-            size="icon"
-            variant="secondary"
-            className="rounded-full bg-card/95 backdrop-blur-md hover:bg-accent-rose hover:text-white shadow-lg border border-border/50 hover:border-accent-rose hover:scale-110 transition-all duration-200"
-            onClick={onAddToCart}
-            aria-label="Add to cart"
-          >
-            <ShoppingBag className="h-4 w-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="secondary"
-            className="rounded-full bg-card/95 backdrop-blur-md hover:bg-accent-rose hover:text-white shadow-lg border border-border/50 hover:border-accent-rose hover:scale-110 transition-all duration-200"
-            onClick={onQuickView}
-            aria-label="Quick view"
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="secondary"
-            className={`rounded-full bg-card/95 backdrop-blur-md hover:bg-accent-rose hover:text-white shadow-lg border border-border/50 hover:border-accent-rose hover:scale-110 transition-all duration-200 ${isWishlisted ? 'text-accent-rose' : ''}`}
+        {onWishlist && (
+          <button
+            type="button"
             onClick={onWishlist}
-            aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+            aria-label={
+              isWishlisted ? `Remove ${title} from wishlist` : `Save ${title} to wishlist`
+            }
+            aria-pressed={isWishlisted}
+            className={cn(floatingButton, 'absolute top-3 right-3 h-9 w-9')}
           >
-            <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
-          </Button>
-        </div>
-
-        {/* Product Details */}
-        <div className="p-5 space-y-2.5 bg-gradient-to-b from-card to-card/95">
-          {/* Rating */}
-          {rating !== undefined && (
-            <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-3.5 w-3.5 ${
-                    i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'
-                  }`}
-                />
-              ))}
-              {rating > 0 && (
-                <span className="ml-1 text-xs text-muted-foreground">({rating.toFixed(1)})</span>
+            <Heart
+              className={cn(
+                'h-4 w-4 transition-colors',
+                isWishlisted ? 'fill-accent-rose text-accent-rose' : 'text-foreground/70',
               )}
-            </div>
-          )}
+            />
+          </button>
+        )}
 
-          <Link href={href}>
-            <h4 className="text-base font-semibold hover:text-accent-rose transition-colors line-clamp-2 min-h-10 group-hover:underline decoration-accent-rose/50">
-              {title}
-            </h4>
-          </Link>
-
-          <div className="flex items-center justify-between pt-1">
-            <Link href={`/shop?category=${categorySlug || category.toLowerCase()}`}>
-              <h5 className="text-xs font-medium text-muted-foreground hover:text-accent-rose transition-colors uppercase tracking-wide">
-                {category}
-              </h5>
-            </Link>
+        {soldOut && (
+          <div className="pointer-events-none absolute inset-0 flex items-end bg-background/40 p-3">
+            <span className="w-full rounded-lg bg-background/95 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground shadow-sm">
+              Sold out
+            </span>
           </div>
+        )}
+
+        {onAddToCart && !soldOut && (
+          <>
+            <button
+              type="button"
+              onClick={onAddToCart}
+              className="absolute inset-x-3 bottom-3 hidden h-10 translate-y-2 items-center justify-center gap-2 rounded-lg bg-background/95 text-sm font-medium text-foreground opacity-0 shadow-md backdrop-blur-sm transition-all duration-300 outline-none group-hover:translate-y-0 group-hover:opacity-100 hover:bg-foreground hover:text-background focus-visible:translate-y-0 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-accent-rose/50 pointer-fine:flex"
+            >
+              <ShoppingBag className="h-4 w-4" />
+              {requiresOptions ? 'Choose options' : 'Add to cart'}
+            </button>
+            <button
+              type="button"
+              onClick={onAddToCart}
+              aria-label={requiresOptions ? `Choose options for ${title}` : `Add ${title} to cart`}
+              className={cn(
+                floatingButton,
+                'absolute right-3 bottom-3 h-9 w-9 pointer-fine:hidden',
+              )}
+            >
+              <ShoppingBag className="h-4 w-4" />
+            </button>
+          </>
+        )}
+      </div>
+
+      <div className="flex flex-1 flex-col gap-1 pt-3.5">
+        <Link
+          href={`/shop?category=${categorySlug || category.toLowerCase()}`}
+          className="w-fit text-[11px] font-medium uppercase tracking-wider text-muted-foreground transition-colors hover:text-accent-rose"
+        >
+          {category}
+        </Link>
+        <Link
+          href={href}
+          className="line-clamp-2 text-sm font-medium leading-snug text-foreground transition-colors outline-none hover:text-accent-rose focus-visible:text-accent-rose focus-visible:underline sm:text-[15px]"
+        >
+          {title}
+        </Link>
+        {rating !== undefined && rating > 0 && <RatingStars rating={rating} className="mt-0.5" />}
+        <div className="mt-auto flex flex-wrap items-baseline gap-x-2 pt-1.5">
+          <span className="text-sm font-semibold tabular-nums text-foreground sm:text-base">
+            {price}
+          </span>
+          {originalPrice && (
+            <span className="text-xs tabular-nums text-muted-foreground line-through sm:text-sm">
+              <span className="sr-only">Was </span>
+              {originalPrice}
+            </span>
+          )}
         </div>
-      </Card>
-    </div>
+      </div>
+    </article>
   );
 }

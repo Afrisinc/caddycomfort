@@ -1,32 +1,32 @@
-import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ProductGrid } from '@/components/products/ProductGrid';
 
 export function ProductCardSkeleton() {
   return (
-    <Card className="overflow-hidden border border-border/50 bg-card">
-      <div className="p-4">
-        <Skeleton className="h-[300px] md:h-[350px] w-full rounded-lg" />
+    <div className="flex flex-col" aria-hidden="true">
+      <Skeleton className="aspect-4/5 w-full rounded-xl" />
+      <div className="space-y-2 pt-3.5">
+        <Skeleton className="h-3 w-16" />
+        <Skeleton className="h-4 w-4/5" />
+        <Skeleton className="h-4 w-24" />
       </div>
-      <div className="p-5 space-y-2.5">
-        <Skeleton className="h-5 w-3/4" />
-        <Skeleton className="h-3 w-1/3" />
-      </div>
-    </Card>
-  );
-}
-
-/** Renders `count` card skeletons inside the same grid classes the real product grid uses. */
-export function ProductGridSkeleton({ count = 6 }: { count?: number }) {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-      {Array.from({ length: count }, (_, i) => (
-        <ProductCardSkeleton key={i} />
-      ))}
     </div>
   );
 }
 
-/** A horizontal image+text row, for list-style product placements (e.g. "Most Selling"). */
+export function ProductGridSkeleton({
+  count = 6,
+  columns = 3,
+}: Readonly<{ count?: number; columns?: 3 | 4 }>) {
+  return (
+    <ProductGrid columns={columns}>
+      {Array.from({ length: count }, (_, i) => (
+        <ProductCardSkeleton key={i} />
+      ))}
+    </ProductGrid>
+  );
+}
+
 export function ProductRowSkeleton() {
   return (
     <div className="flex items-center gap-4 p-4">

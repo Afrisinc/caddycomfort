@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ProductCard } from '@/components/products/ProductCard';
+import { ProductGrid } from '@/components/products/ProductGrid';
 import { ProductGallery } from '@/components/products/ProductGallery';
 import { ProductInfoPanel } from '@/components/products/ProductInfoPanel';
 import { Tabs, TabsContent, TabsCount, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -349,7 +350,7 @@ export default function ShopProductPage() {
                   )
                 }
               />
-              <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+              <ProductGrid columns={4}>
                 {relatedProducts.map((related) => (
                   <ProductCard
                     key={related.id}
@@ -357,7 +358,7 @@ export default function ShopProductPage() {
                     href={`/shop/${related.id}`}
                   />
                 ))}
-              </div>
+              </ProductGrid>
             </section>
           )}
         </div>

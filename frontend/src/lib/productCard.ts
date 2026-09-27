@@ -1,7 +1,6 @@
 import { Product } from '@/types/api';
 import { formatRwf, getProductPricing } from '@/lib/pricing';
 
-/** Maps a real Product into the flat, pre-formatted props ProductCard expects. */
 export function toProductCardProps(product: Product) {
   const { current, original, discountPct } = getProductPricing(product);
 
@@ -15,5 +14,11 @@ export function toProductCardProps(product: Product) {
     discount: discountPct ? `${discountPct}%` : undefined,
     image: product.imageUrl || product.images[0] || '',
     isBestSeller: product.isFeatured,
+    soldOut: product.stockQuantity <= 0,
+    requiresOptions: requiresOptions(product),
   };
+}
+
+export function requiresOptions(product: Pick<Product, 'sizes' | 'colors'>): boolean {
+  return product.sizes.length > 1 || product.colors.length > 1;
 }

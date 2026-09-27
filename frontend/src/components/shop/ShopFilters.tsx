@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useRouter, usePathname, useSearchParams } from '@/router/compat';
+import type { ReactNode } from 'react';
+import { SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -8,8 +8,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { SlidersHorizontal, X } from 'lucide-react';
 import {
   Sheet,
   SheetClose,
@@ -19,248 +17,111 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { SIZES, COLORS, MAX_PRICE } from '@/lib/shopFilters';
-import { buildSearchUrl } from '@/lib/searchParamsUtil';
+import { FilterPanel } from '@/components/shop/FilterPanel';
+import { ActiveFilters } from '@/components/shop/ActiveFilters';
+import { useShopFilters } from '@/hooks/useShopFilters';
+import { SORT_LABELS } from '@/lib/shopFilters';
 
 interface ShopFiltersProps {
-  categoryName: string | null;
-  totalCount: number;
-  children: React.ReactNode;
+  readonly categoryName: string | null;
+  readonly totalCount: number;
+  readonly loading?: boolean;
+  readonly children: ReactNode;
 }
 
-export function ShopFilters({ categoryName, totalCount, children }: ShopFiltersProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  const minPrice = Number(searchParams.get('minPrice') ?? 0);
-  const maxPrice = Number(searchParams.get('maxPrice') ?? MAX_PRICE);
-  const selectedSizes = searchParams.getAll('sizes');
-  const selectedColors = searchParams.getAll('colors');
-  const sort = searchParams.get('sort') ?? 'featured';
-
-  const [priceDraft, setPriceDraft] = useState([minPrice, maxPrice]);
-
-  const navigate = (updates: Record<string, string | string[] | null>) => {
-    router.push(buildSearchUrl(pathname, searchParams, { ...updates, page: null }));
-  };
-
-  const commitPrice = (value: number[]) => {
-    navigate({
-      minPrice: value[0] > 0 ? value[0].toString() : null,
-      maxPrice: value[1] < MAX_PRICE ? value[1].toString() : null,
-    });
-  };
-
-  const toggleSize = (size: string) => {
-    const next = selectedSizes.includes(size)
-      ? selectedSizes.filter((s) => s !== size)
-      : [...selectedSizes, size];
-    navigate({ sizes: next.length ? next : null });
-  };
-
-  const toggleColor = (color: string) => {
-    const next = selectedColors.includes(color)
-      ? selectedColors.filter((c) => c !== color)
-      : [...selectedColors, color];
-    navigate({ colors: next.length ? next : null });
-  };
-
-  const clearFilters = () => {
-    setPriceDraft([0, MAX_PRICE]);
-    navigate({ minPrice: null, maxPrice: null, sizes: null, colors: null });
-  };
-
-  const clearCategory = () => {
-    router.push('/shop');
-  };
-
-  const activeFiltersCount =
-    selectedSizes.length + selectedColors.length + (minPrice > 0 || maxPrice < MAX_PRICE ? 1 : 0);
-
-  const filterSectionContent = (
-    <div className="space-y-8">
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Price Range</h3>
-        <div className="space-y-4">
-          <Slider
-            value={priceDraft}
-            onValueChange={setPriceDraft}
-            onValueCommit={commitPrice}
-            max={MAX_PRICE}
-            step={10000}
-            className="w-full"
-          />
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>Rwf {priceDraft[0].toLocaleString()}</span>
-            <span>Rwf {priceDraft[1].toLocaleString()}</span>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Size</h3>
-        <div className="flex flex-wrap gap-2">
-          {SIZES.map((size) => (
-            <Button
-              key={size}
-              variant={selectedSizes.includes(size) ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => toggleSize(size)}
-              className={
-                selectedSizes.includes(size) ? 'bg-accent-rose hover:bg-accent-rose-dark' : ''
-              }
-            >
-              {size}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Color</h3>
-        <div className="flex flex-wrap gap-3">
-          {COLORS.map((color) => (
-            <button
-              key={color.name}
-              onClick={() => toggleColor(color.name)}
-              className={`w-10 h-10 rounded-full border-2 transition-all ${
-                selectedColors.includes(color.name)
-                  ? 'border-accent-rose scale-110'
-                  : 'border-gray-300 hover:border-accent-rose'
-              }`}
-              style={{ backgroundColor: color.hex }}
-              title={color.name}
-            />
-          ))}
-        </div>
-      </div>
-
-      {activeFiltersCount > 0 && (
-        <Button variant="outline" onClick={clearFilters} className="w-full">
-          Clear All Filters ({activeFiltersCount})
-        </Button>
-      )}
-    </div>
-  );
+export function ShopFilters({ categoryName, totalCount, loading, children }: ShopFiltersProps) {
+  const filters = useShopFilters();
+  const resultLabel = `${totalCount.toLocaleString()} ${totalCount === 1 ? 'product' : 'products'}`;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8">
-      <aside className="hidden lg:block w-64 flex-shrink-0">
-        <div className="sticky top-24 space-y-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-serif">Filters</h2>
-            {activeFiltersCount > 0 && (
-              <span className="text-sm text-accent-rose font-medium">
-                {activeFiltersCount} active
-              </span>
+    <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
+      <aside className="hidden w-64 shrink-0 lg:block" aria-label="Product filters">
+        <div className="sticky top-28">
+          <div className="mb-5 flex items-center justify-between">
+            <p className="text-base font-semibold">Filters</p>
+            {filters.activeCount > 0 && (
+              <button
+                type="button"
+                onClick={filters.clearAll}
+                className="rounded text-xs font-medium text-muted-foreground underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-accent-rose/40"
+              >
+                Clear all
+              </button>
             )}
           </div>
-          {filterSectionContent}
+          <FilterPanel filters={filters} />
         </div>
       </aside>
 
-      <div className="flex-1">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div className="flex items-center gap-4">
+      <div className="min-w-0 flex-1">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" className="lg:hidden">
-                  <SlidersHorizontal className="mr-2 h-4 w-4" />
+                <Button variant="outline" className="h-10 gap-2 lg:hidden">
+                  <SlidersHorizontal className="h-4 w-4" />
                   Filters
-                  {activeFiltersCount > 0 && (
-                    <span className="ml-2 bg-accent-rose text-white text-xs px-2 py-0.5 rounded-full">
-                      {activeFiltersCount}
+                  {filters.activeCount > 0 && (
+                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-rose px-1.5 text-[11px] font-semibold text-white">
+                      {filters.activeCount}
                     </span>
                   )}
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-80">
-                <SheetHeader className="border-b">
+              <SheetContent side="left" className="flex w-[88vw] max-w-sm flex-col gap-0 p-0">
+                <SheetHeader className="border-b px-5 py-4">
                   <SheetTitle>Filters</SheetTitle>
                 </SheetHeader>
-                <div className="flex-1 overflow-y-auto px-4">{filterSectionContent}</div>
-                <SheetFooter className="border-t pt-4">
+                <div className="flex-1 overflow-y-auto px-5 py-5">
+                  <FilterPanel filters={filters} />
+                </div>
+                <SheetFooter className="flex-row gap-3 border-t px-5 py-4">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={filters.clearAll}
+                    disabled={filters.activeCount === 0}
+                  >
+                    Clear all
+                  </Button>
                   <SheetClose asChild>
-                    <Button className="w-full bg-accent-rose hover:bg-accent-rose-dark">
-                      Show {totalCount} Result{totalCount === 1 ? '' : 's'}
+                    <Button className="flex-1 bg-accent-rose hover:bg-accent-rose-dark">
+                      Show {resultLabel}
                     </Button>
                   </SheetClose>
                 </SheetFooter>
               </SheetContent>
             </Sheet>
 
-            <p className="text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">{totalCount}</span> products found
+            <p className="hidden text-sm text-muted-foreground sm:block" aria-live="polite">
+              {loading ? 'Loading products…' : resultLabel}
             </p>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Sort by:</span>
-            <Select
-              value={sort}
-              onValueChange={(value) => navigate({ sort: value === 'featured' ? null : value })}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Featured" />
+            <label htmlFor="shop-sort" className="hidden text-sm text-muted-foreground sm:block">
+              Sort by
+            </label>
+            <Select value={filters.sort} onValueChange={filters.setSort}>
+              <SelectTrigger id="shop-sort" className="h-10 w-44" aria-label="Sort products">
+                <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="featured">Featured</SelectItem>
-                <SelectItem value="price-asc">Price: Low to High</SelectItem>
-                <SelectItem value="price-desc">Price: High to Low</SelectItem>
-                <SelectItem value="newest">Newest First</SelectItem>
+              <SelectContent align="end">
+                {Object.entries(SORT_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
         </div>
 
-        {(activeFiltersCount > 0 || categoryName) && (
-          <div className="flex flex-wrap gap-2 mb-6">
-            {categoryName && (
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent-rose-subtle text-accent-rose rounded-full text-sm">
-                {categoryName}
-                <button onClick={clearCategory}>
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            )}
-            {minPrice > 0 || maxPrice < MAX_PRICE ? (
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent-rose-subtle text-accent-rose rounded-full text-sm">
-                Rwf {minPrice.toLocaleString()} - Rwf {maxPrice.toLocaleString()}
-                <button
-                  onClick={() => {
-                    setPriceDraft([0, MAX_PRICE]);
-                    navigate({ minPrice: null, maxPrice: null });
-                  }}
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            ) : null}
-            {selectedSizes.map((size) => (
-              <span
-                key={size}
-                className="inline-flex items-center gap-1 px-3 py-1 bg-accent-rose-subtle text-accent-rose rounded-full text-sm"
-              >
-                Size: {size}
-                <button onClick={() => toggleSize(size)}>
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            ))}
-            {selectedColors.map((color) => (
-              <span
-                key={color}
-                className="inline-flex items-center gap-1 px-3 py-1 bg-accent-rose-subtle text-accent-rose rounded-full text-sm"
-              >
-                {color}
-                <button onClick={() => toggleColor(color)}>
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
+        <p className="mb-4 text-sm text-muted-foreground sm:hidden" aria-live="polite">
+          {loading ? 'Loading products…' : resultLabel}
+        </p>
+
+        <ActiveFilters filters={filters} categoryName={categoryName} />
 
         {children}
       </div>

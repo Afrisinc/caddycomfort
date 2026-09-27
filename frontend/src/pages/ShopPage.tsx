@@ -1,5 +1,6 @@
-import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { PageHeader } from '@/components/common/PageHeader';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ShopFilters } from '@/components/shop/ShopFilters';
@@ -12,6 +13,7 @@ import { Category, Product } from '@/types/api';
 
 export default function ShopPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState<Category | null>(null);
@@ -37,9 +39,6 @@ export default function ShopPage() {
 
     (async () => {
       try {
-        // Single request: the backend resolves categorySlug -> category and
-        // filters products in the same round trip, instead of us awaiting
-        // a category lookup before we can even ask for products.
         const sort = SORT_OPTIONS[sortKey] ?? SORT_OPTIONS.featured;
 
         const {
@@ -78,37 +77,59 @@ export default function ShopPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.toString()]);
 
+  const hasFilters =
+    sizes.length > 0 ||
+    colors.length > 0 ||
+    (minPrice !== undefined && minPrice > 0) ||
+    (maxPrice !== undefined && maxPrice < MAX_PRICE);
+
+  const clearFilters = () => {
+    const next = new URLSearchParams();
+    if (categorySlug) next.set('category', categorySlug);
+    const qs = next.toString();
+    navigate(qs ? `/shop?${qs}` : '/shop');
+  };
+
   return (
     <>
       <Navbar />
 
-      <div className="min-h-screen bg-background pt-20">
-        <div className="bg-gradient-to-br from-accent-rose-subtle via-background to-accent-rose-muted/30 py-12 md:py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="text-4xl md:text-5xl font-serif text-center mb-4">
-              {category?.name || 'Shop Collection'}
-            </h1>
-            <p className="text-center text-muted-foreground max-w-2xl mx-auto">
-              Discover our curated selection of timeless pieces
-            </p>
-          </div>
-        </div>
+      <main className="min-h-screen bg-background pt-20">
+        <PageHeader
+          title={category?.name || 'Shop all'}
+          description={
+            category?.description ||
+            'Dresses, shoes, bags and wigs — curated pieces for every occasion.'
+          }
+          breadcrumbs={[
+            { label: 'Home', href: '/' },
+            ...(category
+              ? [{ label: 'Shop', href: '/shop' }, { label: category.name }]
+              : [{ label: 'Shop' }]),
+          ]}
+        />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-          <Suspense fallback={<ShopGridSkeleton />}>
-            <ShopFilters categoryName={category?.name ?? null} totalCount={pagination.total}>
-              {loading ? (
-                <ShopGridSkeleton />
-              ) : (
-                <>
-                  <ShopProductGrid products={products} />
-                  <ShopPagination currentPage={page} totalPages={pagination.totalPages || 1} />
-                </>
-              )}
-            </ShopFilters>
-          </Suspense>
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-10 lg:px-8 lg:pb-24">
+          <ShopFilters
+            categoryName={category?.name ?? null}
+            totalCount={pagination.total}
+            loading={loading}
+          >
+            {loading ? (
+              <ShopGridSkeleton />
+            ) : (
+              <>
+                <ShopProductGrid
+                  products={products}
+                  hasFilters={hasFilters}
+                  onClearFilters={clearFilters}
+                />
+                <ShopPagination currentPage={page} totalPages={pagination.totalPages || 1} />
+              </>
+            )}
+          </ShopFilters>
         </div>
-      </div>
+      </main>
 
       <Footer />
     </>

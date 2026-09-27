@@ -2,7 +2,6 @@ import { Card } from '@/components/ui/card';
 import { ArrowRight } from 'lucide-react';
 import Link from '@/components/common/Link';
 import Image from '@/components/common/Image';
-import { motion } from 'framer-motion';
 
 interface CategoryCardProps {
   title: string;
@@ -47,31 +46,21 @@ export function CategoryCardV2({ title, image, href = '#', className = '' }: Cat
         {/* Content Overlay */}
         <div className="absolute inset-0 flex flex-col justify-end p-3 md:p-4 z-10">
           {/* Category Name */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="mb-2"
-          >
+          <div className="mb-2 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
             <h3 className="text-lg md:text-xl font-serif font-bold text-white drop-shadow-lg group-hover:translate-x-2 transition-transform duration-300">
               {title}
             </h3>
-          </motion.div>
+          </div>
 
           {/* Arrow Button */}
-          <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-            className="flex items-center gap-2"
-          >
+          <div className="flex items-center gap-2 animate-in fade-in-0 slide-in-from-left-2 delay-100 duration-300">
             <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/20 backdrop-blur-md group-hover:bg-accent-rose flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-lg">
               <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-white group-hover:translate-x-1 transition-transform duration-300" />
             </div>
             <span className="text-xs md:text-sm font-medium text-white/90 group-hover:text-white transition-colors">
               Explore
             </span>
-          </motion.div>
+          </div>
         </div>
       </Card>
     </Link>

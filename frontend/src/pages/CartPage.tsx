@@ -1,19 +1,23 @@
 import { useState } from 'react';
 import { useRouter } from '@/router/compat';
+import { ArrowRight, Heart, Lock, RotateCcw, ShoppingBag } from 'lucide-react';
+import { toast } from 'sonner';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { X, Minus, Plus, ShoppingBag, ArrowRight, Tag, Loader2 } from 'lucide-react';
-import Image from '@/components/common/Image';
 import Link from '@/components/common/Link';
-import { useCartStore } from '@/store/useCartStore';
+import { PageHeader } from '@/components/common/PageHeader';
+import { EmptyState } from '@/components/common/EmptyState';
+import { Button } from '@/components/ui/button';
+import { FeatureItem } from '@/components/ui/typography';
+import { CartLineItem } from '@/components/cart/CartLineItem';
+import { CouponForm } from '@/components/cart/CouponForm';
+import { FreeShippingProgress } from '@/components/cart/FreeShippingProgress';
+import { OrderSummary, type SummaryLine } from '@/components/cart/OrderSummary';
+import { useCartStore, type CartItem } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { couponsApi } from '@/lib/api';
+import { formatRwf } from '@/lib/pricing';
 import { Coupon } from '@/types/api';
-import { toast } from 'sonner';
 
 interface AppliedCoupon {
   discount: number;
@@ -26,9 +30,8 @@ const TAX_RATE = 0.18;
 
 export default function CartPage() {
   const router = useRouter();
-  const { items, removeItem, updateQuantity, clearCart } = useCartStore();
+  const { items, addItem, removeItem, updateQuantity, clearCart } = useCartStore();
   const { isAuthenticated } = useAuthStore();
-  const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
@@ -39,11 +42,9 @@ export default function CartPage() {
     isFreeShippingCoupon || subtotal > FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING;
   const tax = (subtotal - discount) * TAX_RATE;
   const total = subtotal - discount + shipping + tax;
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  const handleApplyCoupon = async () => {
-    const code = couponCode.trim();
-    if (!code) return;
-
+  const handleApplyCoupon = async (code: string) => {
     if (!isAuthenticated) {
       toast.error('Please log in to apply a coupon');
       router.push('/login');
@@ -66,39 +67,80 @@ export default function CartPage() {
     }
   };
 
-  const handleRemoveCoupon = () => {
-    setAppliedCoupon(null);
-    setCouponCode('');
+  const handleRemove = (item: CartItem) => {
+    removeItem(item.id, item.size, item.color);
+    toast(`${item.name} removed`, { action: { label: 'Undo', onClick: () => addItem(item) } });
   };
 
-  const discountLabel = appliedCoupon
-    ? appliedCoupon.coupon.discountType === 'PERCENTAGE'
-      ? `Discount (${appliedCoupon.coupon.discountValue}%)`
-      : appliedCoupon.coupon.discountType === 'FIXED_AMOUNT'
-        ? 'Discount'
-        : null
-    : null;
+  const handleClear = () => {
+    const snapshot = [...items];
+    clearCart();
+    toast('Cart cleared', {
+      action: { label: 'Undo', onClick: () => snapshot.forEach((item) => addItem(item)) },
+    });
+  };
+
+  const discountLabel = () => {
+    if (appliedCoupon?.coupon.discountType === 'PERCENTAGE') {
+      return `Discount (${appliedCoupon.coupon.discountValue}%)`;
+    }
+    if (appliedCoupon?.coupon.discountType === 'FIXED_AMOUNT') return 'Discount';
+    return null;
+  };
+
+  const lines: SummaryLine[] = [
+    {
+      id: 'subtotal',
+      label: `Subtotal (${itemCount} ${itemCount === 1 ? 'item' : 'items'})`,
+      value: formatRwf(subtotal),
+    },
+    ...(discountLabel() && discount > 0
+      ? [
+          {
+            id: 'discount',
+            label: discountLabel(),
+            value: `−${formatRwf(discount)}`,
+            tone: 'positive' as const,
+          },
+        ]
+      : []),
+    {
+      id: 'shipping',
+      label: 'Shipping',
+      value: shipping === 0 ? 'Free' : formatRwf(shipping),
+      tone: shipping === 0 ? ('positive' as const) : ('default' as const),
+    },
+    { id: 'tax', label: 'Tax (18%)', value: formatRwf(tax) },
+  ];
 
   if (items.length === 0) {
     return (
       <>
         <Navbar />
-        <div className="min-h-screen bg-background pt-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div className="text-center max-w-md mx-auto">
-              <ShoppingBag className="h-24 w-24 mx-auto text-muted-foreground mb-6" />
-              <h1 className="text-3xl font-serif mb-4">Your Cart is Empty</h1>
-              <p className="text-muted-foreground mb-8">
-                Looks like you haven&apos;t added anything to your cart yet.
-              </p>
-              <Link href="/shop">
-                <Button size="lg" className="bg-accent-rose hover:bg-accent-rose-dark">
-                  Continue Shopping
-                </Button>
-              </Link>
-            </div>
+        <main className="min-h-screen bg-background pt-20">
+          <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:py-24">
+            <EmptyState
+              icon={ShoppingBag}
+              title="Your cart is empty"
+              description="Looks like you haven't added anything yet. Explore the collection and find something you love."
+              action={
+                <div className="flex flex-wrap justify-center gap-3">
+                  <Button asChild className="bg-accent-rose hover:bg-accent-rose-dark">
+                    <Link href="/shop">Start shopping</Link>
+                  </Button>
+                  {isAuthenticated && (
+                    <Button asChild variant="outline" className="gap-2">
+                      <Link href="/account/wishlist">
+                        <Heart className="h-4 w-4" />
+                        View wishlist
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              }
+            />
           </div>
-        </div>
+        </main>
         <Footer />
       </>
     );
@@ -108,222 +150,117 @@ export default function CartPage() {
     <>
       <Navbar />
 
-      <div className="min-h-screen bg-background pt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-          <h1 className="text-4xl font-serif mb-8">Shopping Cart</h1>
+      <main className="min-h-screen bg-background pt-20 pb-24 lg:pb-0">
+        <PageHeader
+          title="Your cart"
+          description={`${itemCount} ${itemCount === 1 ? 'item' : 'items'} ready for checkout`}
+          breadcrumbs={[
+            { label: 'Home', href: '/' },
+            { label: 'Shop', href: '/shop' },
+            { label: 'Cart' },
+          ]}
+        />
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Cart Items */}
-            <div className="lg:col-span-2 space-y-4">
-              {items.map((item) => (
-                <div
-                  key={`${item.id}-${item.size}-${item.color}`}
-                  className="flex gap-4 bg-card border rounded-lg p-4"
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-12 lg:px-8">
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-14">
+            <section aria-label="Cart items">
+              <FreeShippingProgress
+                subtotal={subtotal}
+                threshold={FREE_SHIPPING_THRESHOLD}
+                unlocked={shipping === 0}
+                className="mb-8"
+              />
+
+              <ul className="divide-y">
+                {items.map((item) => (
+                  <CartLineItem
+                    key={`${item.id}-${item.size}-${item.color}`}
+                    item={item}
+                    onQuantityChange={(quantity) =>
+                      updateQuantity(item.id, item.size, item.color, quantity)
+                    }
+                    onRemove={() => handleRemove(item)}
+                  />
+                ))}
+              </ul>
+
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t pt-6">
+                <Link
+                  href="/shop"
+                  className="group inline-flex items-center gap-1.5 text-sm font-medium text-foreground/80 transition-colors hover:text-accent-rose"
                 >
-                  <div className="relative w-24 h-24 flex-shrink-0 rounded-md overflow-hidden">
-                    <Image src={item.image} alt={item.name} fill className="object-cover" />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between gap-4 mb-2">
-                      <div>
-                        <h3 className="text-base font-semibold truncate">{item.name}</h3>
-                        <div className="flex gap-2 text-sm text-muted-foreground mt-1">
-                          <span>Size: {item.size}</span>
-                          <span>•</span>
-                          <span>Color: {item.color}</span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => removeItem(item.id, item.size, item.color)}
-                        className="text-muted-foreground hover:text-destructive transition-colors"
-                      >
-                        <X className="h-5 w-5" />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() =>
-                            updateQuantity(
-                              item.id,
-                              item.size,
-                              item.color,
-                              Math.max(1, item.quantity - 1),
-                            )
-                          }
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="text-sm font-medium w-8 text-center">{item.quantity}</span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() =>
-                            updateQuantity(item.id, item.size, item.color, item.quantity + 1)
-                          }
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      <p className="font-semibold">
-                        Rwf {(item.price * item.quantity).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              <div className="flex justify-between pt-4">
-                <Button variant="outline" onClick={clearCart}>
-                  Clear Cart
+                  <ArrowRight className="h-4 w-4 rotate-180 transition-transform group-hover:-translate-x-0.5" />
+                  Continue shopping
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClear}
+                  className="text-muted-foreground"
+                >
+                  Clear cart
                 </Button>
-                <Link href="/shop">
-                  <Button variant="outline">Continue Shopping</Button>
-                </Link>
               </div>
-            </div>
+            </section>
 
-            {/* Order Summary */}
-            <div className="lg:col-span-1">
-              <div className="bg-card border rounded-lg p-6 sticky top-24">
-                <h2 className="text-2xl font-serif mb-6">Order Summary</h2>
-
-                {/* Coupon Code */}
-                <div className="mb-6">
-                  <label className="text-sm font-semibold mb-2 block">Coupon Code</label>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Enter code"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                      onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
-                      disabled={!!appliedCoupon || isApplyingCoupon}
-                    />
+            <aside className="lg:sticky lg:top-28 lg:self-start">
+              <OrderSummary
+                lines={lines}
+                total={total}
+                footer={
+                  <div className="space-y-5">
                     <Button
-                      variant="outline"
-                      onClick={handleApplyCoupon}
-                      disabled={!!appliedCoupon || isApplyingCoupon || !couponCode.trim()}
+                      asChild
+                      size="lg"
+                      className="h-12 w-full gap-2 bg-accent-rose text-[15px] hover:bg-accent-rose-dark"
                     >
-                      {isApplyingCoupon ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Tag className="h-4 w-4" />
-                      )}
+                      <Link href="/checkout">
+                        <Lock className="h-4 w-4" />
+                        Checkout
+                      </Link>
                     </Button>
-                  </div>
-                  {appliedCoupon ? (
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge className="bg-green-500">
-                        Coupon &quot;{appliedCoupon.coupon.code}&quot; applied!
-                      </Badge>
-                      <button
-                        onClick={handleRemoveCoupon}
-                        className="text-xs text-muted-foreground hover:text-destructive underline"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Try code: <span className="font-mono font-semibold">WELCOME10</span>
-                    </p>
-                  )}
-                </div>
-
-                <Separator className="my-4" />
-
-                {/* Price Breakdown */}
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span>Rwf {subtotal.toLocaleString()}</span>
-                  </div>
-                  {discountLabel && discount > 0 && (
-                    <div className="flex justify-between text-sm text-green-600">
-                      <span>{discountLabel}</span>
-                      <span>-Rwf {discount.toLocaleString()}</span>
-                    </div>
-                  )}
-                  {isFreeShippingCoupon && (
-                    <div className="flex justify-between text-sm text-green-600">
-                      <span>Free shipping coupon</span>
-                      <span>Applied</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Shipping</span>
-                    <span>
-                      {shipping === 0 ? (
-                        <Badge variant="outline" className="text-green-600 border-green-600">
-                          Free
-                        </Badge>
-                      ) : (
-                        `Rwf ${shipping.toLocaleString()}`
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Tax (18%)</span>
-                    <span>Rwf {tax.toLocaleString()}</span>
-                  </div>
-                </div>
-
-                <Separator className="my-4" />
-
-                <div className="flex justify-between text-lg font-semibold mb-6">
-                  <span>Total</span>
-                  <span>Rwf {total.toLocaleString()}</span>
-                </div>
-
-                {shipping > 0 && (
-                  <p className="text-xs text-muted-foreground mb-4">
-                    Add Rwf {(FREE_SHIPPING_THRESHOLD - subtotal).toLocaleString()} more for free
-                    shipping
-                  </p>
-                )}
-
-                <Link href="/checkout">
-                  <Button size="lg" className="w-full bg-accent-rose hover:bg-accent-rose-dark">
-                    Proceed to Checkout
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-
-                <div className="mt-6 space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    <div className="grid gap-3 border-t pt-5">
+                      <FeatureItem
+                        icon={Lock}
+                        title="Secure checkout"
+                        description="Protected payment"
                       />
-                    </svg>
-                    <span>Secure checkout</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      <FeatureItem
+                        icon={RotateCcw}
+                        title="Easy returns"
+                        description="30-day return policy"
                       />
-                    </svg>
-                    <span>30-day return policy</span>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </div>
+                }
+              >
+                <CouponForm
+                  appliedCode={appliedCoupon?.coupon.code}
+                  isApplying={isApplyingCoupon}
+                  hint={appliedCoupon ? undefined : 'Try code: WELCOME10'}
+                  onApply={handleApplyCoupon}
+                  onRemove={() => setAppliedCoupon(null)}
+                />
+              </OrderSummary>
+            </aside>
           </div>
         </div>
-      </div>
+
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur lg:hidden">
+          <div className="mx-auto flex max-w-7xl items-center gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground">Total</p>
+              <p className="text-lg font-semibold tabular-nums">{formatRwf(total)}</p>
+            </div>
+            <Button asChild className="h-11 gap-2 bg-accent-rose px-6 hover:bg-accent-rose-dark">
+              <Link href="/checkout">
+                <Lock className="h-4 w-4" />
+                Checkout
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </main>
 
       <Footer />
     </>

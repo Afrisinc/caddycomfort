@@ -1,107 +1,203 @@
+import { ArrowRight, Award, Clock, Heart, MapPin, Sparkles, Users } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
+import Link from '@/components/common/Link';
 import Image from '@/components/common/Image';
-import { Award, Heart, Sparkles, Users } from 'lucide-react';
+import { ContactMethod } from '@/components/common/ContactMethod';
+import { CtaBanner } from '@/components/common/CtaBanner';
+import { CategoryCardV2 } from '@/components/products/CategoryCardV2';
+import { Button } from '@/components/ui/button';
+import { Heading, InfoBlock, SectionHeader, Text } from '@/components/ui/typography';
+
+const VALUES = [
+  {
+    icon: Award,
+    title: 'Quality first',
+    description: 'Only the finest materials and craftsmanship make it into our collection.',
+  },
+  {
+    icon: Heart,
+    title: 'Customer care',
+    description:
+      'Your satisfaction is our priority, with personalized service every step of the way.',
+  },
+  {
+    icon: Sparkles,
+    title: 'Timeless style',
+    description: 'We curate pieces that remain elegant and relevant season after season.',
+  },
+  {
+    icon: Users,
+    title: 'Community',
+    description: 'Building a community of fashion enthusiasts who appreciate true luxury.',
+  },
+];
+
+const COLLECTIONS = [
+  { title: 'Dresses', image: '/new-images/dress/dress-1.jpg', href: '/shop?category=dresses' },
+  { title: 'Shoes', image: '/new-images/Shoes/shoe-1.jpg', href: '/shop?category=shoes' },
+  { title: 'Bags', image: '/new-images/bag/bag-1.jpg', href: '/shop?category=bags' },
+  { title: 'Wigs', image: '/new-images/wigs/wig-1.jpg', href: '/shop?category=wigs' },
+];
+
+const ADDRESS = 'KN 4 Ave, Kigali, Rwanda';
+const MAPS_HREF = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ADDRESS)}`;
 
 export default function AboutPage() {
   return (
     <>
       <Navbar />
 
-      <div className="min-h-screen bg-background pt-20">
-        {/* Hero */}
-        <div className="bg-gradient-to-br from-accent-rose-subtle via-background to-accent-rose-muted/30 py-16 md:py-24">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-5xl md:text-6xl font-serif mb-6">Our Story</h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Crafting timeless elegance since 2026, CaddyComfort brings you curated luxury fashion
-              that celebrates individuality and sophistication.
-            </p>
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          {/* Mission */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-24">
-            <div className="relative aspect-[4/3] rounded-lg overflow-hidden">
+      <main className="min-h-screen bg-background pt-20">
+        <section className="border-b bg-muted/30">
+          <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-12 sm:px-6 md:py-16 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-20">
+            <div className="space-y-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-rose">
+                Our story
+              </p>
+              <Heading as="h1" size="xl" className="max-w-xl leading-tight">
+                Timeless elegance, curated in Kigali
+              </Heading>
+              <Text variant="lead">
+                Crafting timeless elegance since 2026, CaddyComfort brings you curated luxury
+                fashion that celebrates individuality and sophistication.
+              </Text>
+              <div className="flex flex-wrap gap-3 pt-2">
+                <Button
+                  asChild
+                  size="lg"
+                  className="h-11 gap-2 bg-accent-rose hover:bg-accent-rose-dark"
+                >
+                  <Link href="/shop">
+                    Shop the collection
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="h-11">
+                  <Link href="/contact">Contact us</Link>
+                </Button>
+              </div>
+            </div>
+            <div className="relative aspect-4/5 overflow-hidden rounded-3xl bg-muted shadow-xl sm:aspect-square lg:aspect-4/5">
               <Image
-                src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800"
-                alt="Our Store"
+                src="/new-images/hero-4.jpg"
+                alt="Inside the CaddyComfort boutique, surrounded by dresses and printed fabrics"
                 fill
+                priority
                 className="object-cover"
               />
             </div>
-            <div>
-              <h2 className="text-4xl font-serif mb-6">Our Mission</h2>
-              <p className="text-muted-foreground text-lg leading-relaxed mb-4">
+          </div>
+        </section>
+
+        <div className="mx-auto max-w-7xl space-y-20 px-4 py-16 sm:px-6 md:space-y-28 md:py-24 lg:px-8">
+          <section className="grid grid-cols-1 gap-8 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-16">
+            <SectionHeader eyebrow="Our mission" title="Fashion as an expression of who you are" />
+            <div className="grid gap-6 md:grid-cols-2 md:gap-10">
+              <Text className="text-base">
                 At CaddyComfort, we believe that fashion is more than just clothing—it&apos;s an
                 expression of who you are. Our mission is to provide discerning customers with
                 access to the finest luxury fashion pieces that blend timeless elegance with
                 contemporary style.
-              </p>
-              <p className="text-muted-foreground text-lg leading-relaxed">
+              </Text>
+              <Text className="text-base">
                 Every item in our collection is carefully selected for its quality, craftsmanship,
                 and ability to transcend trends. We&apos;re committed to sustainability, ethical
                 sourcing, and creating a shopping experience that&apos;s as exceptional as the
                 pieces we offer.
-              </p>
+              </Text>
             </div>
-          </div>
+          </section>
 
-          {/* Values */}
-          <div className="mb-24">
-            <h2 className="text-4xl font-serif text-center mb-12">Our Values</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {[
-                {
-                  icon: Award,
-                  title: 'Quality First',
-                  description:
-                    'Only the finest materials and craftsmanship make it into our collection.',
-                },
-                {
-                  icon: Heart,
-                  title: 'Customer Care',
-                  description:
-                    'Your satisfaction is our priority, with personalized service every step of the way.',
-                },
-                {
-                  icon: Sparkles,
-                  title: 'Timeless Style',
-                  description:
-                    'We curate pieces that remain elegant and relevant season after season.',
-                },
-                {
-                  icon: Users,
-                  title: 'Community',
-                  description:
-                    'Building a community of fashion enthusiasts who appreciate true luxury.',
-                },
-              ].map((value) => {
-                const Icon = value.icon;
-                return (
-                  <div key={value.title} className="text-center">
-                    <div className="h-16 w-16 rounded-full bg-accent-rose-subtle mx-auto mb-4 flex items-center justify-center">
-                      <Icon className="h-8 w-8 text-accent-rose" />
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2">{value.title}</h3>
-                    <p className="text-muted-foreground">{value.description}</p>
-                  </div>
-                );
-              })}
+          <section>
+            <SectionHeader
+              eyebrow="What we stand for"
+              title="Our values"
+              align="center"
+              className="mb-10"
+            />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {VALUES.map((value) => (
+                <InfoBlock key={value.title} icon={value.icon} title={value.title} className="p-6">
+                  {value.description}
+                </InfoBlock>
+              ))}
             </div>
-          </div>
+          </section>
 
-          {/* Team */}
-          <div className="text-center">
-            <h2 className="text-4xl font-serif mb-6">Meet Our Team</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-12">
-              Our passionate team of fashion experts is dedicated to bringing you the best in luxury
-              fashion, with decades of combined experience in the industry.
-            </p>
-          </div>
+          <section>
+            <SectionHeader
+              eyebrow="Explore"
+              title="What you'll find"
+              className="mb-8"
+              action={
+                <Link
+                  href="/shop"
+                  className="group inline-flex items-center gap-1.5 text-sm font-medium text-foreground/80 transition-colors hover:text-accent-rose"
+                >
+                  Shop all
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              }
+            />
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+              {COLLECTIONS.map((collection) => (
+                <CategoryCardV2 key={collection.href} {...collection} />
+              ))}
+            </div>
+          </section>
+
+          <section className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
+            <div className="relative order-last aspect-4/3 overflow-hidden rounded-3xl bg-muted lg:order-first">
+              <Image
+                src="/new-images/hero-2.jpg"
+                alt="Wigs, handbags and heels on display in the CaddyComfort store"
+                fill
+                className="object-cover"
+              />
+            </div>
+            <div className="space-y-6">
+              <SectionHeader eyebrow="Visit us" title="Come see us in store" />
+              <Text className="text-base">
+                Experience our collection in person at our store in the heart of Kigali. Our team is
+                ready to assist you with personalized styling and expert advice.
+              </Text>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <ContactMethod
+                  icon={MapPin}
+                  label="Address"
+                  value={ADDRESS}
+                  href={MAPS_HREF}
+                  external
+                />
+                <ContactMethod icon={Clock} label="Opening hours" value="Mon–Sat: 9AM–8PM" />
+              </div>
+            </div>
+          </section>
+
+          <CtaBanner
+            title="Find your next favorite piece"
+            description="Browse dresses, shoes, bags and wigs selected for quality and timeless style."
+            actions={
+              <>
+                <Button
+                  asChild
+                  size="lg"
+                  className="h-11 gap-2 bg-accent-rose hover:bg-accent-rose-dark"
+                >
+                  <Link href="/shop">
+                    Shop now
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="h-11 bg-background/80">
+                  <Link href="/contact">Get in touch</Link>
+                </Button>
+              </>
+            }
+          />
         </div>
-      </div>
+      </main>
 
       <Footer />
     </>

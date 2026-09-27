@@ -17,7 +17,7 @@ export function getProductPricing(product: PricedProduct): ProductPricing {
 }
 
 export function formatRwf(amount: number): string {
-  return `Rwf ${amount.toLocaleString()}`;
+  return `Rwf ${Math.round(amount).toLocaleString()}`;
 }
 
 export const LOW_STOCK_THRESHOLD = 5;
