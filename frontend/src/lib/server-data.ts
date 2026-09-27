@@ -37,9 +37,8 @@ export async function getFlashSaleProducts(): Promise<Product[]> {
   const { products } = await fetchApi<{ products: Product[] }>(
     '/products?isActive=true&limit=24&sortBy=createdAt&sortOrder=desc',
   );
-  const discounted = products
+  return products
     .filter((p) => discountPercent(p) > 0)
     .sort((a, b) => discountPercent(b) - discountPercent(a))
     .slice(0, 8);
-  return discounted.length > 0 ? discounted : products.slice(0, 8);
 }

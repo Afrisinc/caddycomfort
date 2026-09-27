@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import Link from '@/components/common/Link';
 import { useAuthStore } from '@/store/useAuthStore';
 import { usersApi, ordersApi } from '@/lib/api';
-import { Order, OrderStatus } from '@/types/api';
+import { Order } from '@/types/api';
 import { toast } from 'sonner';
 import {
   User,
@@ -19,6 +19,7 @@ import {
   ShoppingBag,
   TrendingUp,
 } from 'lucide-react';
+import { OrderStatusBadge } from '@/components/orders/StatusBadge';
 
 interface DashboardStats {
   totalOrders: number;
@@ -26,16 +27,6 @@ interface DashboardStats {
   savedAddresses: number;
   totalSpent: number;
 }
-
-const ORDER_STATUS_BADGES: Record<OrderStatus, { label: string; className: string }> = {
-  PENDING: { label: 'Pending', className: 'bg-yellow-100 text-yellow-800' },
-  PROCESSING: { label: 'Processing', className: 'bg-blue-100 text-blue-800' },
-  CONFIRMED: { label: 'Confirmed', className: 'bg-blue-100 text-blue-800' },
-  SHIPPED: { label: 'Shipped', className: 'bg-indigo-100 text-indigo-800' },
-  DELIVERED: { label: 'Delivered', className: 'bg-green-100 text-green-800' },
-  CANCELLED: { label: 'Cancelled', className: 'bg-gray-100 text-gray-800' },
-  REFUNDED: { label: 'Refunded', className: 'bg-red-100 text-red-800' },
-};
 
 function formatMoney(amount: number): string {
   return `Rwf ${amount.toLocaleString()}`;
@@ -231,7 +222,6 @@ export default function AccountPage() {
                 ) : (
                   <div className="space-y-4">
                     {recentOrders.map((order) => {
-                      const badge = ORDER_STATUS_BADGES[order.status];
                       return (
                         <div key={order.id} className="bg-card border rounded-lg p-4">
                           <div className="flex items-center justify-between mb-2">
@@ -245,9 +235,7 @@ export default function AccountPage() {
                             </div>
                             <div className="text-right">
                               <p className="font-semibold">{formatMoney(order.total)}</p>
-                              <span className={`text-xs px-2 py-1 rounded-full ${badge.className}`}>
-                                {badge.label}
-                              </span>
+                              <OrderStatusBadge status={order.status} />
                             </div>
                           </div>
                           <Link href={`/account/orders/${order.id}`}>

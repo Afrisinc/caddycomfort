@@ -236,7 +236,7 @@ export interface Address {
 export type OrderStatus =
   'PENDING' | 'PROCESSING' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED';
 
-export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
+export type PaymentStatus = 'PENDING' | 'PARTIALLY_PAID' | 'PAID' | 'FAILED' | 'REFUNDED';
 
 export type PaymentMethod =
   'CREDIT_CARD' | 'DEBIT_CARD' | 'PAYPAL' | 'BANK_TRANSFER' | 'MOBILE_MONEY' | 'CASH_ON_DELIVERY';
@@ -263,6 +263,11 @@ export interface Order {
   status: OrderStatus;
   paymentStatus: PaymentStatus;
   paymentMethod: PaymentMethod;
+  depositMethod?: PaymentMethod | null;
+  depositAmount?: number;
+  amountPaid?: number;
+  balanceDue?: number;
+  customer?: { name: string | null; email: string | null };
   subtotal: number;
   discount: number;
   tax: number;
@@ -291,6 +296,7 @@ export interface CreateOrderData {
     phone?: string;
   };
   paymentMethod: PaymentMethod;
+  depositMethod?: PaymentMethod;
   notes?: string;
 }
 

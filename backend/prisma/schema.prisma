@@ -188,6 +188,9 @@ model Order {
   total           Float
   paymentMethod   PaymentMethod
   paymentStatus   PaymentStatus @default(PENDING)
+  depositMethod   PaymentMethod?
+  depositAmount   Float         @default(0)
+  amountPaid      Float         @default(0)
   paymentIntentId String?
   shippingAddress Json
   notes           String?
@@ -219,6 +222,7 @@ enum OrderStatus {
 
 enum PaymentStatus {
   PENDING
+  PARTIALLY_PAID
   PAID
   FAILED
   REFUNDED

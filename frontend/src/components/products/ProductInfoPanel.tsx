@@ -20,8 +20,7 @@ import {
   Truck,
 } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
-import { useAuthStore } from '@/store/useAuthStore';
-import { wishlistApi } from '@/lib/api';
+import { useWishlist } from '@/hooks/useWishlist';
 import { formatRwf, getProductPricing } from '@/lib/pricing';
 import { cn } from '@/lib/utils';
 import { Product } from '@/types/api';
@@ -42,30 +41,19 @@ export function ProductInfoPanel({
 }: ProductInfoPanelProps) {
   const router = useRouter();
   const { addItem } = useCartStore();
-  const { isAuthenticated } = useAuthStore();
+  const wishlist = useWishlist();
+  const isWishlisted = wishlist.isSaved(product.id);
+  const isTogglingWishlist = wishlist.isPending(product.id);
 
   const [selectedSize, setSelectedSize] = useState(product.sizes[0] || '');
   const [selectedColor, setSelectedColor] = useState(product.colors[0] || '');
   const [quantity, setQuantity] = useState(1);
   const [justAdded, setJustAdded] = useState(false);
-  const [isWishlisted, setIsWishlisted] = useState(false);
-  const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const ctaRef = useRef<HTMLDivElement>(null);
 
   const pricing = getProductPricing(product);
   const inStock = product.stockQuantity > 0;
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setIsWishlisted(false);
-      return;
-    }
-    wishlistApi
-      .checkProduct(product.id)
-      .then(setIsWishlisted)
-      .catch(() => {});
-  }, [isAuthenticated, product.id]);
 
   useEffect(() => {
     const el = ctaRef.current;
@@ -98,30 +86,6 @@ export function ProductInfoPanel({
     toast.success(`${product.name} added to cart`, {
       action: { label: 'View cart', onClick: () => router.push('/cart') },
     });
-  };
-
-  const handleToggleWishlist = async () => {
-    if (!isAuthenticated) {
-      toast.error('Please log in to save items to your wishlist');
-      router.push('/login');
-      return;
-    }
-    try {
-      setIsTogglingWishlist(true);
-      if (isWishlisted) {
-        await wishlistApi.removeByProductId(product.id);
-        setIsWishlisted(false);
-        toast.success('Removed from wishlist');
-      } else {
-        await wishlistApi.add(product.id);
-        setIsWishlisted(true);
-        toast.success('Saved to wishlist');
-      }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update wishlist');
-    } finally {
-      setIsTogglingWishlist(false);
-    }
   };
 
   const handleShare = async () => {
@@ -225,7 +189,7 @@ export function ProductInfoPanel({
             <Button
               size="icon"
               variant="outline"
-              onClick={handleToggleWishlist}
+              onClick={() => wishlist.toggle(product)}
               disabled={isTogglingWishlist}
               aria-label={isWishlisted ? 'Remove from wishlist' : 'Save to wishlist'}
               aria-pressed={isWishlisted}

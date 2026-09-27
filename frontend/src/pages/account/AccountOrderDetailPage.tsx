@@ -4,23 +4,16 @@ import { useRouter } from '@/router/compat';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import Link from '@/components/common/Link';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ordersApi } from '@/lib/api';
+import { needsOnlinePayment } from '@/lib/checkout';
+import { CompletePaymentCard } from '@/components/checkout/CompletePaymentCard';
+import { DepositBreakdown } from '@/components/checkout/DepositBreakdown';
 import { Order, OrderStatus } from '@/types/api';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, MapPin, Ban } from 'lucide-react';
-
-const ORDER_STATUS_BADGES: Record<OrderStatus, { label: string; className: string }> = {
-  PENDING: { label: 'Pending', className: 'bg-yellow-100 text-yellow-800' },
-  PROCESSING: { label: 'Processing', className: 'bg-blue-100 text-blue-800' },
-  CONFIRMED: { label: 'Confirmed', className: 'bg-blue-100 text-blue-800' },
-  SHIPPED: { label: 'Shipped', className: 'bg-indigo-100 text-indigo-800' },
-  DELIVERED: { label: 'Delivered', className: 'bg-green-100 text-green-800' },
-  CANCELLED: { label: 'Cancelled', className: 'bg-gray-100 text-gray-800' },
-  REFUNDED: { label: 'Refunded', className: 'bg-red-100 text-red-800' },
-};
+import { OrderStatusBadge } from '@/components/orders/StatusBadge';
 
 const CANCELLABLE_STATUSES: OrderStatus[] = ['PENDING', 'PROCESSING'];
 
@@ -84,8 +77,6 @@ function OrderDetailView({ id }: { id: string }) {
   }
 
   if (!order) return null;
-
-  const badge = ORDER_STATUS_BADGES[order.status];
   const address = order.shippingAddress as
     | { street?: string; city?: string; state?: string; postalCode?: string; country?: string }
     | undefined;
@@ -113,8 +104,29 @@ function OrderDetailView({ id }: { id: string }) {
               })}
             </p>
           </div>
-          <Badge className={badge.className}>{badge.label}</Badge>
+          <OrderStatusBadge status={order.status} />
         </div>
+
+        {order.paymentMethod === 'CASH_ON_DELIVERY' &&
+          (order.depositAmount ?? 0) > 0 &&
+          order.paymentStatus !== 'PAID' && (
+            <DepositBreakdown
+              className="mb-6"
+              deposit={order.depositAmount ?? 0}
+              balance={order.total - (order.depositAmount ?? 0)}
+              depositPaid={order.paymentStatus === 'PARTIALLY_PAID'}
+            />
+          )}
+
+        {needsOnlinePayment(order) && (
+          <div className="mb-6">
+            <CompletePaymentCard
+              order={order}
+              defaultPhone={(order.shippingAddress as { phone?: string } | undefined)?.phone}
+              onPaid={fetchOrder}
+            />
+          </div>
+        )}
 
         {/* Items */}
         <div className="bg-card border rounded-lg p-6 mb-6">

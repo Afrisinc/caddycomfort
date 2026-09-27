@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter } from '@/router/compat';
+import { useSearchParams } from '@/router/compat';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Search, SlidersHorizontal } from 'lucide-react';
@@ -18,21 +18,19 @@ import { Label } from '@/components/ui/label';
 import { ProductCard } from '@/components/products/ProductCard';
 import { ProductGridSkeleton } from '@/components/products/ProductCardSkeleton';
 import { ProductGrid } from '@/components/products/ProductGrid';
-import { productsApi, categoriesApi, wishlistApi } from '@/lib/api';
+import { productsApi, categoriesApi } from '@/lib/api';
 import { toProductCardProps } from '@/lib/productCard';
 import { Category, Product } from '@/types/api';
-import { useAuthStore } from '@/store/useAuthStore';
 import { useQuickAdd } from '@/hooks/useQuickAdd';
-import { toast } from 'sonner';
+import { useWishlist } from '@/hooks/useWishlist';
 
 const MAX_PRICE = 1000000;
 
 function SearchContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const query = searchParams.get('q') || '';
-  const { isAuthenticated } = useAuthStore();
   const quickAdd = useQuickAdd();
+  const wishlist = useWishlist();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -40,7 +38,6 @@ function SearchContent() {
   const [priceRange, setPriceRange] = useState([0, MAX_PRICE]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     categoriesApi
@@ -48,17 +45,6 @@ function SearchContent() {
       .then((cats) => setCategories(cats.filter((c) => (c._count?.products ?? 0) > 0)))
       .catch(() => {});
   }, []);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setWishlistIds(new Set());
-      return;
-    }
-    wishlistApi
-      .getAll()
-      .then((items) => setWishlistIds(new Set(items.map((i) => i.productId))))
-      .catch(() => {});
-  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!query.trim()) {
@@ -112,32 +98,6 @@ function SearchContent() {
     setPriceRange([0, MAX_PRICE]);
     setSelectedCategoryIds([]);
     setSortBy('relevance');
-  };
-
-  const handleToggleWishlist = async (product: Product) => {
-    if (!isAuthenticated) {
-      toast.error('Please log in to save items to your wishlist');
-      router.push('/login');
-      return;
-    }
-    const inWishlist = wishlistIds.has(product.id);
-    try {
-      if (inWishlist) {
-        await wishlistApi.removeByProductId(product.id);
-        setWishlistIds((prev) => {
-          const next = new Set(prev);
-          next.delete(product.id);
-          return next;
-        });
-        toast.success('Removed from wishlist');
-      } else {
-        await wishlistApi.add(product.id);
-        setWishlistIds((prev) => new Set(prev).add(product.id));
-        toast.success('Added to wishlist');
-      }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update wishlist');
-    }
   };
 
   const FilterSection = (
@@ -254,9 +214,9 @@ function SearchContent() {
                     key={product.id}
                     {...toProductCardProps(product)}
                     href={`/shop/${product.id}`}
-                    isWishlisted={wishlistIds.has(product.id)}
+                    isWishlisted={wishlist.isSaved(product.id)}
                     onAddToCart={() => quickAdd(product)}
-                    onWishlist={() => handleToggleWishlist(product)}
+                    onWishlist={() => wishlist.toggle(product)}
                   />
                 ))}
               </ProductGrid>

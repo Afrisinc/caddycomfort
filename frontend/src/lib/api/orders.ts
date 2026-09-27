@@ -1,5 +1,5 @@
 import apiClient, { handleApiResponse, handleApiError } from '@/lib/api-client';
-import { Order, CreateOrderData, PaginationParams } from '@/types/api';
+import { Order, CreateOrderData, OrderStatus, PaginationParams, PaymentStatus } from '@/types/api';
 
 export interface UserOrdersResult {
   orders: Order[];
@@ -75,4 +75,49 @@ export const ordersApi = {
       throw handleApiError(error);
     }
   },
+};
+
+export interface AdminOrderFilters {
+  page?: number;
+  limit?: number;
+  status?: OrderStatus;
+  paymentStatus?: PaymentStatus;
+  search?: string;
+}
+
+export interface AdminOrderStats {
+  totalOrders: number;
+  byStatus: Partial<Record<OrderStatus, number>>;
+  byPaymentStatus: Partial<Record<PaymentStatus, number>>;
+  totalRevenue: number;
+  averageOrderValue: number;
+}
+
+async function request<T>(call: () => Promise<unknown>): Promise<T> {
+  try {
+    const response = await call();
+    return handleApiResponse<T>(response).data!;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+}
+
+export const adminOrdersApi = {
+  getAll: (filters: AdminOrderFilters = {}) => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== '') params.append(key, String(value));
+    });
+    return request<UserOrdersResult>(() => apiClient.get(`/orders/admin/all?${params.toString()}`));
+  },
+
+  getStats: () => request<AdminOrderStats>(() => apiClient.get('/orders/admin/stats')),
+
+  updateStatus: (orderId: string, status: OrderStatus) =>
+    request<Order>(() => apiClient.patch(`/orders/admin/${orderId}/status`, { status })),
+
+  updatePaymentStatus: (orderId: string, paymentStatus: PaymentStatus) =>
+    request<Order>(() =>
+      apiClient.patch(`/orders/admin/${orderId}/payment-status`, { paymentStatus }),
+    ),
 };

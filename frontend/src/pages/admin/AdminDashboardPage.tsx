@@ -10,24 +10,10 @@ import { AdminHeader } from '@/components/admin/AdminHeader';
 import { StatCard, StatGrid } from '@/components/admin/StatCard';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { dashboardApi } from '@/lib/api';
-import {
-  DashboardStats,
-  DashboardRecentOrder,
-  DashboardLowStockProduct,
-  OrderStatus,
-} from '@/types/api';
+import { DashboardStats, DashboardRecentOrder, DashboardLowStockProduct } from '@/types/api';
 import { formatRelativeTime } from '@/lib/utils';
 import { toast } from 'sonner';
-
-const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
-  PENDING: 'bg-yellow-100 text-yellow-800',
-  PROCESSING: 'bg-blue-100 text-blue-800',
-  CONFIRMED: 'bg-blue-100 text-blue-800',
-  SHIPPED: 'bg-indigo-100 text-indigo-800',
-  DELIVERED: 'bg-green-100 text-green-800',
-  CANCELLED: 'bg-gray-100 text-gray-800',
-  REFUNDED: 'bg-red-100 text-red-800',
-};
+import { OrderStatusBadge } from '@/components/orders/StatusBadge';
 
 function formatMoney(amount: number): string {
   return `Rwf ${amount.toLocaleString()}`;
@@ -180,11 +166,7 @@ function AdminDashboard() {
                       <div className="text-right">
                         <p className="font-semibold">{formatMoney(order.total)}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span
-                            className={`text-xs px-2 py-1 rounded-full ${ORDER_STATUS_COLORS[order.status]}`}
-                          >
-                            {order.status}
-                          </span>
+                          <OrderStatusBadge status={order.status} />
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             {formatRelativeTime(order.createdAt)}

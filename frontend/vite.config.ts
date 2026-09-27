@@ -28,7 +28,6 @@ export default defineConfig({
         // deploy that only touches app code doesn't re-download React.
         manualChunks: {
           react: ['react', 'react-dom', 'react-router-dom'],
-          motion: ['framer-motion'],
         },
       },
     },

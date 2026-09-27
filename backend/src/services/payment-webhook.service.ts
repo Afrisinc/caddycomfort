@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import { logger } from '../config/logger';
+import { isOnlinePaymentSettled, successfulPaymentUpdate } from '../utils/payment/payment-rules';
 
 export interface WebhookEventPayload {
   event: string;
@@ -70,16 +71,13 @@ export class PaymentWebhookService {
       return { success: false, error: 'Order not found' };
     }
 
-    if (order.paymentStatus === 'PAID') {
+    if (isOnlinePaymentSettled(order.paymentStatus)) {
       return { success: true, skipped: true };
     }
 
     await prisma.order.update({
       where: { id: order.id },
-      data: {
-        paymentStatus: 'PAID',
-        status: order.status === 'PENDING' ? 'PROCESSING' : order.status,
-      },
+      data: successfulPaymentUpdate(order),
     });
 
     logger.info(
@@ -100,7 +98,7 @@ export class PaymentWebhookService {
       return { success: false, error: 'Order not found' };
     }
 
-    if (order.paymentStatus === 'PAID') {
+    if (isOnlinePaymentSettled(order.paymentStatus)) {
       return { success: true, skipped: true };
     }
 

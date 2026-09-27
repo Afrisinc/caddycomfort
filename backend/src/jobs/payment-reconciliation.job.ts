@@ -55,7 +55,7 @@ export async function runPaymentReconciliation(): Promise<{
       where: {
         paymentStatus: 'PENDING',
         paymentIntentId: { not: null },
-        paymentMethod: { in: ['CREDIT_CARD', 'DEBIT_CARD', 'MOBILE_MONEY'] },
+        paymentMethod: { in: ['CREDIT_CARD', 'DEBIT_CARD', 'MOBILE_MONEY', 'CASH_ON_DELIVERY'] },
       },
       select: {
         id: true,
@@ -64,6 +64,11 @@ export async function runPaymentReconciliation(): Promise<{
         paymentIntentId: true,
         status: true,
         createdAt: true,
+        paymentMethod: true,
+        depositMethod: true,
+        depositAmount: true,
+        amountPaid: true,
+        total: true,
       },
     });
 

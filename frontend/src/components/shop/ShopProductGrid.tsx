@@ -1,16 +1,12 @@
-import { useEffect, useState } from 'react';
-import { useRouter } from '@/router/compat';
 import { SearchX } from 'lucide-react';
 import { ProductCard } from '@/components/products/ProductCard';
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/ui/button';
 import { toProductCardProps } from '@/lib/productCard';
-import { wishlistApi } from '@/lib/api';
 import { Product } from '@/types/api';
-import { useAuthStore } from '@/store/useAuthStore';
 import { useQuickAdd } from '@/hooks/useQuickAdd';
-import { toast } from 'sonner';
+import { useWishlist } from '@/hooks/useWishlist';
 
 interface ShopProductGridProps {
   readonly products: Product[];
@@ -19,47 +15,8 @@ interface ShopProductGridProps {
 }
 
 export function ShopProductGrid({ products, hasFilters, onClearFilters }: ShopProductGridProps) {
-  const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
   const quickAdd = useQuickAdd();
-  const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setWishlistIds(new Set());
-      return;
-    }
-    wishlistApi
-      .getAll()
-      .then((items) => setWishlistIds(new Set(items.map((i) => i.productId))))
-      .catch(() => {});
-  }, [isAuthenticated]);
-
-  const handleToggleWishlist = async (product: Product) => {
-    if (!isAuthenticated) {
-      toast.error('Please log in to save items to your wishlist');
-      router.push('/login');
-      return;
-    }
-    const inWishlist = wishlistIds.has(product.id);
-    try {
-      if (inWishlist) {
-        await wishlistApi.removeByProductId(product.id);
-        setWishlistIds((prev) => {
-          const next = new Set(prev);
-          next.delete(product.id);
-          return next;
-        });
-        toast.success('Removed from wishlist');
-      } else {
-        await wishlistApi.add(product.id);
-        setWishlistIds((prev) => new Set(prev).add(product.id));
-        toast.success('Saved to wishlist');
-      }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update wishlist');
-    }
-  };
+  const wishlist = useWishlist();
 
   if (products.length === 0) {
     return (
@@ -85,9 +42,9 @@ export function ShopProductGrid({ products, hasFilters, onClearFilters }: ShopPr
           key={product.id}
           {...toProductCardProps(product)}
           href={`/shop/${product.id}`}
-          isWishlisted={wishlistIds.has(product.id)}
+          isWishlisted={wishlist.isSaved(product.id)}
           onAddToCart={() => quickAdd(product)}
-          onWishlist={() => handleToggleWishlist(product)}
+          onWishlist={() => wishlist.toggle(product)}
         />
       ))}
     </ProductGrid>

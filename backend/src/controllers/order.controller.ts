@@ -9,7 +9,7 @@ export class OrderController {
   static async createOrder(req: Request, res: Response) {
     try {
       const userId = req.user!.userId;
-      const { shippingAddress, paymentMethod, notes } = req.body;
+      const { shippingAddress, paymentMethod, depositMethod, notes } = req.body;
 
       if (!shippingAddress) {
         return res.status(400).json({ success: false, message: 'Shipping address is required' });
@@ -49,12 +49,13 @@ export class OrderController {
         userId,
         shippingAddress,
         paymentMethod,
+        depositMethod,
         notes,
       });
 
       res.status(201).json({ success: true, message: 'Order created successfully', data: order });
     } catch (error: any) {
-      if (error.message === 'Cart is empty') {
+      if (error.message === 'Cart is empty' || error.message.includes('deposit')) {
         return res.status(400).json({ success: false, message: error.message });
       }
       if (error.message.includes('not available') || error.message.includes('Insufficient stock')) {
@@ -148,6 +149,7 @@ export class OrderController {
         paymentStatus,
         startDate,
         endDate,
+        req.query.search as string | undefined,
       );
       res.json({ success: true, data: result });
     } catch (error: any) {
@@ -197,7 +199,7 @@ export class OrderController {
         return res.status(400).json({ success: false, message: 'Payment status is required' });
       }
 
-      const validStatuses = ['PENDING', 'PAID', 'FAILED', 'REFUNDED'];
+      const validStatuses = ['PENDING', 'PARTIALLY_PAID', 'PAID', 'FAILED', 'REFUNDED'];
       if (!validStatuses.includes(paymentStatus)) {
         return res.status(400).json({ success: false, message: 'Invalid payment status' });
       }

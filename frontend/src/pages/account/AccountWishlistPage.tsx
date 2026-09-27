@@ -13,6 +13,7 @@ import { ProductGrid } from '@/components/products/ProductGrid';
 import { ProductGridSkeleton } from '@/components/products/ProductCardSkeleton';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useQuickAdd } from '@/hooks/useQuickAdd';
+import { useWishlistStore } from '@/store/useWishlistStore';
 import { wishlistApi } from '@/lib/api';
 import { toProductCardProps } from '@/lib/productCard';
 import { WishlistItem } from '@/types/api';
@@ -21,6 +22,7 @@ export default function WishlistPage() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
   const quickAdd = useQuickAdd();
+  const setSaved = useWishlistStore((state) => state.setSaved);
 
   const [items, setItems] = useState<WishlistItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,12 +52,14 @@ export default function WishlistPage() {
     setItems((prev) => prev.filter((i) => i.id !== item.id));
     try {
       await wishlistApi.remove(item.id);
+      setSaved(item.productId, false);
       toast(`${item.product.name} removed from wishlist`, {
         action: {
           label: 'Undo',
           onClick: async () => {
             try {
               await wishlistApi.add(item.productId);
+              setSaved(item.productId, true);
               fetchWishlist();
             } catch {
               toast.error('Could not restore the item');

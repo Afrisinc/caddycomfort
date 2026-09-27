@@ -20,25 +20,16 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { customersApi } from '@/lib/api';
-import { CustomerDetail, CustomerStatus, OrderStatus } from '@/types/api';
+import { CustomerDetail, CustomerStatus } from '@/types/api';
 import { formatRelativeTime } from '@/lib/utils';
 import { toast } from 'sonner';
+import { OrderStatusBadge } from '@/components/orders/StatusBadge';
 
 const STATUS_BADGES: Record<CustomerStatus, { label: string; className: string }> = {
   vip: { label: 'VIP', className: 'bg-purple-100 text-purple-700' },
   active: { label: 'Active', className: 'bg-green-100 text-green-700' },
   inactive: { label: 'Inactive', className: 'bg-gray-100 text-gray-700' },
   suspended: { label: 'Suspended', className: 'bg-red-100 text-red-700' },
-};
-
-const ORDER_STATUS_BADGES: Record<OrderStatus, { label: string; className: string }> = {
-  PENDING: { label: 'Pending', className: 'bg-yellow-100 text-yellow-700' },
-  PROCESSING: { label: 'Processing', className: 'bg-blue-100 text-blue-700' },
-  CONFIRMED: { label: 'Confirmed', className: 'bg-blue-100 text-blue-700' },
-  SHIPPED: { label: 'Shipped', className: 'bg-indigo-100 text-indigo-700' },
-  DELIVERED: { label: 'Delivered', className: 'bg-green-100 text-green-700' },
-  CANCELLED: { label: 'Cancelled', className: 'bg-gray-100 text-gray-700' },
-  REFUNDED: { label: 'Refunded', className: 'bg-red-100 text-red-700' },
 };
 
 function formatMoney(amount: number): string {
@@ -216,7 +207,6 @@ function CustomerDetailView({ id }: { id: string }) {
                   </thead>
                   <tbody>
                     {customer.orders.map((order) => {
-                      const orderBadge = ORDER_STATUS_BADGES[order.status];
                       return (
                         <tr key={order.id} className="border-b hover:bg-muted/50">
                           <td className="py-3 px-4">
@@ -233,7 +223,7 @@ function CustomerDetailView({ id }: { id: string }) {
                           </td>
                           <td className="py-3 px-4 font-medium">{formatMoney(order.total)}</td>
                           <td className="py-3 px-4">
-                            <Badge className={orderBadge.className}>{orderBadge.label}</Badge>
+                            <OrderStatusBadge status={order.status} />
                           </td>
                         </tr>
                       );

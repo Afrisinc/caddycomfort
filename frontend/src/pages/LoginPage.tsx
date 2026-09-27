@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -7,13 +7,15 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useRouter } from '@/router/compat';
+import { useRouter, useSearchParams } from '@/router/compat';
+import { safeRedirect } from '@/lib/navigation';
 import { toast } from 'sonner';
 import Link from '@/components/common/Link';
 import { ArrowLeft, Mail, Lock, User, Phone } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
+  const redirectTo = useSearchParams().get('redirect');
   const { login, register, isAuthenticated } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -33,19 +35,20 @@ export default function LoginPage() {
     confirmPassword: '',
   });
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      const user = useAuthStore.getState().user;
-      if (user?.isVerified === false) {
-        router.push(`/verify-email?email=${encodeURIComponent(user.email)}`);
-      } else if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
-        router.push('/admin');
-      } else {
-        router.push('/account');
-      }
+  const redirectAfterLogin = useCallback(() => {
+    const user = useAuthStore.getState().user;
+    if (user?.isVerified === false) {
+      router.push(`/verify-email?email=${encodeURIComponent(user.email)}`);
+    } else if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
+      router.push(safeRedirect(redirectTo, '/admin'));
+    } else {
+      router.push(safeRedirect(redirectTo, '/account'));
     }
-  }, [isAuthenticated, router]);
+  }, [router, redirectTo]);
+
+  useEffect(() => {
+    if (isAuthenticated) redirectAfterLogin();
+  }, [isAuthenticated, redirectAfterLogin]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,15 +58,7 @@ export default function LoginPage() {
       await login(loginData.email, loginData.password);
       toast.success('Welcome back!');
 
-      // Redirect based on verification status and user role
-      const user = useAuthStore.getState().user;
-      if (user?.isVerified === false) {
-        router.push(`/verify-email?email=${encodeURIComponent(user.email)}`);
-      } else if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
-        router.push('/admin');
-      } else {
-        router.push('/account');
-      }
+      redirectAfterLogin();
     } catch (error: any) {
       const message = error.response?.data?.message || error.message || 'Invalid credentials';
       toast.error(message);

@@ -17,16 +17,13 @@ import { useCartStore, type CartItem } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { couponsApi } from '@/lib/api';
 import { formatRwf } from '@/lib/pricing';
+import { FREE_SHIPPING_THRESHOLD, calculateTotals } from '@/lib/checkout';
 import { Coupon } from '@/types/api';
 
 interface AppliedCoupon {
   discount: number;
   coupon: Coupon;
 }
-
-const FREE_SHIPPING_THRESHOLD = 100000;
-const STANDARD_SHIPPING = 5000;
-const TAX_RATE = 0.18;
 
 export default function CartPage() {
   const router = useRouter();
@@ -37,11 +34,10 @@ export default function CartPage() {
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const discount = appliedCoupon?.discount ?? 0;
-  const isFreeShippingCoupon = appliedCoupon?.coupon.discountType === 'FREE_SHIPPING';
-  const shipping =
-    isFreeShippingCoupon || subtotal > FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING;
-  const tax = (subtotal - discount) * TAX_RATE;
-  const total = subtotal - discount + shipping + tax;
+  const { shipping, tax, total } = calculateTotals(subtotal, {
+    discount,
+    freeShipping: appliedCoupon?.coupon.discountType === 'FREE_SHIPPING',
+  });
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   const handleApplyCoupon = async (code: string) => {

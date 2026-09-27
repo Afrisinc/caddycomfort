@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import { Prisma, OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
+import { DEPOSIT_METHODS, calculateDeposit } from '../utils/payment/payment-rules';
 
 export interface CreateOrderInput {
   userId: string;
@@ -15,6 +16,7 @@ export interface CreateOrderInput {
     phone?: string;
   };
   paymentMethod: PaymentMethod;
+  depositMethod?: PaymentMethod;
   notes?: string;
 }
 
@@ -41,7 +43,12 @@ export interface OrderWithDetails {
   couponCode: string | null;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
+  depositMethod: PaymentMethod | null;
+  depositAmount: number;
+  amountPaid: number;
+  balanceDue: number;
   shippingAddress: any;
+  customer: { name: string | null; email: string | null };
   notes: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -52,7 +59,14 @@ export class OrderService {
    * Create order from cart
    */
   static async createOrder(input: CreateOrderInput): Promise<OrderWithDetails> {
-    const { userId, shippingAddress, paymentMethod, notes } = input;
+    const { userId, shippingAddress, paymentMethod, depositMethod, notes } = input;
+
+    if (
+      paymentMethod === 'CASH_ON_DELIVERY' &&
+      (!depositMethod || !DEPOSIT_METHODS.includes(depositMethod))
+    ) {
+      throw new Error('Choose Mobile Money or card to pay the cash on delivery deposit');
+    }
 
     // Get user's cart
     const cart = await prisma.cart.findUnique({
@@ -123,6 +137,7 @@ export class OrderService {
     const tax = (subtotal - discount) * 0.1;
 
     const total = subtotal - discount + shippingCost + tax;
+    const isCod = paymentMethod === 'CASH_ON_DELIVERY';
 
     // Generate order number
     const orderNumber = await this.generateOrderNumber();
@@ -143,6 +158,8 @@ export class OrderService {
           couponId,
           paymentMethod,
           paymentStatus: 'PENDING',
+          depositMethod: isCod ? depositMethod : null,
+          depositAmount: isCod ? calculateDeposit(total) : 0,
           shippingAddress: shippingAddress as Prisma.JsonObject,
           notes,
           items: {
@@ -338,12 +355,21 @@ export class OrderService {
     paymentStatus?: PaymentStatus,
     startDate?: Date,
     endDate?: Date,
+    search?: string,
   ) {
     const skip = (page - 1) * limit;
 
     const where: Prisma.OrderWhereInput = {};
     if (status) where.status = status;
     if (paymentStatus) where.paymentStatus = paymentStatus;
+    const term = search?.trim();
+    if (term) {
+      where.OR = [
+        { orderNumber: { contains: term, mode: 'insensitive' } },
+        { user: { email: { contains: term, mode: 'insensitive' } } },
+        { user: { name: { contains: term, mode: 'insensitive' } } },
+      ];
+    }
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) where.createdAt.gte = startDate;
@@ -429,9 +455,14 @@ export class OrderService {
       });
     }
 
+    const settlesCashOnDelivery =
+      status === 'DELIVERED' && order.paymentMethod === 'CASH_ON_DELIVERY';
+
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
-      data: { status },
+      data: settlesCashOnDelivery
+        ? { status, paymentStatus: 'PAID', amountPaid: order.total }
+        : { status },
       include: {
         items: true,
         user: {
@@ -467,9 +498,16 @@ export class OrderService {
       throw new Error('Order not found');
     }
 
+    const amountPaid: Partial<Record<PaymentStatus, number>> = {
+      PAID: order.total,
+      PARTIALLY_PAID: order.depositAmount,
+      PENDING: 0,
+      FAILED: 0,
+    };
+
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
-      data: { paymentStatus },
+      data: { paymentStatus, amountPaid: amountPaid[paymentStatus] ?? order.amountPaid },
       include: {
         items: true,
         user: {
@@ -665,10 +703,28 @@ export class OrderService {
       couponCode: order.coupon?.code || null,
       paymentMethod: order.paymentMethod,
       paymentStatus: order.paymentStatus,
+      depositMethod: order.depositMethod,
+      depositAmount: order.depositAmount,
+      amountPaid: order.amountPaid,
+      balanceDue: Math.max(0, order.total - order.amountPaid),
       shippingAddress: order.shippingAddress,
+      customer: this.customerOf(order),
       notes: order.notes,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
+    };
+  }
+
+  private static customerOf(order: any): { name: string | null; email: string | null } {
+    const address = (order.shippingAddress ?? {}) as {
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+    };
+    const addressName = [address.firstName, address.lastName].filter(Boolean).join(' ');
+    return {
+      name: order.user?.name || addressName || null,
+      email: order.user?.email || address.email || null,
     };
   }
 }

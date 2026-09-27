@@ -3,6 +3,7 @@ import Link from '@/components/common/Link';
 import Image from '@/components/common/Image';
 import { QuantityStepper } from '@/components/ui/quantity-stepper';
 import { formatRwf } from '@/lib/pricing';
+import { formatVariant } from '@/lib/checkout';
 import type { CartItem } from '@/store/useCartStore';
 
 interface CartLineItemProps {
@@ -13,7 +14,7 @@ interface CartLineItemProps {
 
 export function CartLineItem({ item, onQuantityChange, onRemove }: CartLineItemProps) {
   const href = `/shop/${item.id}`;
-  const variants = [item.size && `Size ${item.size}`, item.color && item.color].filter(Boolean);
+  const variant = formatVariant(item);
 
   return (
     <li className="flex gap-4 py-6 first:pt-0 sm:gap-6">
@@ -45,9 +46,7 @@ export function CartLineItem({ item, onQuantityChange, onRemove }: CartLineItemP
             >
               {item.name}
             </Link>
-            {variants.length > 0 && (
-              <p className="mt-1 text-sm text-muted-foreground">{variants.join(' · ')}</p>
-            )}
+            {variant && <p className="mt-1 text-sm text-muted-foreground">{variant}</p>}
             <p className="mt-1 text-sm tabular-nums text-muted-foreground">
               {formatRwf(item.price)}
               {item.quantity > 1 && <span> each</span>}

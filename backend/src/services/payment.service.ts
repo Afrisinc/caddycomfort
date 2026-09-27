@@ -1,7 +1,15 @@
 import prisma from '../config/database';
-import { OrderStatus, PaymentStatus } from '@prisma/client';
+import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 import { paymentClient } from '../utils/payment/payment-client';
 import { logger } from '../config/logger';
+import {
+  ONLINE_METHODS,
+  isCashOnDelivery,
+  isOnlinePaymentSettled,
+  onlineAmountDue,
+  onlineChannel,
+  successfulPaymentUpdate,
+} from '../utils/payment/payment-rules';
 
 interface InitiatePaymentInput {
   email?: string;
@@ -41,21 +49,22 @@ export class PaymentService {
       throw new Error('Unauthorized');
     }
 
-    if (order.paymentStatus === 'PAID') {
-      throw new Error('Order is already paid');
+    if (isOnlinePaymentSettled(order.paymentStatus)) {
+      throw new Error(
+        isCashOnDelivery(order) ? 'Deposit is already paid' : 'Order is already paid',
+      );
     }
 
-    if (order.paymentMethod === 'CASH_ON_DELIVERY') {
+    const channel = onlineChannel(order);
+    if (!channel) {
       return { method: 'NONE', message: 'Cash on delivery — no online payment required' };
     }
 
-    if (
-      order.paymentMethod !== 'CREDIT_CARD' &&
-      order.paymentMethod !== 'DEBIT_CARD' &&
-      order.paymentMethod !== 'MOBILE_MONEY'
-    ) {
-      throw new Error(`${order.paymentMethod} is not supported for online payment`);
+    if (!ONLINE_METHODS.includes(channel)) {
+      throw new Error(`${channel} is not supported for online payment`);
     }
+
+    const amount = onlineAmountDue(order);
 
     if (!paymentClient) {
       throw new Error('Payment service is not configured');
@@ -65,16 +74,18 @@ export class PaymentService {
       input.customerName ||
       [order.user.firstName, order.user.lastName].filter(Boolean).join(' ') ||
       undefined;
-    const description = `Order ${order.orderNumber}`;
+    const description = isCashOnDelivery(order)
+      ? `Deposit for order ${order.orderNumber}`
+      : `Order ${order.orderNumber}`;
 
-    if (order.paymentMethod === 'MOBILE_MONEY') {
+    if (channel === 'MOBILE_MONEY') {
       if (!input.phoneNumber) {
         throw new Error('Phone number is required for mobile money payment');
       }
 
       const mobile = await paymentClient.mobileCashin({
         orderId: order.orderNumber,
-        amount: Math.round(order.total),
+        amount: Math.round(amount),
         phoneNumber: input.phoneNumber,
         customerName,
         description,
@@ -102,7 +113,7 @@ export class PaymentService {
 
     const card = await paymentClient.initiateCardPayment({
       orderId: order.orderNumber,
-      amount: Math.round(order.total * 100),
+      amount: Math.round(amount * 100),
       email,
       currency: 'RWF',
       customerName,
@@ -149,8 +160,13 @@ export class PaymentService {
     paymentStatus: PaymentStatus;
     paymentIntentId: string | null;
     status: OrderStatus;
+    paymentMethod: PaymentMethod;
+    depositMethod: PaymentMethod | null;
+    depositAmount: number;
+    amountPaid: number;
+    total: number;
   }): Promise<PaymentStatusResult> {
-    if (order.paymentStatus === 'PAID') {
+    if (isOnlinePaymentSettled(order.paymentStatus)) {
       return {
         status: 'SUCCESSFUL',
         paymentStatus: order.paymentStatus,
@@ -171,10 +187,7 @@ export class PaymentService {
     if (gatewayStatus.status === 'SUCCESSFUL') {
       const updated = await prisma.order.update({
         where: { id: order.id },
-        data: {
-          paymentStatus: 'PAID',
-          status: order.status === 'PENDING' ? 'PROCESSING' : order.status,
-        },
+        data: successfulPaymentUpdate(order),
       });
 
       logger.info({ orderId: order.id, orderNumber: order.orderNumber }, 'Order payment confirmed');
