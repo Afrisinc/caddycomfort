@@ -53,7 +53,7 @@ export class LoginAttemptService {
             userId: outcome.userId,
             success: outcome.success,
             reason: outcome.reason,
-            ipAddress: context.ipAddress?.slice(0, 64),
+            ipAddress: context.ipAddress?.replace(/^::ffff:/, '').slice(0, 64),
             userAgent: context.userAgent?.slice(0, 512),
           },
         }),

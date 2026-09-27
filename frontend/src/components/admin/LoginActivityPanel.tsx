@@ -69,6 +69,7 @@ const COLUMNS = [
 ] as const;
 
 const KEEP_PARAMS = ['tab', 'range'];
+const LOCAL_IPS = new Set(['::1', '127.0.0.1']);
 
 const isRange = (value: string): value is LoginRange => RANGES.some((r) => r.value === value);
 
@@ -186,7 +187,7 @@ export function LoginActivityPanel() {
                 title="Show all attempts from this IP"
                 className="rounded font-mono text-xs text-foreground/80 outline-none hover:text-accent-rose hover:underline focus-visible:ring-2 focus-visible:ring-accent-rose/40"
               >
-                {attempt.ipAddress}
+                {LOCAL_IPS.has(attempt.ipAddress) ? 'Localhost' : attempt.ipAddress}
               </button>
             ) : (
               <span className="text-muted-foreground">—</span>
@@ -248,7 +249,7 @@ export function LoginActivityPanel() {
   };
 
   return (
-    <section aria-labelledby="login-activity-title" className="space-y-6">
+    <section aria-labelledby="login-activity-title" className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
           <Heading as="h2" size="sm" id="login-activity-title">
