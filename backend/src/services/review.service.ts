@@ -1,5 +1,6 @@
 import { Review } from '@prisma/client';
 import prisma from '../config/database';
+import { CACHE_TTL, cache } from '../utils/cache';
 
 interface CreateReviewData {
   productId: string;
@@ -67,6 +68,12 @@ export class ReviewService {
    * Get reviews for a product
    */
   static async getProductReviews(productId: string) {
+    return cache.getOrSet('reviews', ['product', productId], CACHE_TTL.medium, () =>
+      this.loadProductReviews(productId),
+    );
+  }
+
+  private static async loadProductReviews(productId: string) {
     const reviews = await this.getAll({ productId });
 
     // Calculate statistics
@@ -82,6 +89,12 @@ export class ReviewService {
    * Get product review statistics
    */
   static async getProductReviewStats(productId: string) {
+    return cache.getOrSet('reviews', ['stats', productId], CACHE_TTL.medium, () =>
+      this.loadProductReviewStats(productId),
+    );
+  }
+
+  private static async loadProductReviewStats(productId: string) {
     const reviews = await prisma.review.findMany({
       where: { productId },
       select: { rating: true },
@@ -206,7 +219,7 @@ export class ReviewService {
       },
     });
 
-    return prisma.review.create({
+    const result = await prisma.review.create({
       data: {
         userId,
         productId,
@@ -217,6 +230,8 @@ export class ReviewService {
         isVerified: !!hasPurchased,
       },
     });
+    await cache.invalidate('reviews', 'products');
+    return result;
   }
 
   /**
@@ -240,10 +255,12 @@ export class ReviewService {
       throw new Error('Rating must be between 1 and 5');
     }
 
-    return prisma.review.update({
+    const result = await prisma.review.update({
       where: { id: reviewId },
       data,
     });
+    await cache.invalidate('reviews', 'products');
+    return result;
   }
 
   /**
@@ -264,6 +281,7 @@ export class ReviewService {
     await prisma.review.delete({
       where: { id: reviewId },
     });
+    await cache.invalidate('reviews', 'products');
   }
 
   /**
@@ -281,6 +299,7 @@ export class ReviewService {
     await prisma.review.delete({
       where: { id: reviewId },
     });
+    await cache.invalidate('reviews', 'products');
   }
 
   /**
@@ -295,10 +314,12 @@ export class ReviewService {
       throw new Error('Review not found');
     }
 
-    return prisma.review.update({
+    const result = await prisma.review.update({
       where: { id: reviewId },
       data: { isVerified },
     });
+    await cache.invalidate('reviews', 'products');
+    return result;
   }
 
   /**

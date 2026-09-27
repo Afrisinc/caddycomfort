@@ -1,6 +1,7 @@
 import { Category } from '@prisma/client';
 import { uploadBase64Image, deleteImage, isValidBase64Image } from '../utils/cloudinary';
 import prisma from '../config/database';
+import { CACHE_TTL, cache } from '../utils/cache';
 
 interface CreateCategoryData {
   name: string;
@@ -76,7 +77,7 @@ export class CategoryService {
       }
     }
 
-    return prisma.category.create({
+    const result = await prisma.category.create({
       data: {
         ...data,
         image: imageUrl,
@@ -86,12 +87,20 @@ export class CategoryService {
         children: true,
       },
     });
+    await cache.invalidate('categories', 'products');
+    return result;
   }
 
   /**
    * Get all categories with optional filters
    */
   static async getAll(options?: { includeChildren?: boolean; parentId?: string | null }) {
+    return cache.getOrSet('categories', ['list', options ?? {}], CACHE_TTL.medium, () =>
+      this.loadAll(options),
+    );
+  }
+
+  private static async loadAll(options?: { includeChildren?: boolean; parentId?: string | null }) {
     const { includeChildren = true, parentId } = options || {};
 
     const where = parentId !== undefined ? { parentId } : {};
@@ -115,6 +124,10 @@ export class CategoryService {
    * Get category by ID
    */
   static async getById(id: string) {
+    return cache.getOrSet('categories', ['id', id], CACHE_TTL.medium, () => this.loadById(id));
+  }
+
+  private static async loadById(id: string) {
     const category = await prisma.category.findUnique({
       where: { id },
       include: {
@@ -142,6 +155,12 @@ export class CategoryService {
    * Get category by slug
    */
   static async getBySlug(slug: string) {
+    return cache.getOrSet('categories', ['slug', slug], CACHE_TTL.medium, () =>
+      this.loadBySlug(slug),
+    );
+  }
+
+  private static async loadBySlug(slug: string) {
     const category = await prisma.category.findUnique({
       where: { slug },
       include: {
@@ -239,7 +258,7 @@ export class CategoryService {
       }
     }
 
-    return prisma.category.update({
+    const result = await prisma.category.update({
       where: { id },
       data: {
         ...data,
@@ -250,6 +269,8 @@ export class CategoryService {
         children: true,
       },
     });
+    await cache.invalidate('categories', 'products');
+    return result;
   }
 
   /**
@@ -291,12 +312,17 @@ export class CategoryService {
     await prisma.category.delete({
       where: { id },
     });
+    await cache.invalidate('categories', 'products');
   }
 
   /**
    * Get category tree (hierarchical structure)
    */
   static async getTree() {
+    return cache.getOrSet('categories', ['tree'], CACHE_TTL.medium, () => this.loadTree());
+  }
+
+  private static async loadTree() {
     // Get all root categories (no parent)
     const rootCategories = await prisma.category.findMany({
       where: { parentId: null },

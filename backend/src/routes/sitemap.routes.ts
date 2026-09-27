@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import prisma from '../config/database';
 import { logger } from '../config/logger';
+import { CACHE_TTL, cache } from '../utils/cache';
 
 const router = Router();
 
@@ -36,27 +37,30 @@ const urlEntry = (loc: string, lastmod?: Date, changefreq?: string, priority?: s
     .join('\n');
 
 // Served at /sitemap.xml by the frontend nginx, which proxies here.
+async function buildSitemap(): Promise<string> {
+  const [products, categories] = await Promise.all([
+    prisma.product.findMany({
+      where: { isActive: true },
+      select: { id: true, updatedAt: true },
+      orderBy: { updatedAt: 'desc' },
+    }),
+    prisma.category.findMany({ select: { slug: true, updatedAt: true } }),
+  ]);
+
+  const entries = [
+    ...STATIC_PATHS.map((p) => urlEntry(p.path, undefined, p.changefreq, p.priority)),
+    ...categories.map((c) =>
+      urlEntry(`/shop?category=${encodeURIComponent(c.slug)}`, c.updatedAt, 'weekly', '0.7'),
+    ),
+    ...products.map((p) => urlEntry(`/shop/${p.id}`, p.updatedAt, 'weekly', '0.8')),
+  ];
+
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join('\n')}\n</urlset>\n`;
+}
+
 router.get('/', async (_req, res) => {
   try {
-    const [products, categories] = await Promise.all([
-      prisma.product.findMany({
-        where: { isActive: true },
-        select: { id: true, updatedAt: true },
-        orderBy: { updatedAt: 'desc' },
-      }),
-      prisma.category.findMany({ select: { slug: true, updatedAt: true } }),
-    ]);
-
-    const entries = [
-      ...STATIC_PATHS.map((p) => urlEntry(p.path, undefined, p.changefreq, p.priority)),
-      ...categories.map((c) =>
-        urlEntry(`/shop?category=${encodeURIComponent(c.slug)}`, c.updatedAt, 'weekly', '0.7'),
-      ),
-      ...products.map((p) => urlEntry(`/shop/${p.id}`, p.updatedAt, 'weekly', '0.8')),
-    ];
-
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join('\n')}\n</urlset>\n`;
-
+    const xml = await cache.getOrSet('products', ['sitemap'], CACHE_TTL.long, buildSitemap);
     res.set('Content-Type', 'application/xml; charset=utf-8');
     res.set('Cache-Control', 'public, max-age=3600');
     res.send(xml);

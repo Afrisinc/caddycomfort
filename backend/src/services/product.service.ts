@@ -6,6 +6,7 @@ import {
   isValidBase64Image,
 } from '../utils/cloudinary';
 import prisma from '../config/database';
+import { CACHE_TTL, cache } from '../utils/cache';
 
 interface CreateProductData {
   name: string;
@@ -158,6 +159,7 @@ export class ProductService {
       },
     });
 
+    await cache.invalidate('products', 'categories');
     return product;
   }
 
@@ -165,6 +167,12 @@ export class ProductService {
    * Get all products with filters and pagination
    */
   static async getAll(filters?: ProductFilters, pagination?: PaginationOptions) {
+    return cache.getOrSet('products', ['list', filters, pagination], CACHE_TTL.medium, () =>
+      this.loadAll(filters, pagination),
+    );
+  }
+
+  private static async loadAll(filters?: ProductFilters, pagination?: PaginationOptions) {
     const {
       categoryId,
       categorySlug,
@@ -275,6 +283,10 @@ export class ProductService {
    * Get product by ID
    */
   static async getById(id: string) {
+    return cache.getOrSet('products', ['id', id], CACHE_TTL.medium, () => this.loadById(id));
+  }
+
+  private static async loadById(id: string) {
     const product = await prisma.product.findUnique({
       where: { id },
       include: {
@@ -323,6 +335,12 @@ export class ProductService {
    * Get product by slug
    */
   static async getBySlug(slug: string) {
+    return cache.getOrSet('products', ['slug', slug], CACHE_TTL.medium, () =>
+      this.loadBySlug(slug),
+    );
+  }
+
+  private static async loadBySlug(slug: string) {
     const product = await prisma.product.findUnique({
       where: { slug },
       include: {
@@ -462,6 +480,7 @@ export class ProductService {
       },
     });
 
+    await cache.invalidate('products', 'categories');
     return updated;
   }
 
@@ -508,6 +527,7 @@ export class ProductService {
     await prisma.product.delete({
       where: { id },
     });
+    await cache.invalidate('products', 'categories');
   }
 
   /**
@@ -553,6 +573,7 @@ export class ProductService {
       },
     });
 
+    await cache.invalidate('products');
     return updated;
   }
 
@@ -571,6 +592,12 @@ export class ProductService {
    * Get featured products
    */
   static async getFeatured(limit = 10) {
+    return cache.getOrSet('products', ['featured', limit], CACHE_TTL.medium, () =>
+      this.loadFeatured(limit),
+    );
+  }
+
+  private static async loadFeatured(limit = 10) {
     return prisma.product.findMany({
       where: {
         isFeatured: true,
@@ -645,16 +672,27 @@ export class ProductService {
    * Bulk update products
    */
   static async bulkUpdate(productIds: string[], data: UpdateProductData) {
-    return prisma.product.updateMany({
+    const result = await prisma.product.updateMany({
       where: { id: { in: productIds } },
       data,
     });
+    await cache.invalidate('products', 'categories');
+    return result;
   }
 
   /**
    * Search products
    */
   static async search(query: string, limit = 20) {
+    return cache.getOrSet(
+      'products',
+      ['search', query.trim().toLowerCase(), limit],
+      CACHE_TTL.short,
+      () => this.loadSearch(query, limit),
+    );
+  }
+
+  private static async loadSearch(query: string, limit = 20) {
     return prisma.product.findMany({
       where: {
         OR: [

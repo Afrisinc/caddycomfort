@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { logger } from './config/logger';
+import prisma from './config/database';
+import { closeRedis } from './config/redis';
 import { requestLogger } from './middleware/logger.middleware';
 import { errorHandler, notFound } from './middleware/error.middleware';
 import routes from './routes';
@@ -63,10 +65,21 @@ app.use('/api', routes);
 app.use(notFound);
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   logger.info(`🚀 Server is running on port ${PORT}`);
   logger.info(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
   logger.info(`🔒 CORS enabled for: ${process.env.CORS_ORIGIN || 'http://localhost:3000'}`);
 
   initializePaymentReconciliationJob();
 });
+
+const shutdown = (signal: string) => {
+  logger.info(`${signal} received, shutting down`);
+  server.close(async () => {
+    await Promise.allSettled([closeRedis(), prisma.$disconnect()]);
+    process.exit(0);
+  });
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

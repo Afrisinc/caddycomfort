@@ -1,4 +1,5 @@
 import prisma from '../config/database';
+import { cache } from '../utils/cache';
 import { Prisma, OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 import { DEPOSIT_METHODS, calculateDeposit } from '../utils/payment/payment-rules';
 
@@ -233,6 +234,7 @@ export class OrderService {
       return newOrder;
     });
 
+    await cache.invalidate('products');
     return this.formatOrderResponse(order);
   }
 
@@ -480,6 +482,7 @@ export class OrderService {
       },
     });
 
+    if (status === 'CANCELLED') await cache.invalidate('products');
     return this.formatOrderResponse(updatedOrder);
   }
 

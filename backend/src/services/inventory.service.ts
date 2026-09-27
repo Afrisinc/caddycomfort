@@ -1,4 +1,5 @@
 import prisma from '../config/database';
+import { cache } from '../utils/cache';
 import { Prisma, InventoryLogType } from '@prisma/client';
 
 export interface StockAdjustmentInput {
@@ -160,6 +161,7 @@ export class InventoryService {
         },
       }),
     ]);
+    await cache.invalidate('products');
 
     return {
       product: updatedProduct,
