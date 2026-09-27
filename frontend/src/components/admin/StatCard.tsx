@@ -28,7 +28,7 @@ export interface StatCardProps {
 }
 
 const cardBase =
-  'relative flex flex-col rounded-xl border bg-card p-5 text-card-foreground shadow-xs';
+  'relative flex items-center gap-3.5 rounded-xl border bg-card px-4 py-3.5 text-card-foreground shadow-xs';
 
 export function StatCard({
   title,
@@ -41,29 +41,36 @@ export function StatCard({
 }: StatCardProps) {
   const body = (
     <>
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-sm font-medium text-muted-foreground">{title}</p>
-        <span
-          className={cn(
-            'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform duration-200',
-            href && 'group-hover:scale-105',
-            toneStyles[tone],
-          )}
-        >
-          <Icon className="h-4.5 w-4.5" aria-hidden="true" />
-        </span>
-      </div>
-      <p className="mt-3 truncate text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
-      {(hint || href) && (
-        <div className="mt-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-          <span className="truncate">{hint}</span>
-          {href && (
-            <ArrowUpRight
-              aria-hidden="true"
-              className="h-4 w-4 shrink-0 opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100 group-focus-visible:opacity-100"
-            />
+      <span
+        className={cn(
+          'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-transform duration-200',
+          href && 'group-hover:scale-105',
+          toneStyles[tone],
+        )}
+      >
+        <Icon className="h-5 w-5" aria-hidden="true" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-xs font-medium text-muted-foreground">{title}</p>
+        <div className="mt-0.5 flex min-w-0 items-baseline gap-2">
+          <p className="shrink-0 text-xl leading-7 font-semibold tracking-tight tabular-nums">
+            {value}
+          </p>
+          {hint && (
+            <p
+              className="min-w-0 truncate text-xs text-muted-foreground"
+              title={typeof hint === 'string' ? hint : undefined}
+            >
+              {hint}
+            </p>
           )}
         </div>
+      </div>
+      {href && (
+        <ArrowUpRight
+          aria-hidden="true"
+          className="absolute top-2.5 right-2.5 h-3.5 w-3.5 text-muted-foreground opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100 group-focus-visible:opacity-100"
+        />
       )}
     </>
   );
@@ -74,7 +81,7 @@ export function StatCard({
         href={href}
         className={cn(
           cardBase,
-          'group outline-none transition-all duration-200 hover:-translate-y-0.5 hover:border-accent-rose/30 hover:shadow-md focus-visible:ring-2 focus-visible:ring-accent-rose/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+          'group outline-none transition-all duration-200 hover:border-accent-rose/30 hover:shadow-md focus-visible:ring-2 focus-visible:ring-accent-rose/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
           className,
         )}
       >
@@ -89,12 +96,11 @@ export function StatCard({
 export function StatCardSkeleton({ className }: { readonly className?: string }) {
   return (
     <div className={cn(cardBase, className)} aria-hidden="true">
-      <div className="flex items-start justify-between">
-        <Skeleton className="h-4 w-24" />
-        <Skeleton className="h-9 w-9 rounded-lg" />
+      <Skeleton className="h-10 w-10 shrink-0 rounded-lg" />
+      <div className="flex-1 space-y-2">
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="h-5 w-28" />
       </div>
-      <Skeleton className="mt-3 h-8 w-28" />
-      <Skeleton className="mt-2 h-3 w-20" />
     </div>
   );
 }
@@ -115,7 +121,7 @@ interface StatGridProps {
 export function StatGrid({ columns = 4, loading, children, className }: StatGridProps) {
   return (
     <div
-      className={cn('mb-8 grid grid-cols-1 gap-4 sm:gap-6', gridCols[columns], className)}
+      className={cn('mb-6 grid grid-cols-1 gap-3 sm:gap-4', gridCols[columns], className)}
       aria-busy={loading || undefined}
     >
       {loading ? Array.from({ length: columns }, (_, i) => <StatCardSkeleton key={i} />) : children}
