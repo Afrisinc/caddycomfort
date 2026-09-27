@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Banknote, Clock, PackageCheck, RefreshCw, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { CellMeta, CellTitle, DataCell, DataRow, DataTable } from '@/components/ui/data-table';
 import {
   Select,
   SelectContent,
@@ -30,6 +30,16 @@ import {
 } from '@/lib/orderStatus';
 import type { Order, OrderStatus, PaymentStatus } from '@/types/api';
 import { SearchInput } from '@/components/ui/search-input';
+
+const COLUMNS = [
+  { key: 'order', label: 'Order' },
+  { key: 'customer', label: 'Customer' },
+  { key: 'total', label: 'Total', align: 'right' },
+  { key: 'payment', label: 'Payment' },
+  { key: 'collect', label: 'Cash to collect', align: 'right' },
+  { key: 'status', label: 'Status' },
+  { key: 'actions', label: 'Actions', hideLabel: true },
+] as const;
 
 function cashToCollect(order: Order): number {
   if (order.paymentMethod !== 'CASH_ON_DELIVERY') return 0;
@@ -94,51 +104,36 @@ function OrdersManagement() {
 
   const needsAction = (stats?.byStatus.PENDING ?? 0) + (stats?.byStatus.PROCESSING ?? 0);
 
-  const renderRows = () => {
-    if (loading) {
-      return Array.from({ length: 6 }, (_, i) => (
-        <tr key={i} className="border-b">
-          <td colSpan={7} className="p-4">
-            <Skeleton className="h-6 w-full" />
-          </td>
-        </tr>
-      ));
-    }
-    return orders.map((order) => {
+  const renderRows = () =>
+    orders.map((order) => {
       const collect = cashToCollect(order);
       return (
-        <tr key={order.id} className="border-b transition-colors last:border-0 hover:bg-muted/40">
-          <td className="p-4">
-            <p className="font-medium">{order.orderNumber}</p>
-            <p className="text-xs text-muted-foreground">
+        <DataRow key={order.id}>
+          <DataCell>
+            <CellTitle mono>{order.orderNumber}</CellTitle>
+            <CellMeta>
               {new Date(order.createdAt).toLocaleDateString(undefined, {
                 month: 'short',
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
               })}
-            </p>
-          </td>
-          <td className="p-4">
-            <p className="max-w-48 truncate text-sm font-medium">
-              {order.customer?.name || 'Customer'}
-            </p>
-            <p className="max-w-48 truncate text-xs text-muted-foreground">
-              {order.customer?.email}
-            </p>
-          </td>
-          <td className="p-4 text-right text-sm font-semibold tabular-nums">
+            </CellMeta>
+          </DataCell>
+          <DataCell>
+            <CellTitle className="max-w-48">{order.customer?.name || 'Customer'}</CellTitle>
+            <CellMeta className="max-w-48">{order.customer?.email}</CellMeta>
+          </DataCell>
+          <DataCell align="right" numeric strong>
             {formatRwf(order.total)}
-          </td>
-          <td className="p-4">
+          </DataCell>
+          <DataCell>
             <div className="flex flex-col items-start gap-1">
               <PaymentStatusBadge status={order.paymentStatus} />
-              <span className="text-xs text-muted-foreground">
-                {PAYMENT_METHOD_NAMES[order.paymentMethod]}
-              </span>
+              <CellMeta>{PAYMENT_METHOD_NAMES[order.paymentMethod]}</CellMeta>
             </div>
-          </td>
-          <td className="p-4 text-right text-sm tabular-nums">
+          </DataCell>
+          <DataCell align="right" numeric>
             {collect > 0 ? (
               <span className="font-semibold text-amber-700 dark:text-amber-400">
                 {formatRwf(collect)}
@@ -146,11 +141,11 @@ function OrdersManagement() {
             ) : (
               <span className="text-muted-foreground">—</span>
             )}
-          </td>
-          <td className="p-4">
+          </DataCell>
+          <DataCell>
             <OrderStatusBadge status={order.status} />
-          </td>
-          <td className="p-4 text-right">
+          </DataCell>
+          <DataCell align="right">
             <Button
               variant="outline"
               size="sm"
@@ -159,11 +154,10 @@ function OrdersManagement() {
             >
               Manage
             </Button>
-          </td>
-        </tr>
+          </DataCell>
+        </DataRow>
       );
     });
-  };
 
   const renderTable = () => {
     if (loadFailed) {
@@ -201,26 +195,9 @@ function OrdersManagement() {
       );
     }
     return (
-      <div className="overflow-hidden rounded-2xl border bg-card">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-224">
-            <thead className="border-b bg-muted/40 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="p-4 font-medium">Order</th>
-                <th className="p-4 font-medium">Customer</th>
-                <th className="p-4 text-right font-medium">Total</th>
-                <th className="p-4 font-medium">Payment</th>
-                <th className="p-4 text-right font-medium">Cash to collect</th>
-                <th className="p-4 font-medium">Status</th>
-                <th className="p-4">
-                  <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>{renderRows()}</tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable columns={COLUMNS} label="Orders" loading={loading} minWidth="min-w-224">
+        {renderRows()}
+      </DataTable>
     );
   };
 

@@ -18,7 +18,8 @@ import Link from '@/components/common/Link';
 import { ImageThumbnail } from '@/components/common/ImageThumbnail';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { CellMeta, CellTitle, DataCell, DataRow, DataTable } from '@/components/ui/data-table';
+import { StatusPill } from '@/components/ui/status-pill';
 import { SearchInput } from '@/components/ui/search-input';
 import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog';
 import {
@@ -51,6 +52,14 @@ import { cn } from '@/lib/utils';
 import type { Category, Product, ProductFilters } from '@/types/api';
 
 const LOW_STOCK = 10;
+const COLUMNS = [
+  { key: 'product', label: 'Product' },
+  { key: 'category', label: 'Category' },
+  { key: 'price', label: 'Price' },
+  { key: 'stock', label: 'Stock', align: 'right' },
+  { key: 'status', label: 'Status' },
+  { key: 'actions', label: 'Actions', hideLabel: true },
+] as const;
 const NO_CATEGORIES: Category[] = [];
 
 type Stats = Awaited<ReturnType<typeof productsApi.getStats>>;
@@ -136,65 +145,41 @@ function ProductsManagement() {
       ? `This product appears in ${orderCount} order${orderCount === 1 ? '' : 's'}, so it can't be deleted. Hide it from the shop instead.`
       : null;
 
-  const renderRows = () => {
-    if (loading) {
-      return Array.from({ length: 6 }, (_, i) => (
-        <tr key={i} className="border-b last:border-0">
-          <td colSpan={6} className="p-4">
-            <Skeleton className="h-10 w-full" />
-          </td>
-        </tr>
-      ));
-    }
-    return products.map((product) => {
+  const renderRows = () =>
+    products.map((product) => {
       const href = `/admin/products/${product.slug || product.id}`;
       const images = product.images?.length ? product.images : [product.imageUrl];
       return (
-        <tr key={product.id} className="border-b transition-colors last:border-0 hover:bg-muted/40">
-          <td className="p-4">
+        <DataRow key={product.id}>
+          <DataCell>
             <div className="flex items-center gap-3">
               <ImageThumbnail images={images} alt={product.name} fallbackIcon={Package} />
               <div className="min-w-0">
-                <Link
-                  href={href}
-                  className="block max-w-72 truncate font-medium outline-none hover:text-accent-rose focus-visible:underline"
-                >
-                  {product.name}
-                </Link>
-                <p className="font-mono text-xs text-muted-foreground">{product.sku}</p>
+                <CellTitle href={href}>{product.name}</CellTitle>
+                <CellMeta mono>{product.sku}</CellMeta>
               </div>
             </div>
-          </td>
-          <td className="p-4 text-sm">{product.category?.name ?? '—'}</td>
-          <td className="p-4">
+          </DataCell>
+          <DataCell>{product.category?.name ?? '—'}</DataCell>
+          <DataCell>
             <PriceDisplay pricing={getProductPricing(product)} size="sm" className="gap-x-2" />
-          </td>
-          <td
-            className={cn(
-              'p-4 text-right text-sm font-medium tabular-nums',
-              stockTone(product.stockQuantity),
-            )}
+          </DataCell>
+          <DataCell
+            align="right"
+            numeric
+            className={cn('font-medium', stockTone(product.stockQuantity))}
           >
             {product.stockQuantity}
-          </td>
-          <td className="p-4">
-            <span
-              className={cn(
-                'inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium',
-                product.isActive
-                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
-                  : 'bg-muted text-muted-foreground',
-              )}
-            >
-              {product.isActive ? 'Active' : 'Draft'}
-            </span>
-            {product.isFeatured && (
-              <span className="ml-1.5 inline-flex rounded-full bg-accent-rose/10 px-2.5 py-0.5 text-xs font-medium text-accent-rose">
-                Featured
-              </span>
-            )}
-          </td>
-          <td className="p-4 text-right">
+          </DataCell>
+          <DataCell>
+            <div className="flex flex-wrap gap-1.5">
+              <StatusPill tone={product.isActive ? 'green' : 'neutral'}>
+                {product.isActive ? 'Active' : 'Draft'}
+              </StatusPill>
+              {product.isFeatured && <StatusPill tone="rose">Featured</StatusPill>}
+            </div>
+          </DataCell>
+          <DataCell align="right">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" aria-label={`Actions for ${product.name}`}>
@@ -238,11 +223,10 @@ function ProductsManagement() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </td>
-        </tr>
+          </DataCell>
+        </DataRow>
       );
     });
-  };
 
   const renderTable = () => {
     if (loadFailed) {
@@ -284,25 +268,9 @@ function ProductsManagement() {
       );
     }
     return (
-      <div className="overflow-hidden rounded-2xl border bg-card">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-208">
-            <thead className="border-b bg-muted/40 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="p-4 font-medium">Product</th>
-                <th className="p-4 font-medium">Category</th>
-                <th className="p-4 font-medium">Price</th>
-                <th className="p-4 text-right font-medium">Stock</th>
-                <th className="p-4 font-medium">Status</th>
-                <th className="p-4">
-                  <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>{renderRows()}</tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable columns={COLUMNS} label="Products" loading={loading} minWidth="min-w-208">
+        {renderRows()}
+      </DataTable>
     );
   };
 

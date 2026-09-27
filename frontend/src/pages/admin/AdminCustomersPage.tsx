@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import Link from '@/components/common/Link';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { CellMeta, CellTitle, DataCell, DataRow, DataTable } from '@/components/ui/data-table';
 import { SearchInput } from '@/components/ui/search-input';
 import {
   DropdownMenu,
@@ -44,6 +44,15 @@ import { ADMIN_PAGE_SIZE } from '@/lib/pagination';
 import { formatRwf } from '@/lib/pricing';
 import { formatRelativeTime } from '@/lib/utils';
 import type { Customer, CustomerStats, CustomerStatus } from '@/types/api';
+
+const COLUMNS = [
+  { key: 'customer', label: 'Customer' },
+  { key: 'phone', label: 'Phone' },
+  { key: 'orders', label: 'Orders', align: 'right' },
+  { key: 'spent', label: 'Total spent', align: 'right' },
+  { key: 'status', label: 'Status' },
+  { key: 'actions', label: 'Actions', hideLabel: true },
+] as const;
 
 function CustomersManagement() {
   const { get, query, search, setSearch, setFilter, page, setPage, clearFilters, hasFilters } =
@@ -108,46 +117,31 @@ function CustomersManagement() {
     }
   };
 
-  const renderRows = () => {
-    if (loading) {
-      return Array.from({ length: 6 }, (_, i) => (
-        <tr key={i} className="border-b last:border-0">
-          <td colSpan={6} className="p-4">
-            <Skeleton className="h-9 w-full" />
-          </td>
-        </tr>
-      ));
-    }
-    return customers.map((customer) => {
+  const renderRows = () =>
+    customers.map((customer) => {
       const busy = togglingId === customer.id;
       return (
-        <tr
-          key={customer.id}
-          className="border-b transition-colors last:border-0 hover:bg-muted/40"
-        >
-          <td className="p-4">
-            <Link
-              href={`/admin/customers/${customer.id}`}
-              className="block max-w-56 truncate font-medium outline-none hover:text-accent-rose focus-visible:underline"
-            >
+        <DataRow key={customer.id}>
+          <DataCell>
+            <CellTitle href={`/admin/customers/${customer.id}`} className="max-w-56">
               {customer.name}
-            </Link>
-            <p className="max-w-56 truncate text-xs text-muted-foreground">{customer.email}</p>
-          </td>
-          <td className="p-4 text-sm text-muted-foreground">{customer.phone || '—'}</td>
-          <td className="p-4 text-right text-sm tabular-nums">
-            <p className="font-medium">{customer.ordersCount}</p>
-            <p className="text-xs text-muted-foreground">
+            </CellTitle>
+            <CellMeta className="max-w-56">{customer.email}</CellMeta>
+          </DataCell>
+          <DataCell muted>{customer.phone || '—'}</DataCell>
+          <DataCell align="right" numeric>
+            <CellTitle>{customer.ordersCount}</CellTitle>
+            <CellMeta>
               {customer.lastOrderAt ? formatRelativeTime(customer.lastOrderAt) : 'Never'}
-            </p>
-          </td>
-          <td className="p-4 text-right text-sm font-semibold tabular-nums">
+            </CellMeta>
+          </DataCell>
+          <DataCell align="right" numeric strong>
             {formatRwf(customer.totalSpent)}
-          </td>
-          <td className="p-4">
+          </DataCell>
+          <DataCell>
             <CustomerStatusBadge status={customer.status} />
-          </td>
-          <td className="p-4 text-right">
+          </DataCell>
+          <DataCell align="right">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -193,11 +187,10 @@ function CustomersManagement() {
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-          </td>
-        </tr>
+          </DataCell>
+        </DataRow>
       );
     });
-  };
 
   const renderTable = () => {
     if (loadFailed) {
@@ -235,25 +228,9 @@ function CustomersManagement() {
       );
     }
     return (
-      <div className="overflow-hidden rounded-2xl border bg-card">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-208">
-            <thead className="border-b bg-muted/40 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="p-4 font-medium">Customer</th>
-                <th className="p-4 font-medium">Phone</th>
-                <th className="p-4 text-right font-medium">Orders</th>
-                <th className="p-4 text-right font-medium">Total spent</th>
-                <th className="p-4 font-medium">Status</th>
-                <th className="p-4">
-                  <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>{renderRows()}</tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable columns={COLUMNS} label="Customers" loading={loading} minWidth="min-w-208">
+        {renderRows()}
+      </DataTable>
     );
   };
 

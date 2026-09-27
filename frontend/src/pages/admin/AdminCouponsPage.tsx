@@ -14,7 +14,8 @@ import {
 import Link from '@/components/common/Link';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { CellMeta, CellTitle, DataCell, DataRow, DataTable } from '@/components/ui/data-table';
+import { StatusPill, type StatusTone } from '@/components/ui/status-pill';
 import { SearchInput } from '@/components/ui/search-input';
 import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog';
 import {
@@ -40,20 +41,22 @@ import { ALL, useUrlFilters } from '@/hooks/useUrlFilters';
 import { couponsApi, type CouponStatus } from '@/lib/api';
 import { ADMIN_PAGE_SIZE } from '@/lib/pagination';
 import { formatRwf } from '@/lib/pricing';
-import { cn } from '@/lib/utils';
 import type { Coupon, CouponStats } from '@/types/api';
 
-const STATUS_STYLES: Record<CouponStatus, { label: string; className: string }> = {
-  active: {
-    label: 'Active',
-    className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300',
-  },
-  expired: {
-    label: 'Expired',
-    className: 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300',
-  },
-  inactive: { label: 'Paused', className: 'bg-muted text-muted-foreground' },
+const STATUS_STYLES: Record<CouponStatus, { label: string; tone: StatusTone }> = {
+  active: { label: 'Active', tone: 'green' },
+  expired: { label: 'Expired', tone: 'amber' },
+  inactive: { label: 'Paused', tone: 'neutral' },
 };
+
+const COLUMNS = [
+  { key: 'code', label: 'Code' },
+  { key: 'discount', label: 'Discount' },
+  { key: 'min', label: 'Min. spend', align: 'right' },
+  { key: 'usage', label: 'Usage', align: 'right' },
+  { key: 'status', label: 'Status' },
+  { key: 'actions', label: 'Actions', hideLabel: true },
+] as const;
 
 const STATUSES = Object.keys(STATUS_STYLES) as CouponStatus[];
 
@@ -125,67 +128,40 @@ function CouponsManagement() {
     loadStats();
   }, [loadStats]);
 
-  const renderRows = () => {
-    if (loading) {
-      return Array.from({ length: 6 }, (_, i) => (
-        <tr key={i} className="border-b last:border-0">
-          <td colSpan={6} className="p-4">
-            <Skeleton className="h-9 w-full" />
-          </td>
-        </tr>
-      ));
-    }
-    return coupons.map((coupon) => {
+  const renderRows = () =>
+    coupons.map((coupon) => {
       const style = STATUS_STYLES[couponStatus(coupon)];
       const editHref = `/admin/coupons/${coupon.id}/edit`;
       return (
-        <tr key={coupon.id} className="border-b transition-colors last:border-0 hover:bg-muted/40">
-          <td className="p-4">
-            <Link
-              href={editHref}
-              className="font-mono text-sm font-semibold tracking-wide text-accent-rose outline-none hover:underline focus-visible:underline"
-            >
+        <DataRow key={coupon.id}>
+          <DataCell>
+            <CellTitle href={editHref} mono className="tracking-wide text-accent-rose">
               {coupon.code}
-            </Link>
-            <p className="max-w-64 truncate text-xs text-muted-foreground">
-              {coupon.description || 'No description'}
-            </p>
-          </td>
-          <td className="p-4 text-sm">
-            <p className="font-medium">{discountLabel(coupon)}</p>
+            </CellTitle>
+            <CellMeta className="max-w-64">{coupon.description || 'No description'}</CellMeta>
+          </DataCell>
+          <DataCell>
+            <CellTitle>{discountLabel(coupon)}</CellTitle>
             {coupon.maxDiscountAmount ? (
-              <p className="text-xs text-muted-foreground">
-                Up to {formatRwf(coupon.maxDiscountAmount)}
-              </p>
+              <CellMeta>Up to {formatRwf(coupon.maxDiscountAmount)}</CellMeta>
             ) : null}
-          </td>
-          <td className="p-4 text-right text-sm tabular-nums">
-            {coupon.minPurchaseAmount ? (
-              formatRwf(coupon.minPurchaseAmount)
-            ) : (
-              <span className="text-muted-foreground">—</span>
-            )}
-          </td>
-          <td className="p-4 text-right text-sm tabular-nums">
+          </DataCell>
+          <DataCell align="right" numeric muted={!coupon.minPurchaseAmount}>
+            {coupon.minPurchaseAmount ? formatRwf(coupon.minPurchaseAmount) : '—'}
+          </DataCell>
+          <DataCell align="right" numeric>
             <span className="font-medium">{coupon.usedCount}</span>
             <span className="text-muted-foreground">
               {coupon.usageLimit ? ` / ${coupon.usageLimit}` : ' uses'}
             </span>
-          </td>
-          <td className="p-4">
-            <span
-              className={cn(
-                'inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium',
-                style.className,
-              )}
-            >
-              {style.label}
-            </span>
-            <p className="mt-1 text-xs text-muted-foreground">
+          </DataCell>
+          <DataCell>
+            <StatusPill tone={style.tone}>{style.label}</StatusPill>
+            <CellMeta className="mt-1">
               {coupon.validUntil ? `Ends ${formatDate(coupon.validUntil)}` : 'No end date'}
-            </p>
-          </td>
-          <td className="p-4 text-right">
+            </CellMeta>
+          </DataCell>
+          <DataCell align="right">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" aria-label={`Actions for ${coupon.code}`}>
@@ -215,11 +191,10 @@ function CouponsManagement() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </td>
-        </tr>
+          </DataCell>
+        </DataRow>
       );
     });
-  };
 
   const renderTable = () => {
     if (loadFailed) {
@@ -261,25 +236,9 @@ function CouponsManagement() {
       );
     }
     return (
-      <div className="overflow-hidden rounded-2xl border bg-card">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-208">
-            <thead className="border-b bg-muted/40 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="p-4 font-medium">Code</th>
-                <th className="p-4 font-medium">Discount</th>
-                <th className="p-4 text-right font-medium">Min. spend</th>
-                <th className="p-4 text-right font-medium">Usage</th>
-                <th className="p-4 font-medium">Status</th>
-                <th className="p-4">
-                  <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>{renderRows()}</tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable columns={COLUMNS} label="Coupons" loading={loading} minWidth="min-w-208">
+        {renderRows()}
+      </DataTable>
     );
   };
 

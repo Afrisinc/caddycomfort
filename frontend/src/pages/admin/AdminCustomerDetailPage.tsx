@@ -24,11 +24,19 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { InfoCardSkeleton } from '@/components/ui/info-card';
 import { customersApi } from '@/lib/api';
 import { CustomerDetail } from '@/types/api';
+import { CellTitle, DataCell, DataRow, DataTable } from '@/components/ui/data-table';
 import { ADMIN_PAGE_SIZE, pageCount, pageSlice } from '@/lib/pagination';
 import { formatRwf } from '@/lib/pricing';
 import { formatRelativeTime } from '@/lib/utils';
 import { toast } from 'sonner';
 import { OrderStatusBadge } from '@/components/orders/StatusBadge';
+
+const ORDER_COLUMNS = [
+  { key: 'order', label: 'Order' },
+  { key: 'date', label: 'Date' },
+  { key: 'total', label: 'Total', align: 'right' },
+  { key: 'status', label: 'Status' },
+] as const;
 
 function CustomerDetailView({ id }: { id: string }) {
   const router = useRouter();
@@ -202,45 +210,33 @@ function CustomerDetailView({ id }: { id: string }) {
               />
             ) : (
               <>
-                <div className="overflow-hidden rounded-xl border">
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-128">
-                      <thead className="border-b bg-muted/40 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        <tr>
-                          <th className="p-4 font-medium">Order</th>
-                          <th className="p-4 font-medium">Date</th>
-                          <th className="p-4 text-right font-medium">Total</th>
-                          <th className="p-4 font-medium">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {visibleOrders.map((order) => (
-                          <tr
-                            key={order.id}
-                            className="border-b transition-colors last:border-0 hover:bg-muted/40"
-                          >
-                            <td className="p-4 font-mono text-sm font-medium">
-                              {order.orderNumber}
-                            </td>
-                            <td className="p-4 text-sm text-muted-foreground">
-                              {new Date(order.createdAt).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })}
-                            </td>
-                            <td className="p-4 text-right text-sm font-semibold tabular-nums">
-                              {formatRwf(order.total)}
-                            </td>
-                            <td className="p-4">
-                              <OrderStatusBadge status={order.status} />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                <DataTable
+                  columns={ORDER_COLUMNS}
+                  label="Order history"
+                  minWidth="min-w-128"
+                  bordered={false}
+                >
+                  {visibleOrders.map((order) => (
+                    <DataRow key={order.id}>
+                      <DataCell>
+                        <CellTitle mono>{order.orderNumber}</CellTitle>
+                      </DataCell>
+                      <DataCell muted>
+                        {new Date(order.createdAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </DataCell>
+                      <DataCell align="right" numeric strong>
+                        {formatRwf(order.total)}
+                      </DataCell>
+                      <DataCell>
+                        <OrderStatusBadge status={order.status} />
+                      </DataCell>
+                    </DataRow>
+                  ))}
+                </DataTable>
                 <TablePagination
                   page={currentOrdersPage}
                   pageSize={ADMIN_PAGE_SIZE}

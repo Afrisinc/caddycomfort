@@ -1,5 +1,14 @@
-import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import {
+  AlertOctagon,
+  History,
+  PackagePlus,
+  RefreshCw,
+  RotateCcw,
+  ShoppingBag,
+  SlidersHorizontal,
+  type LucideIcon,
+} from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -7,25 +16,59 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { SkeletonList } from '@/components/ui/skeleton-list';
 import { inventoryApi } from '@/lib/api';
-import { InventoryLogEntry, InventoryLogType } from '@/types/api';
-import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import type { InventoryLogEntry, InventoryLogType } from '@/types/api';
 
 interface StockHistoryDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  productId: string;
-  productName: string;
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
+  readonly productId: string;
+  readonly productName: string;
 }
 
-const TYPE_BADGES: Record<InventoryLogType, { label: string; className: string }> = {
-  RESTOCK: { label: 'Restock', className: 'bg-green-100 text-green-700' },
-  RETURN: { label: 'Return', className: 'bg-blue-100 text-blue-700' },
-  SALE: { label: 'Sale', className: 'bg-gray-100 text-gray-700' },
-  DAMAGED: { label: 'Damaged', className: 'bg-red-100 text-red-700' },
-  ADJUSTMENT: { label: 'Adjustment', className: 'bg-purple-100 text-purple-700' },
+const TYPE_STYLES: Record<
+  InventoryLogType,
+  { label: string; icon: LucideIcon; className: string }
+> = {
+  RESTOCK: {
+    label: 'Restock',
+    icon: PackagePlus,
+    className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300',
+  },
+  RETURN: {
+    label: 'Return',
+    icon: RotateCcw,
+    className: 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300',
+  },
+  SALE: {
+    label: 'Sale',
+    icon: ShoppingBag,
+    className: 'bg-muted text-muted-foreground',
+  },
+  DAMAGED: {
+    label: 'Damaged',
+    icon: AlertOctagon,
+    className: 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300',
+  },
+  ADJUSTMENT: {
+    label: 'Adjustment',
+    icon: SlidersHorizontal,
+    className: 'bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300',
+  },
 };
+
+function formatWhen(value: string) {
+  return new Date(value).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
 
 export function StockHistoryDialog({
   open,
@@ -33,83 +76,108 @@ export function StockHistoryDialog({
   productId,
   productName,
 }: StockHistoryDialogProps) {
-  const [logs, setLogs] = useState<InventoryLogEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [logs, setLogs] = useState<InventoryLogEntry[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-
-    (async () => {
-      try {
-        setIsLoading(true);
-        const result = await inventoryApi.getProductLogs(productId);
-        if (!cancelled) setLogs(result.logs);
-      } catch (error: any) {
-        if (!cancelled) toast.error(error.message || 'Failed to load stock history');
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    })();
-
+    setLogs(null);
+    setFailed(false);
+    inventoryApi
+      .getProductLogs(productId)
+      .then((result) => !cancelled && setLogs(result.logs))
+      .catch(() => !cancelled && setFailed(true));
     return () => {
       cancelled = true;
     };
-  }, [open, productId]);
+  }, [open, productId, attempt]);
+
+  const renderBody = () => {
+    if (failed) {
+      return (
+        <div className="flex flex-col items-center gap-3 py-10 text-center">
+          <p className="text-sm text-muted-foreground">We couldn’t load the stock history.</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => setAttempt((n) => n + 1)}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Try again
+          </Button>
+        </div>
+      );
+    }
+    if (!logs) {
+      return <SkeletonList rows={4} bordered label="Loading stock history" />;
+    }
+    if (logs.length === 0) {
+      return (
+        <div className="flex flex-col items-center gap-3 py-10 text-center">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <History className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <p className="text-sm text-muted-foreground">No stock movements recorded yet.</p>
+        </div>
+      );
+    }
+    return (
+      <ul className="-mx-1 max-h-96 space-y-2 overflow-y-auto px-1">
+        {logs.map((log) => {
+          const style = TYPE_STYLES[log.type];
+          const Icon = style.icon;
+          const incoming = log.quantity >= 0;
+          return (
+            <li key={log.id} className="flex items-center gap-3 rounded-xl border px-3.5 py-3">
+              <span
+                className={cn(
+                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
+                  style.className,
+                )}
+              >
+                <Icon className="h-4.5 w-4.5" aria-hidden="true" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">{style.label}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {log.reason || formatWhen(log.createdAt)}
+                </p>
+                {log.reason && (
+                  <p className="text-xs text-muted-foreground/80">{formatWhen(log.createdAt)}</p>
+                )}
+              </div>
+              <span
+                className={cn(
+                  'shrink-0 text-sm font-semibold tabular-nums',
+                  incoming
+                    ? 'text-emerald-700 dark:text-emerald-400'
+                    : 'text-red-600 dark:text-red-400',
+                )}
+              >
+                {incoming ? '+' : '−'}
+                {Math.abs(log.quantity)}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Stock History</DialogTitle>
+          <DialogTitle>Stock history</DialogTitle>
           <DialogDescription>
-            Recent inventory movements for <strong>{productName}</strong>.
+            Recent inventory movements for{' '}
+            <span className="font-medium text-foreground">{productName}</span>.
           </DialogDescription>
         </DialogHeader>
-
-        {isLoading ? (
-          <div className="flex items-center justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-accent-rose" />
-          </div>
-        ) : logs.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-10">
-            No stock movements recorded yet
-          </p>
-        ) : (
-          <div className="max-h-96 overflow-y-auto -mx-2 px-2 space-y-2">
-            {logs.map((log) => {
-              const badge = TYPE_BADGES[log.type];
-              return (
-                <div
-                  key={log.id}
-                  className="flex items-center justify-between border rounded-lg px-3 py-2"
-                >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Badge className={badge.className}>{badge.label}</Badge>
-                      <span
-                        className={`text-sm font-medium ${log.quantity >= 0 ? 'text-green-600' : 'text-red-600'}`}
-                      >
-                        {log.quantity >= 0 ? '+' : ''}
-                        {log.quantity}
-                      </span>
-                    </div>
-                    {log.reason && (
-                      <p className="text-xs text-muted-foreground mt-1">{log.reason}</p>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground shrink-0">
-                    {new Date(log.createdAt).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        {renderBody()}
       </DialogContent>
     </Dialog>
   );

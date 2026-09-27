@@ -14,7 +14,8 @@ import {
 import Link from '@/components/common/Link';
 import { ImageThumbnail } from '@/components/common/ImageThumbnail';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { SkeletonList } from '@/components/ui/skeleton-list';
+import { StatusPill } from '@/components/ui/status-pill';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { AdminPanel, PanelEmpty } from '@/components/admin/AdminPanel';
@@ -25,7 +26,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { OrderStatusBadge } from '@/components/orders/StatusBadge';
 import { dashboardApi } from '@/lib/api';
 import { formatRwf, formatRwfCompact } from '@/lib/pricing';
-import { cn, formatRelativeTime } from '@/lib/utils';
+import { formatRelativeTime } from '@/lib/utils';
 import { useStoreSettings } from '@/store/useSettingsStore';
 import type {
   DashboardLowStockProduct,
@@ -66,23 +67,6 @@ function greeting(date: Date) {
 
 function settled<T>(result: PromiseSettledResult<T>, fallback: T): T {
   return result.status === 'fulfilled' ? result.value : fallback;
-}
-
-function ListSkeleton({ rows }: { readonly rows: number }) {
-  return (
-    <ul className="space-y-4" aria-busy="true">
-      {Array.from({ length: rows }, (_, i) => (
-        <li key={i} className="flex items-center gap-3">
-          <Skeleton className="h-10 w-10 shrink-0 rounded-lg" />
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-4 w-1/2" />
-            <Skeleton className="h-3 w-1/3" />
-          </div>
-          <Skeleton className="h-5 w-16 rounded-full" />
-        </li>
-      ))}
-    </ul>
-  );
 }
 
 function AdminDashboard() {
@@ -243,7 +227,7 @@ function AdminDashboard() {
             hrefLabel="Inventory"
           >
             {loading ? (
-              <ListSkeleton rows={5} />
+              <SkeletonList rows={5} label="Loading stock alerts" />
             ) : lowStock.length === 0 ? (
               <PanelEmpty icon={PackageCheck}>Every active product is well stocked.</PanelEmpty>
             ) : (
@@ -269,16 +253,9 @@ function AdminDashboard() {
                           {product.sku}
                         </p>
                       </div>
-                      <span
-                        className={cn(
-                          'shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium tabular-nums',
-                          out
-                            ? 'bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-300'
-                            : 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300',
-                        )}
-                      >
+                      <StatusPill tone={out ? 'red' : 'amber'} className="shrink-0 tabular-nums">
                         {out ? 'Out of stock' : `${product.stockQuantity} left`}
-                      </span>
+                      </StatusPill>
                     </li>
                   );
                 })}
@@ -300,7 +277,7 @@ function AdminDashboard() {
             href="/admin/orders"
           >
             {loading ? (
-              <ListSkeleton rows={6} />
+              <SkeletonList rows={6} label="Loading recent orders" />
             ) : recentOrders.length === 0 ? (
               <PanelEmpty icon={ShoppingBag}>New orders will appear here.</PanelEmpty>
             ) : (

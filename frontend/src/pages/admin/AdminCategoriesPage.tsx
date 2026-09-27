@@ -15,7 +15,7 @@ import {
 import Link from '@/components/common/Link';
 import { ImageThumbnail } from '@/components/common/ImageThumbnail';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { CellMeta, CellTitle, DataCell, DataRow, DataTable } from '@/components/ui/data-table';
 import { SearchInput } from '@/components/ui/search-input';
 import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog';
 import {
@@ -36,6 +36,13 @@ import { categoryRows, groupRowsByRoot } from '@/lib/categoryForm';
 import { useUrlFilters } from '@/hooks/useUrlFilters';
 import { ADMIN_PAGE_SIZE, pageCount, pageSlice } from '@/lib/pagination';
 import type { Category } from '@/types/api';
+
+const COLUMNS = [
+  { key: 'category', label: 'Category' },
+  { key: 'handle', label: 'URL handle' },
+  { key: 'products', label: 'Products', align: 'right' },
+  { key: 'actions', label: 'Actions', hideLabel: true },
+] as const;
 
 function deleteBlocker(category: Category, childCount: number): string | null {
   const products = category._count?.products ?? 0;
@@ -122,122 +129,81 @@ function CategoriesManagement() {
       );
     }
     return (
-      <div className="overflow-hidden rounded-2xl border bg-card">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-176">
-            <thead className="border-b bg-muted/40 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="p-4 font-medium">Category</th>
-                <th className="p-4 font-medium">URL handle</th>
-                <th className="p-4 text-right font-medium">Products</th>
-                <th className="p-4">
-                  <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading
-                ? Array.from({ length: 5 }, (_, i) => (
-                    <tr key={i} className="border-b last:border-0">
-                      <td colSpan={4} className="p-4">
-                        <Skeleton className="h-8 w-full" />
-                      </td>
-                    </tr>
-                  ))
-                : rows.map(({ category, depth, childCount }) => {
-                    const products = category._count?.products ?? 0;
-                    const image = category.image || category.imageUrl;
-                    return (
-                      <tr
-                        key={category.id}
-                        className="border-b transition-colors last:border-0 hover:bg-muted/40"
+      <DataTable columns={COLUMNS} label="Categories" loading={loading} skeletonRows={5}>
+        {rows.map(({ category, depth, childCount }) => {
+          const products = category._count?.products ?? 0;
+          const image = category.image || category.imageUrl;
+          return (
+            <DataRow key={category.id}>
+              <DataCell>
+                <div className="flex items-center gap-3" style={{ paddingLeft: depth * 24 }}>
+                  {depth > 0 && (
+                    <CornerDownRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  )}
+                  <ImageThumbnail
+                    images={[image]}
+                    alt={category.name}
+                    size="sm"
+                    fallbackIcon={FolderTree}
+                  />
+                  <div className="min-w-0">
+                    <CellTitle href={`/admin/categories/${category.id}/edit`}>
+                      {category.name}
+                    </CellTitle>
+                    <CellMeta className="max-w-md">
+                      {depth === 0 && childCount > 0
+                        ? `${childCount} subcategor${childCount === 1 ? 'y' : 'ies'}`
+                        : category.description ||
+                          (depth > 0 ? 'Subcategory' : 'Top-level category')}
+                    </CellMeta>
+                  </div>
+                </div>
+              </DataCell>
+              <DataCell muted className="font-mono text-xs">
+                {category.slug}
+              </DataCell>
+              <DataCell align="right" numeric muted={products === 0}>
+                {products}
+              </DataCell>
+              <DataCell align="right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" aria-label={`Actions for ${category.name}`}>
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <Link href={`/admin/categories/${category.id}/edit`}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href={`/shop?category=${category.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
-                        <td className="p-4">
-                          <div
-                            className="flex items-center gap-3"
-                            style={{ paddingLeft: depth * 24 }}
-                          >
-                            {depth > 0 && (
-                              <CornerDownRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                            )}
-                            <ImageThumbnail
-                              images={[image]}
-                              alt={category.name}
-                              size="sm"
-                              fallbackIcon={FolderTree}
-                            />
-                            <div className="min-w-0">
-                              <Link
-                                href={`/admin/categories/${category.id}/edit`}
-                                className="font-medium outline-none hover:text-accent-rose focus-visible:underline"
-                              >
-                                {category.name}
-                              </Link>
-                              <p className="max-w-md truncate text-xs text-muted-foreground">
-                                {depth === 0 && childCount > 0
-                                  ? `${childCount} subcategor${childCount === 1 ? 'y' : 'ies'}`
-                                  : category.description ||
-                                    (depth > 0 ? 'Subcategory' : 'Top-level category')}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-4 font-mono text-xs text-muted-foreground">
-                          {category.slug}
-                        </td>
-                        <td className="p-4 text-right text-sm tabular-nums">
-                          {products > 0 ? (
-                            products
-                          ) : (
-                            <span className="text-muted-foreground">0</span>
-                          )}
-                        </td>
-                        <td className="p-4 text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                aria-label={`Actions for ${category.name}`}
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem asChild>
-                                <Link href={`/admin/categories/${category.id}/edit`}>
-                                  <Pencil className="mr-2 h-4 w-4" />
-                                  Edit
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem asChild>
-                                <Link
-                                  href={`/shop?category=${category.slug}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <ExternalLink className="mr-2 h-4 w-4" />
-                                  View in shop
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onSelect={() => setToDelete(category)}
-                                className="text-red-600 focus:text-red-600"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </tr>
-                    );
-                  })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        View in shop
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={() => setToDelete(category)}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </DataCell>
+            </DataRow>
+          );
+        })}
+      </DataTable>
     );
   };
 

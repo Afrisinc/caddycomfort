@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { StatusPill } from '@/components/ui/status-pill';
 import { useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -43,7 +44,6 @@ import {
 import { productsApi } from '@/lib/api';
 import { getProductPricing } from '@/lib/pricing';
 import { swatchColor } from '@/lib/swatches';
-import { cn } from '@/lib/utils';
 import type { Product } from '@/types/api';
 
 const LOW_STOCK = 10;
@@ -265,21 +265,10 @@ function ProductDetail() {
           <div className="space-y-6">
             <FormSection title="Overview">
               <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={cn(
-                    'inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium',
-                    product.isActive
-                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
-                      : 'bg-muted text-muted-foreground',
-                  )}
-                >
+                <StatusPill tone={product.isActive ? 'green' : 'neutral'}>
                   {product.isActive ? 'Visible in shop' : 'Draft — hidden'}
-                </span>
-                {product.isFeatured && (
-                  <span className="inline-flex rounded-full bg-accent-rose/10 px-2.5 py-0.5 text-xs font-medium text-accent-rose">
-                    Featured
-                  </span>
-                )}
+                </StatusPill>
+                {product.isFeatured && <StatusPill tone="rose">Featured</StatusPill>}
               </div>
               <PriceDisplay pricing={pricing} size="lg" />
               <DetailList
