@@ -1,32 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRouter } from '@/router/compat';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
+import { InfoCard } from '@/components/ui/info-card';
+import { Heading } from '@/components/ui/typography';
+import { formatRwf } from '@/lib/pricing';
+import { formatVariant } from '@/lib/checkout';
 import Link from '@/components/common/Link';
 import { useAuthStore } from '@/store/useAuthStore';
+import { cn } from '@/lib/utils';
 import { ordersApi } from '@/lib/api';
 import { needsOnlinePayment } from '@/lib/checkout';
 import { CompletePaymentCard } from '@/components/checkout/CompletePaymentCard';
 import { DepositBreakdown } from '@/components/checkout/DepositBreakdown';
 import { Order, OrderStatus } from '@/types/api';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, MapPin, Ban } from 'lucide-react';
+import { ArrowLeft, Ban, Loader2, MapPin, Package, Receipt } from 'lucide-react';
 import { OrderStatusBadge } from '@/components/orders/StatusBadge';
 import { OrderProgress } from '@/components/orders/OrderProgress';
+import { OrderDetailSkeleton } from '@/components/orders/OrderSkeletons';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const CANCELLABLE_STATUSES: OrderStatus[] = ['PENDING', 'PROCESSING'];
-
-function formatMoney(amount: number): string {
-  return `Rwf ${amount.toLocaleString()}`;
-}
 
 function OrderDetailView({ id }: { id: string }) {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
   const [order, setOrder] = useState<Order | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
@@ -35,23 +37,19 @@ function OrderDetailView({ id }: { id: string }) {
     }
   }, [isAuthenticated, router]);
 
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    fetchOrder();
-  }, [isAuthenticated, id]);
-
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
     try {
-      setIsLoading(true);
       const data = await ordersApi.getById(id);
       setOrder(data);
     } catch (error: any) {
       toast.error(error.message || 'Failed to load order');
       router.push('/account/orders');
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [id, router]);
+
+  useEffect(() => {
+    if (isAuthenticated) fetchOrder();
+  }, [isAuthenticated, fetchOrder]);
 
   const handleCancel = async () => {
     if (!order) return;
@@ -69,18 +67,34 @@ function OrderDetailView({ id }: { id: string }) {
 
   if (!isAuthenticated) return null;
 
-  if (isLoading) {
+  if (!order) {
     return (
-      <div className="min-h-screen bg-background pt-20 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-accent-rose" />
+      <div className="min-h-screen bg-background pt-20">
+        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
+          <Skeleton className="mb-6 h-4 w-28" />
+          <OrderDetailSkeleton />
+        </div>
       </div>
     );
   }
-
-  if (!order) return null;
   const address = order.shippingAddress as
     | { street?: string; city?: string; state?: string; postalCode?: string; country?: string }
     | undefined;
+  const addressLine = [
+    ...new Set(
+      [address?.street, address?.city, address?.state, address?.postalCode, address?.country]
+        .map((part) => part?.trim())
+        .filter(Boolean),
+    ),
+  ].join(', ');
+  const summaryRows: { label: string; value: string; tone?: 'green' }[] = [
+    { label: 'Subtotal', value: formatRwf(order.subtotal) },
+    ...(order.discount > 0
+      ? [{ label: 'Discount', value: `− ${formatRwf(order.discount)}`, tone: 'green' as const }]
+      : []),
+    { label: 'Shipping', value: order.shippingCost > 0 ? formatRwf(order.shippingCost) : 'Free' },
+    { label: 'Tax', value: formatRwf(order.tax) },
+  ];
 
   return (
     <div className="min-h-screen bg-background pt-20">
@@ -93,9 +107,11 @@ function OrderDetailView({ id }: { id: string }) {
           Back to Orders
         </Link>
 
-        <div className="flex items-start justify-between mb-8">
+        <div className="mb-8 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-serif mb-1">{order.orderNumber}</h1>
+            <Heading as="h1" size="lg" className="mb-1">
+              Order {order.orderNumber}
+            </Heading>
             <p className="text-sm text-muted-foreground">
               Placed on{' '}
               {new Date(order.createdAt).toLocaleDateString('en-US', {
@@ -131,65 +147,65 @@ function OrderDetailView({ id }: { id: string }) {
           </div>
         )}
 
-        {/* Items */}
-        <div className="bg-card border rounded-lg p-6 mb-6">
-          <h2 className="font-semibold mb-4">Items</h2>
-          <div className="space-y-4">
-            {order.items.map((item) => (
-              <div key={item.id} className="flex items-center justify-between text-sm">
-                <div>
-                  <p className="font-medium">{item.productName}</p>
-                  <p className="text-muted-foreground">
-                    Qty {item.quantity}
-                    {item.size ? ` • Size ${item.size}` : ''}
-                    {item.color ? ` • ${item.color}` : ''}
+        <InfoCard
+          title={`Items (${order.items.reduce((sum, item) => sum + item.quantity, 0)})`}
+          icon={Package}
+          className="mb-6"
+        >
+          <ul className="divide-y">
+            {order.items.map((item) => {
+              const variant = formatVariant({
+                size: item.size ?? undefined,
+                color: item.color ?? undefined,
+              });
+              return (
+                <li
+                  key={item.id}
+                  className="flex items-start justify-between gap-4 py-3 text-sm first:pt-0 last:pb-0"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium">{item.productName}</p>
+                    <p className="text-muted-foreground">
+                      Qty {item.quantity}
+                      {variant ? ` · ${variant}` : ''} · {formatRwf(item.price)} each
+                    </p>
+                  </div>
+                  <p className="shrink-0 font-medium tabular-nums">
+                    {formatRwf(item.price * item.quantity)}
                   </p>
-                </div>
-                <p className="font-medium">{formatMoney(item.price * item.quantity)}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+                </li>
+              );
+            })}
+          </ul>
+        </InfoCard>
 
-        {/* Shipping Address */}
-        {address && (
-          <div className="bg-card border rounded-lg p-6 mb-6">
-            <h2 className="font-semibold mb-3 flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-accent-rose" />
-              Shipping Address
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {address.street}, {address.city}, {address.state} {address.postalCode},{' '}
-              {address.country}
-            </p>
-          </div>
+        {addressLine && (
+          <InfoCard title="Shipping address" icon={MapPin} className="mb-6">
+            <p className="text-sm text-muted-foreground">{addressLine}</p>
+          </InfoCard>
         )}
 
-        {/* Totals */}
-        <div className="bg-card border rounded-lg p-6 mb-6 space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Subtotal</span>
-            <span>{formatMoney(order.subtotal)}</span>
-          </div>
-          {order.discount > 0 && (
-            <div className="flex justify-between text-green-600">
-              <span>Discount</span>
-              <span>-{formatMoney(order.discount)}</span>
+        <InfoCard title="Summary" icon={Receipt} className="mb-6">
+          <dl className="space-y-2 text-sm">
+            {summaryRows.map((row) => (
+              <div key={row.label} className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">{row.label}</dt>
+                <dd
+                  className={cn(
+                    'tabular-nums',
+                    row.tone === 'green' && 'text-emerald-700 dark:text-emerald-400',
+                  )}
+                >
+                  {row.value}
+                </dd>
+              </div>
+            ))}
+            <div className="flex justify-between gap-4 border-t pt-3 text-base font-semibold">
+              <dt>Total</dt>
+              <dd className="tabular-nums">{formatRwf(order.total)}</dd>
             </div>
-          )}
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Shipping</span>
-            <span>{formatMoney(order.shippingCost)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Tax</span>
-            <span>{formatMoney(order.tax)}</span>
-          </div>
-          <div className="flex justify-between font-semibold text-base pt-2 border-t">
-            <span>Total</span>
-            <span>{formatMoney(order.total)}</span>
-          </div>
-        </div>
+          </dl>
+        </InfoCard>
 
         {CANCELLABLE_STATUSES.includes(order.status) && (
           <Button

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRouter } from '@/router/compat';
 import {
@@ -21,6 +21,7 @@ import { CustomerStatusBadge } from '@/components/admin/CustomerStatusBadge';
 import { TablePagination } from '@/components/admin/TablePagination';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { EmptyState } from '@/components/common/EmptyState';
+import { InfoCardSkeleton } from '@/components/ui/info-card';
 import { customersApi } from '@/lib/api';
 import { CustomerDetail } from '@/types/api';
 import { ADMIN_PAGE_SIZE, pageCount, pageSlice } from '@/lib/pagination';
@@ -36,13 +37,8 @@ function CustomerDetailView({ id }: { id: string }) {
   const [isToggling, setIsToggling] = useState(false);
   const [ordersPage, setOrdersPage] = useState(1);
 
-  useEffect(() => {
-    fetchCustomer();
-  }, [id]);
-
-  const fetchCustomer = async () => {
+  const fetchCustomer = useCallback(async () => {
     try {
-      setIsLoading(true);
       const data = await customersApi.getById(id);
       setCustomer(data);
     } catch (error: any) {
@@ -51,7 +47,11 @@ function CustomerDetailView({ id }: { id: string }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [id, router]);
+
+  useEffect(() => {
+    fetchCustomer();
+  }, [fetchCustomer]);
 
   const handleToggleStatus = async () => {
     if (!customer) return;
@@ -68,10 +68,18 @@ function CustomerDetailView({ id }: { id: string }) {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && !customer) {
     return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-accent-rose" />
+      <div className="min-h-screen bg-muted/30">
+        <AdminHeader title="Customer" description="Loading customer details" />
+        <div className="space-y-6 px-4 py-8 sm:px-8" role="status" aria-label="Loading customer">
+          <div className="grid gap-6 lg:grid-cols-3">
+            <InfoCardSkeleton lines={4} />
+            <InfoCardSkeleton lines={1} />
+            <InfoCardSkeleton lines={1} />
+          </div>
+          <InfoCardSkeleton lines={5} />
+        </div>
       </div>
     );
   }

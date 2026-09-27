@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { InfoCardSkeleton } from '@/components/ui/info-card';
 import { useRouter } from '@/router/compat';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -126,8 +127,10 @@ export default function AddressesPage() {
           </div>
 
           {isLoading ? (
-            <div className="flex items-center justify-center py-24">
-              <Loader2 className="h-8 w-8 animate-spin text-accent-rose" />
+            <div className="space-y-4" role="status" aria-label="Loading addresses">
+              {Array.from({ length: 3 }, (_, i) => (
+                <InfoCardSkeleton key={i} lines={2} />
+              ))}
             </div>
           ) : addresses.length === 0 ? (
             <div className="bg-card border rounded-lg p-12 text-center">

@@ -9,7 +9,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { EmptyState } from '@/components/common/EmptyState';
 import { OrderCard } from '@/components/orders/OrderCard';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { OrderCardSkeleton } from '@/components/orders/OrderSkeletons';
 import { Pagination } from '@/components/ui/pagination';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -26,21 +26,6 @@ const TABS: { value: OrderStatus | 'all'; label: string }[] = [
   { value: 'DELIVERED', label: 'Delivered' },
   { value: 'CANCELLED', label: 'Cancelled' },
 ];
-
-function OrderCardSkeleton() {
-  return (
-    <div className="space-y-4 rounded-2xl border bg-card p-6" aria-hidden="true">
-      <div className="flex justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-5 w-40" />
-          <Skeleton className="h-4 w-56" />
-        </div>
-        <Skeleton className="h-6 w-24" />
-      </div>
-      <Skeleton className="h-8 w-full" />
-    </div>
-  );
-}
 
 export default function AccountOrdersPage() {
   const router = useRouter();

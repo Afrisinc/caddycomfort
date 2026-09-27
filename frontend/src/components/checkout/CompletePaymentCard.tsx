@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Heading } from '@/components/ui/typography';
 import { PaymentStatusPanel } from '@/components/checkout/PaymentStatusPanel';
 import { usePayment } from '@/hooks/usePayment';
 import { formatRwf } from '@/lib/pricing';
@@ -61,7 +62,9 @@ export function CompletePaymentCard({
         <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
         <div className="min-w-0 flex-1 space-y-4">
           <div>
-            <h2 className="font-semibold">{isDeposit ? 'Deposit pending' : 'Payment pending'}</h2>
+            <Heading as="h2" size="xs">
+              {isDeposit ? 'Deposit pending' : 'Payment pending'}
+            </Heading>
             <p className="mt-1 text-sm text-muted-foreground">
               {payment.phase === 'idle'
                 ? `Complete your payment of ${formatRwf(amountDue)} to confirm this order.`

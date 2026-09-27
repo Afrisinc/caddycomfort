@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 interface FormSectionProps {
@@ -38,5 +39,30 @@ export function FormSection({
         </footer>
       )}
     </section>
+  );
+}
+
+export function FormSectionSkeleton({
+  fields = 4,
+  className,
+}: {
+  readonly fields?: number;
+  readonly className?: string;
+}) {
+  return (
+    <div className={cn('rounded-2xl border bg-card', className)} aria-hidden="true">
+      <div className="space-y-2 border-b px-5 py-4 sm:px-6">
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-4 w-64 max-w-full" />
+      </div>
+      <div className="grid gap-5 px-5 py-5 sm:grid-cols-2 sm:px-6">
+        {Array.from({ length: fields }, (_, i) => (
+          <div key={i} className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-11 w-full" />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

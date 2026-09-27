@@ -1,6 +1,7 @@
 import { useState, useEffect, Suspense } from 'react';
+import { AdminHeader } from '@/components/admin/AdminHeader';
+import { FormSectionSkeleton } from '@/components/ui/form-section';
 import { useRouter, useSearchParams } from '@/router/compat';
-import { Loader2 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import {
@@ -64,8 +65,12 @@ function CreateCouponContent() {
 
   if (isLoadingSource) {
     return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-accent-rose" />
+      <div className="min-h-screen bg-muted/30">
+        <AdminHeader title="Create coupon" description="Loading coupon details" />
+        <div className="space-y-6 px-4 py-8 sm:px-8" role="status" aria-label="Loading coupon">
+          <FormSectionSkeleton fields={4} />
+          <FormSectionSkeleton fields={2} />
+        </div>
       </div>
     );
   }
