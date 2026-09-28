@@ -97,7 +97,7 @@ export function CategoryForm({
           <Input
             id="category-name"
             className="h-11"
-            placeholder="e.g. Evening Dresses"
+            placeholder="e.g. Sports Bras"
             value={values.name}
             onChange={(e) => set('name', e.target.value)}
             aria-invalid={!!errors.name}
@@ -115,7 +115,7 @@ export function CategoryForm({
           <Input
             id="category-slug"
             className="h-11 font-mono text-sm"
-            placeholder="evening-dresses"
+            placeholder="sports-bras"
             value={values.slug}
             onChange={(e) => {
               setSlugEdited(true);
@@ -156,7 +156,7 @@ export function CategoryForm({
           hint={
             hasChildren
               ? 'This category has subcategories, so it must stay at the top level.'
-              : 'Choose a parent to make this a subcategory, e.g. Women › Dresses.'
+              : 'Choose a parent to make this a subcategory, e.g. Gym wear › Leggings.'
           }
         >
           <Select

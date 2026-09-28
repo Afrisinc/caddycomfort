@@ -99,7 +99,7 @@ export default function ShopPage() {
           title={category?.name || 'Shop all'}
           description={
             category?.description ||
-            'Dresses, shoes, bags and wigs — curated pieces for every occasion.'
+            'Pieces made for comfort and confidence, from your workout to the rest of your day.'
           }
           breadcrumbs={[
             { label: 'Home', href: '/' },

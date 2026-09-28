@@ -181,7 +181,7 @@ export function ProductForm({
                 <Input
                   {...props}
                   className="h-11"
-                  placeholder="e.g. Elegant Silk Dress"
+                  placeholder="e.g. High-Waist Seamless Leggings"
                   value={values.name}
                   onChange={(e) => set('name', e.target.value)}
                 />
@@ -195,7 +195,7 @@ export function ProductForm({
                 <Input
                   {...props}
                   className="h-11 font-mono text-sm"
-                  placeholder="elegant-silk-dress"
+                  placeholder="high-waist-seamless-leggings"
                   value={values.slug}
                   onChange={(e) => {
                     setSlugEdited(true);

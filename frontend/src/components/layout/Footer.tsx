@@ -45,8 +45,8 @@ export function Footer() {
               />
             </Link>
             <p className="text-sm text-muted-foreground">
-              Timeless elegance meets contemporary style. Discover luxury fashion that defines your
-              unique expression.
+              Move in comfort. Pieces made for every woman&apos;s body and how she moves, from your
+              workout to the rest of your day.
             </p>
             <div className="flex space-x-4">
               <Button variant="ghost" size="icon">

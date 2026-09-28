@@ -14,7 +14,7 @@ export interface StoreSettings {
 
 export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   storeName: 'CaddyComfort',
-  description: 'Premium fashion and lifestyle products',
+  description: 'Gym wear and accessories made for comfort and confidence',
   email: 'caddyumutoniwase@gmail.com',
   phone: '+250 786 763 654',
   address: 'KN 4 Ave, Kigali, Rwanda',

@@ -2,7 +2,6 @@ import { ArrowRight } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import Link from '@/components/common/Link';
-import Image from '@/components/common/Image';
 import { CtaBanner } from '@/components/common/CtaBanner';
 import { PageSection } from '@/components/common/PageSection';
 import { ScrollRow } from '@/components/common/ScrollRow';
@@ -91,7 +90,7 @@ export default function HomePage() {
       <Navbar />
 
       <main>
-        <h1 className="sr-only">CaddyComfort — luxury fashion in Kigali</h1>
+        <h1 className="sr-only">CaddyComfort — move in comfort</h1>
 
         <HeroBanner slides={HERO_SLIDES} />
 
@@ -99,7 +98,7 @@ export default function HomePage() {
           <PageSection
             eyebrow="Categories"
             title="Shop by category"
-            description="Discover our wide range of fashion categories to find your perfect style."
+            description="Find pieces that move with you, whatever your day looks like."
             action={<ShopAllLink label="Shop all" />}
           >
             <ScrollRow label="Categories">
@@ -122,7 +121,7 @@ export default function HomePage() {
             className="pt-0 md:pt-0"
             eyebrow="Featured"
             title="Featured products"
-            description="Discover our curated selection of premium fashion pieces."
+            description="Hand-picked pieces made for comfort and confidence."
             action={<ShopAllLink label="View all" />}
           >
             <ProductRow
@@ -162,17 +161,6 @@ export default function HomePage() {
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-            }
-            media={
-              <div className="relative h-52 md:h-72">
-                <Image
-                  src="/new-images/png/bag-1.png"
-                  alt="Handbag from the CaddyComfort collection"
-                  fill
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-contain object-bottom"
-                />
-              </div>
             }
           />
         </div>

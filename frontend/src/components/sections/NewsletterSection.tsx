@@ -38,7 +38,7 @@ export function NewsletterSection() {
       align="center"
       eyebrow="Newsletter"
       title="Sign up to our newsletter"
-      description="Stay updated with our latest collections, exclusive offers, and fashion insights."
+      description="Be first to hear about new gym wear, exclusive offers, and ways to move in comfort."
     >
       {subscribed ? (
         <p

@@ -228,7 +228,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
         <EmptyState
           icon={SearchX}
           title={`No results for “${trimmed}”`}
-          description="Check the spelling or try a more general word like “dress” or “heels”."
+          description="Check the spelling or try a more general word like “leggings” or “top”."
           action={
             <Button variant="outline" asChild>
               <Link href="/shop" onClick={close}>
@@ -345,7 +345,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={onKeyDown}
-              placeholder="Search dresses, shoes, wigs…"
+              placeholder="Search leggings, sports bras, tops…"
               autoComplete="off"
               spellCheck={false}
               role="combobox"

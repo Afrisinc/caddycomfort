@@ -7,9 +7,9 @@ export const SITE_URL = (import.meta.env.VITE_APP_URL || 'https://caddycomfort.c
   /\/$/,
   '',
 );
-const DEFAULT_TITLE = `${SITE_NAME} | Luxury Fashion`;
+const DEFAULT_TITLE = `${SITE_NAME} | Move in Comfort`;
 const DEFAULT_DESCRIPTION =
-  'Discover timeless elegance and contemporary style at CaddyComfort — dresses, shoes, bags and wigs, delivered to your door.';
+  "Caddy — Move in Comfort. Pieces made for every woman's body and how she moves, so you can train, travel and live your day in comfort and confidence.";
 const DEFAULT_IMAGE = `${SITE_URL}/og-image.png`;
 
 interface SeoProps {

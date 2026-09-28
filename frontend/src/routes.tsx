@@ -60,7 +60,7 @@ export const router = createBrowserRouter([
         handle: {
           title: 'Shop',
           description:
-            'Shop dresses, shoes, bags and wigs at CaddyComfort. New arrivals, flash sales and best sellers.',
+            'Shop CaddyComfort — pieces made for comfort and confidence. New arrivals, flash sales and best sellers.',
         },
       },
       { path: 'shop/:id', element: <ShopProductPage />, handle: { dynamic: true } },
@@ -89,7 +89,7 @@ export const router = createBrowserRouter([
         handle: {
           title: 'About Us',
           description:
-            'Learn about CaddyComfort — our story, our values and our commitment to timeless, comfortable fashion.',
+            "The story behind Caddy — gym wear made for every woman's body and how she moves. Our mission, vision and values.",
         },
       },
       {

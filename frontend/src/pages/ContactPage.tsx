@@ -100,7 +100,7 @@ export default function ContactPage() {
                 <div className="relative aspect-4/3">
                   <Image
                     src="/new-images/hero-2.jpg"
-                    alt="Wigs, handbags and heels on display in the CaddyComfort store"
+                    alt="Products on display in the CaddyComfort store"
                     fill
                     className="object-cover"
                   />
