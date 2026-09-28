@@ -411,14 +411,14 @@ export class AuthService {
     });
 
     if (!user) {
-      await LoginAttemptService.record(email, { success: false, reason: 'UNKNOWN_EMAIL' }, context);
+      LoginAttemptService.record(email, { success: false, reason: 'UNKNOWN_EMAIL' }, context);
       throw new Error('Invalid email or password');
     }
 
     const isValidPassword = await this.comparePassword(password, user.password);
 
     if (!isValidPassword) {
-      await LoginAttemptService.record(
+      LoginAttemptService.record(
         email,
         { userId: user.id, success: false, reason: 'WRONG_PASSWORD' },
         context,
@@ -427,7 +427,7 @@ export class AuthService {
     }
 
     if (!user.isActive) {
-      await LoginAttemptService.record(
+      LoginAttemptService.record(
         email,
         { userId: user.id, success: false, reason: 'SUSPENDED' },
         context,
@@ -436,7 +436,7 @@ export class AuthService {
     }
 
     const tokens = await this.generateTokens(user);
-    await LoginAttemptService.record(email, { userId: user.id, success: true }, context);
+    LoginAttemptService.record(email, { userId: user.id, success: true }, context);
 
     return { user: toPublicUser(user), tokens };
   }

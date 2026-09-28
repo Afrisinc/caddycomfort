@@ -40,34 +40,37 @@ function attemptWhere({ range, status, search }: AttemptFilters): Prisma.LoginAt
 }
 
 export class LoginAttemptService {
-  static async record(
+  /**
+   * Fire-and-forget: audit logging must never hold up (or fail) a login, so
+   * the writes run in the background and are independent of each other.
+   */
+  static record(
     email: string,
     outcome: { userId?: string; success: boolean; reason?: LoginFailureReason },
     context: AttemptContext,
-  ) {
-    try {
-      await prisma.$transaction([
-        prisma.loginAttempt.create({
-          data: {
-            email,
-            userId: outcome.userId,
-            success: outcome.success,
-            reason: outcome.reason,
-            ipAddress: context.ipAddress?.replace(/^::ffff:/, '').slice(0, 64),
-            userAgent: context.userAgent?.slice(0, 512),
-          },
+  ): void {
+    const writes: Promise<unknown>[] = [
+      prisma.loginAttempt.create({
+        data: {
+          email,
+          userId: outcome.userId,
+          success: outcome.success,
+          reason: outcome.reason,
+          ipAddress: context.ipAddress?.replace(/^::ffff:/, '').slice(0, 64),
+          userAgent: context.userAgent?.slice(0, 512),
+        },
+      }),
+    ];
+    if (outcome.success && outcome.userId) {
+      writes.push(
+        prisma.user.update({
+          where: { id: outcome.userId },
+          data: { lastLoginAt: new Date() },
         }),
-        ...(outcome.success && outcome.userId
-          ? [
-              prisma.user.update({
-                where: { id: outcome.userId },
-                data: { lastLoginAt: new Date() },
-              }),
-            ]
-          : []),
-      ]);
-    } catch (err) {
-      logger.warn({ err }, 'Failed to record login attempt');
+      );
+    }
+    for (const write of writes) {
+      write.catch((err) => logger.warn({ err }, 'Failed to record login attempt'));
     }
   }
 
