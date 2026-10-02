@@ -42,6 +42,7 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // Body Parsing Middleware
+app.use(['/api/products', '/api/categories'], express.json({ limit: '24mb' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
