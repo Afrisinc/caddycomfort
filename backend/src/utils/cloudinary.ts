@@ -8,6 +8,8 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+const UPLOAD_TIMEOUT_MS = 300_000;
+
 interface UploadOptions {
   folder?: string;
   transformation?: any[];
@@ -28,6 +30,7 @@ export const uploadBase64Image = async (
       transformation: options?.transformation,
       format: options?.format,
       public_id: options?.public_id,
+      timeout: UPLOAD_TIMEOUT_MS,
     });
 
     return result.secure_url;
@@ -68,6 +71,7 @@ export const uploadBufferImage = async (
         transformation: options?.transformation,
         format: options?.format,
         public_id: options?.public_id,
+        timeout: UPLOAD_TIMEOUT_MS,
       },
       (error, result) => {
         if (error) {

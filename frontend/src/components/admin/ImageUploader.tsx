@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import Image from '@/components/common/Image';
 import { ImageLightbox, ImageZoomTrigger } from '@/components/common/ImageLightbox';
 import { useImageLightbox } from '@/hooks/useImageLightbox';
+import { compressImage } from '@/lib/imageCompression';
 import { cn } from '@/lib/utils';
 
 interface ImageUploaderProps {
@@ -16,14 +17,6 @@ interface ImageUploaderProps {
   readonly label?: string;
 }
 
-const readAsDataUrl = (file: File) =>
-  new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-
 const iconButton =
   'flex h-8 w-8 items-center justify-center rounded-full bg-background/95 text-foreground shadow-sm backdrop-blur-sm transition-colors outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-accent-rose/50';
 
@@ -31,7 +24,7 @@ export function ImageUploader({
   images,
   onChange,
   max = 5,
-  maxBytes = 5 * 1024 * 1024,
+  maxBytes = 25 * 1024 * 1024,
   disabled,
   aspect = 'square',
   label = 'Product image',
@@ -64,9 +57,15 @@ export function ImageUploader({
     if (accepted.length === 0) return;
     setReading(true);
     try {
-      onChange([...images, ...(await Promise.all(accepted.map(readAsDataUrl)))]);
-    } catch {
-      toast.error('Some images could not be read');
+      const prepared: string[] = [];
+      for (const file of accepted) {
+        try {
+          prepared.push(await compressImage(file));
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : `${file.name} could not be read`);
+        }
+      }
+      if (prepared.length > 0) onChange([...images, ...prepared]);
     } finally {
       setReading(false);
     }

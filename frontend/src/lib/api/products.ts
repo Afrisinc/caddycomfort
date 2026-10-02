@@ -1,4 +1,8 @@
-import apiClient, { handleApiResponse, handleApiError } from '@/lib/api-client';
+import apiClient, {
+  UPLOAD_REQUEST_CONFIG,
+  handleApiResponse,
+  handleApiError,
+} from '@/lib/api-client';
 import { Product, ProductFilters, PaginationParams, SortParams } from '@/types/api';
 
 export interface ProductListResult {
@@ -156,7 +160,7 @@ export const productsApi = {
         ...data,
         comparePrice: data.comparePrice !== undefined ? data.comparePrice : data.compareAtPrice,
       };
-      const response = await apiClient.post('/products', payload);
+      const response = await apiClient.post('/products', payload, UPLOAD_REQUEST_CONFIG);
       const resData = handleApiResponse<any>(response).data;
       return (resData?.product || resData) as Product;
     } catch (error) {
@@ -192,7 +196,7 @@ export const productsApi = {
         ...data,
         comparePrice: data.comparePrice !== undefined ? data.comparePrice : data.compareAtPrice,
       };
-      const response = await apiClient.put(`/products/${id}`, payload);
+      const response = await apiClient.put(`/products/${id}`, payload, UPLOAD_REQUEST_CONFIG);
       const resData = handleApiResponse<any>(response).data;
       return (resData?.product || resData) as Product;
     } catch (error) {

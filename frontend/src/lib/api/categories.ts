@@ -1,4 +1,8 @@
-import apiClient, { handleApiResponse, handleApiError } from '@/lib/api-client';
+import apiClient, {
+  UPLOAD_REQUEST_CONFIG,
+  handleApiResponse,
+  handleApiError,
+} from '@/lib/api-client';
 import { Category } from '@/types/api';
 
 export const categoriesApi = {
@@ -64,7 +68,7 @@ export const categoriesApi = {
     image?: string | null;
   }): Promise<Category> => {
     try {
-      const response = await apiClient.post('/categories', data);
+      const response = await apiClient.post('/categories', data, UPLOAD_REQUEST_CONFIG);
       return handleApiResponse<Category>(response).data!;
     } catch (error) {
       throw handleApiError(error);
@@ -85,7 +89,7 @@ export const categoriesApi = {
     },
   ): Promise<Category> => {
     try {
-      const response = await apiClient.put(`/categories/${id}`, data);
+      const response = await apiClient.put(`/categories/${id}`, data, UPLOAD_REQUEST_CONFIG);
       return handleApiResponse<Category>(response).data!;
     } catch (error) {
       throw handleApiError(error);

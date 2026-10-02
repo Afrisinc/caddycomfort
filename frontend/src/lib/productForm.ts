@@ -21,7 +21,7 @@ export interface ProductFormValues {
 export type ProductFormErrors = Partial<Record<keyof ProductFormValues, string>>;
 
 export const MAX_PRODUCT_IMAGES = 5;
-export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
 
 export const EMPTY_PRODUCT_VALUES: ProductFormValues = {
   name: '',
