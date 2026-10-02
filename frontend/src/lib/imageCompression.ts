@@ -1,6 +1,6 @@
 const MAX_DIMENSION = 2400;
 export const MAX_COMPRESSED_BYTES = 2 * 1024 * 1024;
-const QUALITY_STEPS = [0.92, 0.88, 0.84, 0.8, 0.75, 0.7, 0.62, 0.55];
+const QUALITY_STEPS = [0.95, 0.92, 0.88, 0.84, 0.8, 0.75, 0.7, 0.62];
 const MIN_SCALE = 0.5;
 const PASSTHROUGH_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const EXIF_SCAN_BYTES = 128 * 1024;

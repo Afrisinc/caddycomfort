@@ -680,8 +680,8 @@ export class ProductService {
       uploaded = await uploadMultipleBase64Images(pending, {
         folder: 'clementine-shop/products',
         transformation: [
-          { width: 1200, height: 1200, crop: 'limit' },
-          { quality: 'auto' },
+          { width: 2400, height: 2400, crop: 'limit' },
+          { quality: 'auto:best' },
           { format: 'webp' },
         ],
       });

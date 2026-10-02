@@ -61,8 +61,8 @@ export class CategoryService {
           imageUrl = await uploadBase64Image(data.image, {
             folder: 'clementine-shop/categories',
             transformation: [
-              { width: 800, height: 600, crop: 'limit' },
-              { quality: 'auto' },
+              { width: 1600, height: 1600, crop: 'limit' },
+              { quality: 'auto:best' },
               { format: 'webp' },
             ],
           });
@@ -382,8 +382,8 @@ export class CategoryService {
         resolved = await uploadBase64Image(next, {
           folder: 'clementine-shop/categories',
           transformation: [
-            { width: 800, height: 600, crop: 'limit' },
-            { quality: 'auto' },
+            { width: 1600, height: 1600, crop: 'limit' },
+            { quality: 'auto:best' },
             { format: 'webp' },
           ],
         });
