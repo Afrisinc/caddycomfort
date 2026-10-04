@@ -7,6 +7,7 @@ import Image from '@/components/common/Image';
 import { HighlightMatch } from '@/components/common/HighlightMatch';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/ui/button';
+import { categoryHref, useStoreCategories } from '@/hooks/useStoreCategories';
 import { MIN_QUERY_LENGTH, useProductSearch } from '@/hooks/useProductSearch';
 import {
   addRecentSearch,
@@ -28,17 +29,15 @@ type SearchOption =
   | { kind: 'product'; key: string; product: Product }
   | { kind: 'all'; key: string };
 
-const QUICK_LINKS = [
-  { label: 'Shop all', href: '/shop' },
-  { label: 'Women', href: '/shop?category=womans-cloth' },
-  { label: 'Men', href: '/shop?category=men' },
-  { label: 'Kids', href: '/shop?category=kids' },
-];
-
 const optionClass =
   'flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 text-left text-sm transition-colors';
 
 export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
+  const storeCategories = useStoreCategories();
+  const quickLinks = [
+    { label: 'Shop all', href: '/shop' },
+    ...storeCategories.data.slice(0, 6).map((c) => ({ label: c.name, href: categoryHref(c) })),
+  ];
   const router = useRouter();
   const listId = useId();
   const listRef = useRef<HTMLDivElement>(null);
@@ -174,7 +173,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
               Browse
             </p>
             <div className="flex flex-wrap gap-2">
-              {QUICK_LINKS.map((link) => (
+              {quickLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}

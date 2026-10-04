@@ -609,3 +609,17 @@ export interface LoginAttemptStats {
   flagThreshold: number;
   flagged: FlaggedLoginSource[];
 }
+
+export interface HeroBanner {
+  id: string;
+  eyebrow: string;
+  title: string;
+  ctaText: string;
+  ctaLink: string;
+  image: string;
+  imageAlt: string;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

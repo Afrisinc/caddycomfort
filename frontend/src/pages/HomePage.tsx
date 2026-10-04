@@ -15,9 +15,10 @@ import { ProductListItem } from '@/components/products/ProductListItem';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAsyncData } from '@/hooks/useAsyncData';
+import { categoryCover } from '@/hooks/useStoreCategories';
 import { useQuickAdd } from '@/hooks/useQuickAdd';
 import { useWishlist } from '@/hooks/useWishlist';
-import { HERO_SLIDES, PROMO_CATEGORIES } from '@/lib/homeContent';
+import { heroBannersApi } from '@/lib/api';
 import { toProductCardProps } from '@/lib/productCard';
 import {
   getFeaturedProducts,
@@ -25,10 +26,11 @@ import {
   getHomeCategories,
   getMostSellingProducts,
 } from '@/lib/server-data';
-import type { Category, Product } from '@/types/api';
+import type { Category, HeroBanner as HeroBannerRecord, Product } from '@/types/api';
 
 const NO_CATEGORIES: Category[] = [];
 const NO_PRODUCTS: Product[] = [];
+const NO_BANNERS: HeroBannerRecord[] = [];
 
 function ShopAllLink({ href = '/shop', label }: Readonly<{ href?: string; label: string }>) {
   return (
@@ -77,6 +79,7 @@ function ProductRow({
 }
 
 export default function HomePage() {
+  const banners = useAsyncData(heroBannersApi.getActive, NO_BANNERS);
   const categories = useAsyncData(getHomeCategories, NO_CATEGORIES);
   const featured = useAsyncData(getFeaturedProducts, NO_PRODUCTS);
   const bestSellers = useAsyncData(getMostSellingProducts, NO_PRODUCTS);
@@ -92,7 +95,7 @@ export default function HomePage() {
       <main>
         <h1 className="sr-only">CaddyComfort — move in comfort</h1>
 
-        <HeroBanner slides={HERO_SLIDES} />
+        <HeroBanner slides={banners.data} loading={banners.loading} />
 
         {show(categories) && (
           <PageSection
@@ -109,7 +112,8 @@ export default function HomePage() {
                       key={category.id}
                       title={category.name}
                       href={`/shop?category=${category.slug}`}
-                      image={category.image || undefined}
+                      image={categoryCover(category)}
+                      parentName={category.parent?.name}
                     />
                   ))}
             </ScrollRow>
@@ -138,13 +142,13 @@ export default function HomePage() {
             title="Get discounts on our products"
             description={
               <ul className="flex flex-wrap gap-2 pt-2">
-                {PROMO_CATEGORIES.map((category) => (
-                  <li key={category.href}>
+                {categories.data.slice(0, 4).map((category) => (
+                  <li key={category.id}>
                     <Link
-                      href={category.href}
+                      href={`/shop?category=${category.slug}`}
                       className="inline-flex h-9 items-center rounded-full border bg-background px-4 text-sm font-medium text-foreground transition-colors outline-none hover:border-accent-rose/40 hover:text-accent-rose focus-visible:ring-2 focus-visible:ring-accent-rose/40"
                     >
-                      {category.label}
+                      {category.name}
                     </Link>
                   </li>
                 ))}

@@ -22,6 +22,7 @@ import { CategoryCardSkeleton } from '@/components/products/CategoryCardSkeleton
 import { Button } from '@/components/ui/button';
 import { FeatureItem, Heading, InfoBlock, SectionHeader, Text } from '@/components/ui/typography';
 import { useAsyncData } from '@/hooks/useAsyncData';
+import { categoryCover } from '@/hooks/useStoreCategories';
 import { useContactInfo } from '@/hooks/useContactInfo';
 import { getHomeCategories } from '@/lib/server-data';
 import type { Category } from '@/types/api';
@@ -230,7 +231,8 @@ export default function AboutPage() {
                           key={category.id}
                           title={category.name}
                           href={`/shop?category=${category.slug}`}
-                          image={category.image || undefined}
+                          image={categoryCover(category)}
+                          parentName={category.parent?.name}
                         />
                       ))}
               </div>

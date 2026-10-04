@@ -1,14 +1,14 @@
 export interface NavItem {
   label: string;
   href: string;
+  image?: string;
+  count?: number;
+  children?: NavItem[];
 }
 
 export const NAV_LINKS: NavItem[] = [
   { label: 'Home', href: '/' },
   { label: 'Shop', href: '/shop' },
-  { label: 'Women', href: '/shop?category=womans-cloth' },
-  { label: 'Men', href: '/shop?category=men' },
-  { label: 'Kids', href: '/shop?category=kids' },
   { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
 ];

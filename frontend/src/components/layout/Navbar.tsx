@@ -10,7 +10,8 @@ import { NavLinks } from '@/components/layout/NavLinks';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useWishlistStore } from '@/store/useWishlistStore';
-import { ADMIN_LINK, NAV_LINKS } from '@/lib/navigation';
+import { ADMIN_LINK, NAV_LINKS, type NavItem } from '@/lib/navigation';
+import { categoryCover, categoryHref, useStoreCategories } from '@/hooks/useStoreCategories';
 import { cn } from '@/lib/utils';
 
 function SiteLogo({ onClick, priority }: Readonly<{ onClick?: () => void; priority?: boolean }>) {
@@ -52,7 +53,18 @@ export function Navbar() {
   const loadWishlist = useWishlistStore((state) => state.load);
   const resetWishlist = useWishlistStore((state) => state.reset);
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
-  const links = isAdmin ? [...NAV_LINKS, ADMIN_LINK] : NAV_LINKS;
+  const categories = useStoreCategories();
+  const categoryLinks: NavItem[] = categories.data.map((c) => ({
+    label: c.name,
+    href: categoryHref(c),
+    image: categoryCover(c),
+    count: c._count?.products,
+    children: c.children?.map((child) => ({ label: child.name, href: categoryHref(child) })),
+  }));
+  const baseLinks = NAV_LINKS.map((item) =>
+    item.href === '/shop' && categoryLinks.length > 0 ? { ...item, children: categoryLinks } : item,
+  );
+  const links = isAdmin ? [...baseLinks, ADMIN_LINK] : baseLinks;
   const accountHref = isAuthenticated ? '/account' : '/login';
 
   useEffect(() => {

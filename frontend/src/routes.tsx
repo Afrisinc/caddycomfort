@@ -31,6 +31,9 @@ const AccountWishlistPage = lazy(() => import('@/pages/account/AccountWishlistPa
 
 const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage'));
 const AdminAnalyticsPage = lazy(() => import('@/pages/admin/AdminAnalyticsPage'));
+const AdminBannersPage = lazy(() => import('@/pages/admin/AdminBannersPage'));
+const AdminBannerNewPage = lazy(() => import('@/pages/admin/AdminBannerNewPage'));
+const AdminBannerEditPage = lazy(() => import('@/pages/admin/AdminBannerEditPage'));
 const AdminCategoriesPage = lazy(() => import('@/pages/admin/AdminCategoriesPage'));
 const AdminCategoryNewPage = lazy(() => import('@/pages/admin/AdminCategoryNewPage'));
 const AdminCategoryEditPage = lazy(() => import('@/pages/admin/AdminCategoryEditPage'));
@@ -153,6 +156,21 @@ export const router = createBrowserRouter([
       {
         path: 'admin/analytics',
         element: <AdminAnalyticsPage />,
+        handle: { title: 'Admin', noindex: true },
+      },
+      {
+        path: 'admin/banners',
+        element: <AdminBannersPage />,
+        handle: { title: 'Admin', noindex: true },
+      },
+      {
+        path: 'admin/banners/new',
+        element: <AdminBannerNewPage />,
+        handle: { title: 'Admin', noindex: true },
+      },
+      {
+        path: 'admin/banners/:id/edit',
+        element: <AdminBannerEditPage />,
         handle: { title: 'Admin', noindex: true },
       },
       {

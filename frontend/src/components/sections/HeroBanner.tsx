@@ -4,10 +4,12 @@ import Link from '@/components/common/Link';
 import Image from '@/components/common/Image';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { HeroSlide } from '@/lib/homeContent';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { HeroBanner as HeroSlide } from '@/types/api';
 
 interface HeroBannerProps {
   readonly slides: HeroSlide[];
+  readonly loading?: boolean;
   readonly autoPlayInterval?: number;
 }
 
@@ -58,7 +60,7 @@ function HeroPreview({
   );
 }
 
-export function HeroBanner({ slides, autoPlayInterval = 6000 }: HeroBannerProps) {
+export function HeroBanner({ slides, loading, autoPlayInterval = 6000 }: HeroBannerProps) {
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [interacting, setInteracting] = useState(false);
@@ -74,6 +76,15 @@ export function HeroBanner({ slides, autoPlayInterval = 6000 }: HeroBannerProps)
     return () => clearInterval(timer);
   }, [autoPlay, autoPlayInterval, count]);
 
+  if (loading && count === 0) {
+    return (
+      <section aria-hidden="true" className="bg-background pt-24 pb-6 md:pt-28">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <Skeleton className="h-110 rounded-3xl sm:h-130 lg:h-150" />
+        </div>
+      </section>
+    );
+  }
   if (count === 0) return null;
   const slide = slides[index];
   const upcoming = [1, 2]
@@ -96,7 +107,7 @@ export function HeroBanner({ slides, autoPlayInterval = 6000 }: HeroBannerProps)
         >
           {slides.map((item, i) => (
             <div
-              key={item.image}
+              key={item.id}
               aria-hidden={i !== index}
               className={cn(
                 'absolute inset-0 transition-opacity duration-700 ease-out',
@@ -146,7 +157,7 @@ export function HeroBanner({ slides, autoPlayInterval = 6000 }: HeroBannerProps)
               <div className="flex items-center gap-2">
                 {slides.map((item, i) => (
                   <button
-                    key={item.image}
+                    key={item.id}
                     type="button"
                     onClick={() => goTo(i)}
                     aria-label={`Show slide ${i + 1} of ${count}`}
@@ -196,7 +207,7 @@ export function HeroBanner({ slides, autoPlayInterval = 6000 }: HeroBannerProps)
           <div className="hidden gap-4 lg:flex lg:flex-col">
             {upcoming.map((slideIndex, i) => (
               <HeroPreview
-                key={slides[slideIndex].image}
+                key={slides[slideIndex].id}
                 slide={slides[slideIndex]}
                 label={i === 0 ? 'Up next' : 'Coming up'}
                 onSelect={() => goTo(slideIndex)}

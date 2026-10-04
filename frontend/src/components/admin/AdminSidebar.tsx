@@ -6,6 +6,7 @@ import {
   Boxes,
   ExternalLink,
   FolderTree,
+  GalleryHorizontal,
   HelpCircle,
   LayoutDashboard,
   LogOut,
@@ -62,6 +63,10 @@ const navSections: { label: string; items: NavItem[] }[] = [
       { title: 'Categories', href: '/admin/categories', icon: FolderTree },
       { title: 'Inventory', href: '/admin/inventory', icon: Boxes },
     ],
+  },
+  {
+    label: 'Storefront',
+    items: [{ title: 'Home banners', href: '/admin/banners', icon: GalleryHorizontal }],
   },
   {
     label: 'System',

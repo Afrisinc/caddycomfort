@@ -1,7 +1,7 @@
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function CategoryCardSkeleton() {
-  return <Skeleton className="h-[160px] md:h-[180px] w-full rounded-xl" />;
+  return <Skeleton className="aspect-4/5 w-full rounded-2xl" />;
 }
 
 export function CategoryRowSkeleton({ count = 4 }: { count?: number }) {
