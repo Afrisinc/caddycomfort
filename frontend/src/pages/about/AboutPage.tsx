@@ -93,7 +93,7 @@ export default function AboutPage() {
                 Our story
               </p>
               <Heading as="h1" size="xl" className="max-w-xl leading-tight">
-                Caddy: move in comfort
+                Caddy move in comfort
               </Heading>
               <Text variant="lead">
                 It&apos;s more than a name. It&apos;s how we want every woman to feel.
@@ -128,7 +128,7 @@ export default function AboutPage() {
 
         <div className="mx-auto max-w-7xl space-y-20 px-4 py-16 sm:px-6 md:space-y-28 md:py-24 lg:px-8">
           <section className="grid grid-cols-1 gap-8 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-16">
-            <SectionHeader eyebrow="The story behind Caddy" title="Solving the whole problem" />
+            <SectionHeader eyebrow="The story behind Comfort" title="Solving the whole problem" />
             <div className="space-y-6">
               <Text className="text-base">
                 I heard it over and over, from friends, from mums: women who felt limited by their
