@@ -78,18 +78,21 @@ const VALUES = [
 const STORE_PHOTOS = [
   {
     id: 1,
-    alt: 'Two women wearing Caddy flared leggings and fitted tops',
+    wide: 720,
+    alt: 'Two women wearing Caddy flared leggings, one in black and one in plum',
     className: 'row-span-2',
     position: 'object-center',
   },
   {
     id: 2,
+    wide: 1000,
     alt: 'Woman in a green Caddy set walking through the city',
     className: '',
     position: 'object-[50%_28%]',
   },
   {
     id: 3,
+    wide: 1000,
     alt: 'Woman in a red and white Caddy set with a wrap top',
     className: '',
     position: 'object-[50%_35%]',
@@ -257,7 +260,7 @@ export default function AboutPage() {
                 >
                   <Image
                     src={`/new-images/store/store-${photo.id}-600.jpg`}
-                    srcSet={`/new-images/store/store-${photo.id}-600.jpg 600w, /new-images/store/store-${photo.id}-1000.jpg 1000w`}
+                    srcSet={`/new-images/store/store-${photo.id}-600.jpg 600w, /new-images/store/store-${photo.id}-${photo.wide}.jpg ${photo.wide}w`}
                     sizes="(min-width: 1024px) 28vw, 45vw"
                     alt={photo.alt}
                     fill
