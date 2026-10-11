@@ -92,7 +92,7 @@ export const router = createBrowserRouter([
         handle: {
           title: 'About Us',
           description:
-            "The story behind Caddy — gym wear made for every woman's body and how she moves. Our mission, vision and values.",
+            "The story behind Comfort — gym wear made for every woman's body and how she moves. Our mission, vision and values.",
         },
       },
       {

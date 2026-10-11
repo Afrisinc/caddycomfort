@@ -20,14 +20,14 @@ import { CtaBanner } from '@/components/common/CtaBanner';
 import { CategoryCardV2 } from '@/components/products/CategoryCardV2';
 import { CategoryCardSkeleton } from '@/components/products/CategoryCardSkeleton';
 import { Button } from '@/components/ui/button';
-import { FeatureItem, Heading, InfoBlock, SectionHeader, Text } from '@/components/ui/typography';
+import { Heading, InfoBlock, SectionHeader, Text } from '@/components/ui/typography';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { categoryCover } from '@/hooks/useStoreCategories';
 import { useContactInfo } from '@/hooks/useContactInfo';
 import { getHomeCategories } from '@/lib/server-data';
 import type { Category } from '@/types/api';
 
-const FOUNDATIONS = [
+const VALUES = [
   {
     icon: Feather,
     title: 'Comfort',
@@ -48,9 +48,7 @@ const FOUNDATIONS = [
     title: 'A daily go-to',
     description: 'Not just for the gym, but for your whole day.',
   },
-];
 
-const VALUES = [
   {
     icon: Award,
     title: 'Quality first',
@@ -144,18 +142,8 @@ export default function AboutPage() {
               <Text className="text-base">
                 So instead of just chasing &ldquo;gym wear,&rdquo; I went back to what I personally
                 look for every time I choose something to work out in, and I wrote it all down. That
-                list became the foundation of the brand:
+                list became the foundation of the brand.
               </Text>
-              <div className="grid gap-5 rounded-2xl border bg-muted/30 p-6 sm:grid-cols-2">
-                {FOUNDATIONS.map((item) => (
-                  <FeatureItem
-                    key={item.title}
-                    icon={item.icon}
-                    title={item.title}
-                    description={item.description}
-                  />
-                ))}
-              </div>
               <Text className="text-base">
                 I also considered women who prefer more coverage in their gym wear: extra coverage,
                 inseam length, whatever fits their own reasons for wanting it.
