@@ -75,6 +75,27 @@ const VALUES = [
   },
 ];
 
+const STORE_PHOTOS = [
+  {
+    id: 1,
+    alt: 'Two women wearing Caddy flared leggings and fitted tops',
+    className: 'row-span-2',
+    position: 'object-center',
+  },
+  {
+    id: 2,
+    alt: 'Woman in a green Caddy set walking through the city',
+    className: '',
+    position: 'object-[50%_28%]',
+  },
+  {
+    id: 3,
+    alt: 'Woman in a red and white Caddy set with a wrap top',
+    className: '',
+    position: 'object-[50%_35%]',
+  },
+] as const;
+
 const NO_CATEGORIES: Category[] = [];
 
 export default function AboutPage() {
@@ -228,13 +249,23 @@ export default function AboutPage() {
           )}
 
           <section className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
-            <div className="relative order-last aspect-4/3 overflow-hidden rounded-3xl bg-muted lg:order-first">
-              <Image
-                src="/new-images/hero-2.jpg"
-                alt="Products on display in the CaddyComfort store"
-                fill
-                className="object-cover"
-              />
+            <div className="order-last grid aspect-4/3 grid-cols-2 grid-rows-2 gap-2 overflow-hidden rounded-3xl bg-muted lg:order-first">
+              {STORE_PHOTOS.map((photo) => (
+                <div
+                  key={photo.id}
+                  className={`relative overflow-hidden bg-muted ${photo.className}`}
+                >
+                  <Image
+                    src={`/new-images/store/store-${photo.id}-600.jpg`}
+                    srcSet={`/new-images/store/store-${photo.id}-600.jpg 600w, /new-images/store/store-${photo.id}-1000.jpg 1000w`}
+                    sizes="(min-width: 1024px) 28vw, 45vw"
+                    alt={photo.alt}
+                    fill
+                    decoding="async"
+                    className={`object-cover ${photo.position}`}
+                  />
+                </div>
+              ))}
             </div>
             <div className="space-y-6">
               <SectionHeader eyebrow="Visit us" title="Come see us in store" />
