@@ -116,8 +116,8 @@ export default function AboutPage() {
             </div>
             <div className="relative aspect-4/5 overflow-hidden rounded-3xl bg-muted shadow-xl sm:aspect-square lg:aspect-4/5">
               <Image
-                src="/new-images/hero-4.jpg"
-                alt="Inside the CaddyComfort store"
+                src="/new-images/about-hero.jpg"
+                alt="Woman in a pink Caddy set holding a black tote bag"
                 fill
                 priority
                 className="object-cover"
