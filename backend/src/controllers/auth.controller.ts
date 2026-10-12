@@ -295,13 +295,12 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    const { firstName, lastName, phone, avatar } = req.body;
+    const { firstName, lastName, phone } = req.body;
 
     const user = await AuthService.updateProfile(req.user.userId, {
       firstName,
       lastName,
       phone,
-      avatar,
     });
 
     res.status(200).json({

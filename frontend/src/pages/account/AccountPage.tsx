@@ -20,6 +20,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { OrderStatusBadge } from '@/components/orders/StatusBadge';
+import { UserAvatar } from '@/components/account/UserAvatar';
 
 interface DashboardStats {
   totalOrders: number;
@@ -255,9 +256,12 @@ export default function AccountPage() {
             <div className="space-y-6">
               <div className="bg-card border rounded-lg p-6">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="h-16 w-16 rounded-full bg-accent-rose-subtle flex items-center justify-center">
-                    <User className="h-8 w-8 text-accent-rose" />
-                  </div>
+                  <UserAvatar
+                    src={user.avatar}
+                    firstName={user.firstName}
+                    lastName={user.lastName}
+                    email={user.email}
+                  />
                   <div>
                     <h3 className="font-semibold text-lg">
                       {user.firstName} {user.lastName}

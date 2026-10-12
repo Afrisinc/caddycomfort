@@ -22,7 +22,7 @@ export const usersApi = {
     lastName?: string;
     name?: string;
     phone?: string;
-    avatar?: string;
+    avatar?: string | null;
   }): Promise<User> => {
     try {
       const response = await apiClient.put('/users/profile', data);

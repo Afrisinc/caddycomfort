@@ -33,3 +33,9 @@ export function formatRelativeTime(date: string | Date | null | undefined): stri
   const diffYear = Math.round(diffDay / 365);
   return `${diffYear} year${diffYear === 1 ? '' : 's'} ago`;
 }
+
+/** Reads the message from an Error or an ApiError-shaped object, falling back when absent. */
+export function errorMessage(error: unknown, fallback: string): string {
+  const message = (error as { message?: unknown } | null)?.message;
+  return typeof message === 'string' && message ? message : fallback;
+}

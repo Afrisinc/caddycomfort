@@ -75,7 +75,14 @@ async function encode(bitmap: ImageBitmap, scale: number, quality: number): Prom
   return jpeg;
 }
 
-export async function compressImage(file: File): Promise<string> {
+interface CompressOptions {
+  readonly maxDimension?: number;
+}
+
+export async function compressImage(
+  file: File,
+  { maxDimension = MAX_DIMENSION }: CompressOptions = {},
+): Promise<string> {
   let bitmap: ImageBitmap;
   try {
     bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
@@ -84,7 +91,7 @@ export async function compressImage(file: File): Promise<string> {
   }
 
   try {
-    const baseScale = Math.min(1, MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    const baseScale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
     if (
       baseScale === 1 &&
       file.size <= MAX_COMPRESSED_BYTES &&

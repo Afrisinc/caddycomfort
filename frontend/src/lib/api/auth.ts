@@ -29,24 +29,11 @@ export const authApi = {
   },
 
   /**
-   * Logout user
+   * Logout user (revokes the given refresh token on the server)
    */
-  logout: async (): Promise<void> => {
+  logout: async (refreshToken: string): Promise<void> => {
     try {
-      await apiClient.post('/auth/logout');
-    } catch (error) {
-      throw handleApiError(error);
-    }
-  },
-
-  /**
-   * Refresh access token
-   */
-  refreshToken: async (refreshToken: string): Promise<{ accessToken: string }> => {
-    try {
-      const response = await apiClient.post('/auth/refresh', { refreshToken });
-      const data = handleApiResponse<{ accessToken: string }>(response);
-      return data.data!;
+      await apiClient.post('/auth/logout', { refreshToken });
     } catch (error) {
       throw handleApiError(error);
     }

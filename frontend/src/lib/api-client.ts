@@ -1,5 +1,7 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { toast } from 'sonner';
 import { ApiError, ApiResponse } from '@/types/api';
+import { AuthTokens, expireSession, tokenStorage } from '@/lib/auth-session';
 
 const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -61,15 +63,63 @@ const apiClient: AxiosInstance = axios.create({
 
 export const UPLOAD_REQUEST_CONFIG = { timeout: 0 } as const;
 
+const SESSION_EXPIRED_MESSAGE = 'Your session has expired. Please sign in again.';
+
+// Auth endpoints answer 401 for bad credentials or tokens; never try to refresh on them.
+const isAuthEndpoint = (url?: string): boolean => Boolean(url?.startsWith('/auth/'));
+
+let refreshRequest: Promise<string> | null = null;
+
+const requestTokenRefresh = async (): Promise<string> => {
+  const refreshToken = tokenStorage.getRefreshToken();
+  if (!refreshToken) {
+    throw new Error('No refresh token available');
+  }
+
+  // Plain axios so this call bypasses the interceptors below.
+  const response = await axios.post<ApiResponse<AuthTokens>>(`${baseURL}/auth/refresh`, {
+    refreshToken,
+  });
+  const tokens = response.data.data;
+  if (!tokens?.accessToken || !tokens.refreshToken) {
+    throw new Error('Malformed refresh response');
+  }
+
+  // The backend rotates refresh tokens, so both must be persisted.
+  tokenStorage.setTokens(tokens);
+  return tokens.accessToken;
+};
+
+/**
+ * Share a single in-flight refresh between concurrent 401s. Refresh tokens are
+ * single-use, so parallel refreshes would revoke each other and end the session.
+ */
+const refreshAccessToken = (): Promise<string> => {
+  refreshRequest ??= requestTokenRefresh().finally(() => {
+    refreshRequest = null;
+  });
+  return refreshRequest;
+};
+
+/** A transient failure (offline, timeout, 5xx) should not sign the user out. */
+const isSessionRejected = (error: unknown): boolean => {
+  if (!axios.isAxiosError(error)) return true;
+  const status = error.response?.status;
+  return status === 400 || status === 401 || status === 403;
+};
+
+const toApiError = (error: AxiosError<unknown>): ApiError => ({
+  message: extractResponseMessage(error.response?.data) || error.message || 'An error occurred',
+  error: extractResponseCode(error.response?.data),
+  statusCode: error.response?.status,
+});
+
 // Request interceptor - Add auth token
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Get token from localStorage
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('accessToken');
-      if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
+    const token = tokenStorage.getAccessToken();
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -84,47 +134,33 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error: AxiosError<unknown>) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & {
-      _retry?: boolean;
-    };
+    const originalRequest = error.config as
+      | (InternalAxiosRequestConfig & { _retry?: boolean })
+      | undefined;
 
-    // Handle 401 Unauthorized - Try to refresh token
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !isAuthEndpoint(originalRequest.url) &&
+      tokenStorage.getAccessToken() !== null
+    ) {
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken) {
-          const response = await axios.post(`${baseURL}/auth/refresh`, { refreshToken });
-
-          const { accessToken } = response.data.data;
-          localStorage.setItem('accessToken', accessToken);
-
-          // Retry original request with new token
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          }
-          return apiClient(originalRequest);
-        }
+        const accessToken = await refreshAccessToken();
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        return apiClient(originalRequest);
       } catch (refreshError) {
-        // Refresh failed - clear tokens and redirect to login
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          window.location.href = '/login';
+        if (isSessionRejected(refreshError)) {
+          expireSession();
+          toast.error(SESSION_EXPIRED_MESSAGE, { id: 'session-expired' });
         }
-        return Promise.reject(refreshError);
+        return Promise.reject(toApiError(error));
       }
     }
 
-    // Handle other errors
-    const apiError: ApiError = {
-      message: extractResponseMessage(error.response?.data) || error.message || 'An error occurred',
-      error: extractResponseCode(error.response?.data),
-      statusCode: error.response?.status,
-    };
-
-    return Promise.reject(apiError);
+    return Promise.reject(toApiError(error));
   },
 );
 

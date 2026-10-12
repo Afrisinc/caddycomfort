@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import Link from '@/components/common/Link';
 import { cn } from '@/lib/utils';
@@ -5,6 +6,7 @@ import { formatCount } from '@/lib/navigation';
 
 interface HeaderActionProps {
   readonly icon: LucideIcon;
+  readonly media?: ReactNode;
   readonly label: string;
   readonly href?: string;
   readonly onClick?: () => void;
@@ -17,6 +19,7 @@ const actionClass =
 
 export function HeaderAction({
   icon: Icon,
+  media,
   label,
   href,
   onClick,
@@ -26,7 +29,7 @@ export function HeaderAction({
   const accessibleLabel = count > 0 ? `${label} (${count})` : label;
   const content = (
     <>
-      <Icon className="h-5 w-5" aria-hidden="true" />
+      {media ?? <Icon className="h-5 w-5" aria-hidden="true" />}
       {count > 0 && (
         <span
           aria-hidden="true"

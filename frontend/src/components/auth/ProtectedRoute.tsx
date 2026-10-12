@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useRouter } from '@/router/compat';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'sonner';
@@ -15,13 +16,14 @@ export function ProtectedRoute({
   requireAdmin = false,
 }: ProtectedRouteProps) {
   const router = useRouter();
+  const { pathname, search } = useLocation();
   const { user, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    // Check if user is authenticated
+    // Send unauthenticated visitors to login, then back here once signed in.
+    // Session-expiry messaging is handled by the API client.
     if (!isAuthenticated || !user) {
-      toast.error('Please login to access this page');
-      router.push('/login');
+      router.replace(`/login?redirect=${encodeURIComponent(pathname + search)}`);
       return;
     }
 
@@ -40,7 +42,7 @@ export function ProtectedRoute({
       router.push('/');
       return;
     }
-  }, [isAuthenticated, user, requiredRole, requireAdmin, router]);
+  }, [isAuthenticated, user, requiredRole, requireAdmin, router, pathname, search]);
 
   // Don't render children until authentication is verified
   if (!isAuthenticated || !user) {

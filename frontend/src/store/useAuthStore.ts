@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authApi, usersApi } from '@/lib/api';
+import { onSessionExpired, tokenStorage } from '@/lib/auth-session';
 
 export interface User {
   id: string;
@@ -8,6 +9,7 @@ export interface User {
   firstName: string | null;
   lastName: string | null;
   phone?: string | null;
+  avatar?: string | null;
   role?: string;
   isVerified?: boolean;
 }
@@ -28,6 +30,7 @@ interface AuthStore {
     firstName?: string;
     lastName?: string;
     phone?: string;
+    avatar?: string | null;
   }) => Promise<void>;
   checkAuth: () => Promise<boolean>;
   verifyEmail: (email: string, code: string) => Promise<void>;
@@ -46,9 +49,7 @@ export const useAuthStore = create<AuthStore>()(
         try {
           const response = await authApi.login({ email, password });
 
-          // Store tokens in localStorage
-          localStorage.setItem('accessToken', response.accessToken);
-          localStorage.setItem('refreshToken', response.refreshToken);
+          tokenStorage.setTokens(response);
 
           // Set user data
           set({
@@ -57,8 +58,7 @@ export const useAuthStore = create<AuthStore>()(
           });
         } catch (error: any) {
           // Clear any existing auth data on failed login
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
+          tokenStorage.clear();
           set({ user: null, isAuthenticated: false });
           throw error;
         }
@@ -68,9 +68,7 @@ export const useAuthStore = create<AuthStore>()(
         try {
           const response = await authApi.register(userData);
 
-          // Store tokens in localStorage
-          localStorage.setItem('accessToken', response.accessToken);
-          localStorage.setItem('refreshToken', response.refreshToken);
+          tokenStorage.setTokens(response);
 
           // Set user data
           set({
@@ -79,32 +77,26 @@ export const useAuthStore = create<AuthStore>()(
           });
         } catch (error: any) {
           // Clear any existing auth data on failed registration
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
+          tokenStorage.clear();
           set({ user: null, isAuthenticated: false });
           throw error;
         }
       },
 
       logout: async () => {
+        const refreshToken = tokenStorage.getRefreshToken();
+
+        // Sign out locally first so the UI never waits on the network.
+        tokenStorage.clear();
+        set({ user: null, isAuthenticated: false });
+
+        if (!refreshToken) return;
+
         try {
-          // Call logout API to invalidate tokens on backend
-          await authApi.logout();
-        } catch (error: any) {
-          // Silently handle logout API errors - local cleanup is more important
-          // Only log if it's not a network/auth error
-          if (
-            error?.response?.status &&
-            error.response.status !== 401 &&
-            error.response.status !== 403
-          ) {
-            console.warn('Logout API warning:', error.message);
-          }
-        } finally {
-          // Always clear local storage and state
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          set({ user: null, isAuthenticated: false });
+          await authApi.logout(refreshToken);
+        } catch (error) {
+          // The token expires on its own; a failed revoke must not block sign-out.
+          console.warn('Failed to revoke refresh token on logout:', error);
         }
       },
 
@@ -117,6 +109,7 @@ export const useAuthStore = create<AuthStore>()(
                 firstName: updated.firstName,
                 lastName: updated.lastName,
                 phone: updated.phone,
+                avatar: updated.avatar,
               }
             : null,
         }));
@@ -142,8 +135,7 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       checkAuth: async () => {
-        const token = localStorage.getItem('accessToken');
-        if (!token) {
+        if (!tokenStorage.getAccessToken()) {
           set({ user: null, isAuthenticated: false });
           return false;
         }
@@ -151,15 +143,13 @@ export const useAuthStore = create<AuthStore>()(
         try {
           const isValid = await authApi.verifyAuth();
           if (!isValid) {
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
+            tokenStorage.clear();
             set({ user: null, isAuthenticated: false });
             return false;
           }
           return true;
-        } catch (error) {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
+        } catch {
+          tokenStorage.clear();
           set({ user: null, isAuthenticated: false });
           return false;
         }
@@ -170,3 +160,13 @@ export const useAuthStore = create<AuthStore>()(
     },
   ),
 );
+
+// A persisted user without tokens (e.g. signed out in another tab) is stale.
+if (useAuthStore.getState().isAuthenticated && !tokenStorage.getAccessToken()) {
+  useAuthStore.setState({ user: null, isAuthenticated: false });
+}
+
+// The API client ends the session when a token refresh is rejected.
+onSessionExpired(() => {
+  useAuthStore.setState({ user: null, isAuthenticated: false });
+});

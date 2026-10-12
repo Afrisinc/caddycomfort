@@ -2,9 +2,9 @@ import { Clock, HelpCircle, Mail, MapPin, Package, Phone, RotateCcw } from 'luci
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import Link from '@/components/common/Link';
-import Image from '@/components/common/Image';
 import { PageHeader } from '@/components/common/PageHeader';
 import { ContactMethod } from '@/components/common/ContactMethod';
+import { StorePhotoGrid } from '@/components/common/StorePhotoGrid';
 import { ContactForm } from '@/components/contact/ContactForm';
 import { Heading, Text } from '@/components/ui/typography';
 import { useContactInfo } from '@/hooks/useContactInfo';
@@ -97,14 +97,10 @@ export default function ContactPage() {
               </section>
 
               <section className="overflow-hidden rounded-2xl border bg-card">
-                <div className="relative aspect-4/3">
-                  <Image
-                    src="/new-images/hero-2.jpg"
-                    alt="Products on display in the CaddyComfort store"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
+                <StorePhotoGrid
+                  sizes="(min-width: 1024px) 11rem, 50vw"
+                  className="gap-1 rounded-none"
+                />
                 <div className="space-y-2 p-5">
                   <Heading as="h2" size="sm">
                     Visit our store

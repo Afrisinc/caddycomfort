@@ -1,13 +1,25 @@
 import bcrypt from 'bcryptjs';
 import { sendPasswordChangedEmail } from '../utils/notify/auth.notify';
 import prisma from '../config/database';
+import { logger } from '../config/logger';
+import { deleteImage, uploadBase64Image } from '../utils/cloudinary';
+
+export class ProfileValidationError extends Error {}
+
+const AVATAR_FOLDER = 'clementine-shop/avatars';
+const AVATAR_DATA_URL = /^data:image\/(png|jpe?g|gif|webp);base64,/;
+const AVATAR_TRANSFORMATION = [
+  { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+  { quality: 'auto' },
+  { format: 'webp' },
+];
 
 interface UpdateProfileData {
   firstName?: string;
   lastName?: string;
   name?: string;
   phone?: string;
-  avatar?: string;
+  avatar?: string | null;
 }
 
 interface ChangePasswordData {
@@ -57,9 +69,12 @@ export class UserService {
       throw new Error('User not found');
     }
 
-    return prisma.user.update({
+    const { avatar, ...fields } = data;
+    const nextAvatar = await this.resolveAvatar(user.avatar, avatar);
+
+    const updated = await prisma.user.update({
       where: { id: userId },
-      data,
+      data: nextAvatar === undefined ? fields : { ...fields, avatar: nextAvatar },
       select: {
         id: true,
         email: true,
@@ -74,6 +89,35 @@ export class UserService {
         createdAt: true,
         updatedAt: true,
       },
+    });
+
+    if (nextAvatar !== undefined && user.avatar?.includes('cloudinary.com')) {
+      await deleteImage(user.avatar).catch((error) =>
+        logger.error({ err: error }, 'Failed to delete previous avatar'),
+      );
+    }
+
+    return updated;
+  }
+
+  /**
+   * Upload a new avatar, or clear it with null. Returns undefined when unchanged.
+   * Only uploaded images are accepted, never arbitrary URLs.
+   */
+  private static async resolveAvatar(
+    current: string | null,
+    next: string | null | undefined,
+  ): Promise<string | null | undefined> {
+    if (next === undefined || next === current) return undefined;
+    if (next === null || next === '') return null;
+
+    if (!AVATAR_DATA_URL.test(next)) {
+      throw new ProfileValidationError('Profile photo must be a PNG, JPG, WebP or GIF image');
+    }
+
+    return uploadBase64Image(next, {
+      folder: AVATAR_FOLDER,
+      transformation: AVATAR_TRANSFORMATION,
     });
   }
 

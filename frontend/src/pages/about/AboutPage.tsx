@@ -16,6 +16,7 @@ import { Footer } from '@/components/layout/Footer';
 import Link from '@/components/common/Link';
 import Image from '@/components/common/Image';
 import { ContactMethod } from '@/components/common/ContactMethod';
+import { StorePhotoGrid } from '@/components/common/StorePhotoGrid';
 import { CtaBanner } from '@/components/common/CtaBanner';
 import { CategoryCardV2 } from '@/components/products/CategoryCardV2';
 import { CategoryCardSkeleton } from '@/components/products/CategoryCardSkeleton';
@@ -74,30 +75,6 @@ const VALUES = [
       'Caddy is built with and for women who support each other. Confidence grows when we move together.',
   },
 ];
-
-const STORE_PHOTOS = [
-  {
-    id: 1,
-    wide: 720,
-    alt: 'Two women wearing Caddy flared leggings, one in black and one in plum',
-    className: 'row-span-2',
-    position: 'object-center',
-  },
-  {
-    id: 2,
-    wide: 1000,
-    alt: 'Woman in a green Caddy set walking through the city',
-    className: '',
-    position: 'object-[50%_28%]',
-  },
-  {
-    id: 3,
-    wide: 1000,
-    alt: 'Woman in a red and white Caddy set with a wrap top',
-    className: '',
-    position: 'object-[50%_35%]',
-  },
-] as const;
 
 const NO_CATEGORIES: Category[] = [];
 
@@ -252,24 +229,10 @@ export default function AboutPage() {
           )}
 
           <section className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
-            <div className="order-last grid aspect-4/3 grid-cols-2 grid-rows-2 gap-2 overflow-hidden rounded-3xl bg-muted lg:order-first">
-              {STORE_PHOTOS.map((photo) => (
-                <div
-                  key={photo.id}
-                  className={`relative overflow-hidden bg-muted ${photo.className}`}
-                >
-                  <Image
-                    src={`/new-images/store/store-${photo.id}-600.jpg`}
-                    srcSet={`/new-images/store/store-${photo.id}-600.jpg 600w, /new-images/store/store-${photo.id}-${photo.wide}.jpg ${photo.wide}w`}
-                    sizes="(min-width: 1024px) 28vw, 45vw"
-                    alt={photo.alt}
-                    fill
-                    decoding="async"
-                    className={`object-cover ${photo.position}`}
-                  />
-                </div>
-              ))}
-            </div>
+            <StorePhotoGrid
+              sizes="(min-width: 1024px) 28vw, 45vw"
+              className="order-last lg:order-first"
+            />
             <div className="space-y-6">
               <SectionHeader eyebrow="Visit us" title="Come see us in store" />
               <Text className="text-base">

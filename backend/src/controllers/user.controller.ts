@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { UserService } from '../services/user.service';
+import { ProfileValidationError, UserService } from '../services/user.service';
 
 export class UserController {
   /**
@@ -36,6 +36,9 @@ export class UserController {
 
       res.json({ success: true, message: 'Profile updated successfully', data: user });
     } catch (error) {
+      if (error instanceof ProfileValidationError) {
+        return res.status(400).json({ success: false, message: error.message });
+      }
       res.status(500).json({
         success: false,
         message: error instanceof Error ? error.message : 'Error updating profile',

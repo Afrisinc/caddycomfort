@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import Link from '@/components/common/Link';
+import { UserAvatar } from '@/components/account/UserAvatar';
 import { usePathname, useRouter } from '@/router/compat';
 import {
   BarChart3,
@@ -191,12 +192,6 @@ export function AdminSidebar({ isOpen, onClose, collapsed, onToggleCollapsed }: 
     [user?.firstName, user?.lastName].filter(Boolean).join(' ') ||
     user?.email?.split('@')[0] ||
     'Admin';
-  const initials = displayName
-    .split(' ')
-    .map((part: string) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
   const collapseLabel = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
   const CollapseIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
 
@@ -343,25 +338,36 @@ export function AdminSidebar({ isOpen, onClose, collapsed, onToggleCollapsed }: 
                 </span>
               }
             >
-              <span
-                tabIndex={rail ? 0 : undefined}
-                aria-label={rail ? `Signed in as ${displayName}` : undefined}
+              <Link
+                href="/account/profile"
+                onClick={onClose}
+                aria-label={rail ? `Profile settings for ${displayName}` : undefined}
+                title={rail ? undefined : 'Profile settings'}
                 className={cn(
-                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-rose/10 text-xs font-semibold text-accent-rose',
-                  rail && focusRing,
+                  'flex min-w-0 items-center gap-3 rounded-full',
+                  !rail && '-my-1 -ml-1 flex-1 rounded-lg py-1 pl-1 hover:bg-muted',
+                  focusRing,
                 )}
               >
-                {initials}
-              </span>
-            </RailTooltip>
-            {!rail && (
-              <div className="min-w-0 flex-1 leading-tight">
-                <p className="truncate text-sm font-medium">{displayName}</p>
-                {user?.email && (
-                  <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                <UserAvatar
+                  src={user?.avatar}
+                  firstName={user?.firstName}
+                  lastName={user?.lastName}
+                  email={user?.email}
+                  className="size-9 text-xs"
+                />
+                {!rail && (
+                  <span className="min-w-0 flex-1 leading-tight">
+                    <span className="block truncate text-sm font-medium">{displayName}</span>
+                    {user?.email && (
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {user.email}
+                      </span>
+                    )}
+                  </span>
                 )}
-              </div>
-            )}
+              </Link>
+            </RailTooltip>
             <RailTooltip rail={rail} label="Log out">
               <button
                 type="button"

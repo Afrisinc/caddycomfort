@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Heart, Menu, Search, ShoppingBag, User, type LucideIcon } from 'lucide-react';
 import Link from '@/components/common/Link';
 import Image from '@/components/common/Image';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { SearchDialog } from '@/components/SearchDialog';
 import { HeaderAction } from '@/components/layout/HeaderAction';
+import { UserAvatar } from '@/components/account/UserAvatar';
 import { NavLinks } from '@/components/layout/NavLinks';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -36,6 +37,7 @@ function SiteLogo({ onClick, priority }: Readonly<{ onClick?: () => void; priori
 
 interface DrawerShortcut {
   icon: LucideIcon;
+  media?: ReactNode;
   label: string;
   description: string;
   href: string;
@@ -92,9 +94,22 @@ export function Navbar() {
 
   const closeMenu = () => setMenuOpen(false);
 
+  const signedInUser = isAuthenticated ? user : null;
+  const accountAvatar = (className: string) =>
+    signedInUser ? (
+      <UserAvatar
+        src={signedInUser.avatar}
+        firstName={signedInUser.firstName}
+        lastName={signedInUser.lastName}
+        email={signedInUser.email}
+        className={className}
+      />
+    ) : undefined;
+
   const shortcuts: DrawerShortcut[] = [
     {
       icon: User,
+      media: accountAvatar('size-10 text-sm'),
       label: isAuthenticated ? 'My account' : 'Sign in',
       description: isAuthenticated ? 'Profile & orders' : 'Access your orders and wishlist',
       href: accountHref,
@@ -125,9 +140,10 @@ export function Navbar() {
           <HeaderAction icon={Search} label="Search (Ctrl+K)" onClick={() => setSearchOpen(true)} />
           <HeaderAction
             icon={User}
+            media={accountAvatar('size-7 text-[11px]')}
             label={isAuthenticated ? 'My account' : 'Sign in'}
             href={accountHref}
-            className="hidden sm:flex"
+            className={signedInUser ? undefined : 'hidden sm:flex'}
           />
           <HeaderAction
             icon={Heart}
@@ -171,16 +187,18 @@ export function Navbar() {
             </nav>
 
             <ul className="space-y-1 border-t pt-6">
-              {shortcuts.map(({ icon: Icon, label, description, href }) => (
+              {shortcuts.map(({ icon: Icon, media, label, description, href }) => (
                 <li key={href}>
                   <Link
                     href={href}
                     onClick={closeMenu}
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-accent-rose/40"
                   >
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-rose/10 text-accent-rose">
-                      <Icon className="h-5 w-5" />
-                    </span>
+                    {media ?? (
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-rose/10 text-accent-rose">
+                        <Icon className="h-5 w-5" />
+                      </span>
+                    )}
                     <span>
                       <span className="block text-sm font-medium">{label}</span>
                       <span className="block text-xs text-muted-foreground">{description}</span>
