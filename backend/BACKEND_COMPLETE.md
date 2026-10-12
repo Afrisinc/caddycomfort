@@ -99,7 +99,7 @@ All remaining backend endpoints have been successfully implemented and are now r
 
 ### Postman Collection
 
-- **`Clementine_Complete_API.postman_collection.json`**: Updated with **60+ new endpoints**
+- **`CaddyComfort_Complete_API.postman_collection.json`**: Updated with **60+ new endpoints**
   - Section 12: Addresses (7 endpoints)
   - Section 13: Wishlist (8 endpoints)
   - Section 14: Reviews (11 endpoints)

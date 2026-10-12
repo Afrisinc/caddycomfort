@@ -92,7 +92,7 @@ curl -X GET http://localhost:5000/api/auth/me \
 ## 📚 Documentation
 
 - **Full API Documentation**: `AUTH_SYSTEM.md`
-- **Postman Collection**: `Clementine_Auth_API.postman_collection.json`
+- **Postman Collection**: `CaddyComfort_Auth_API.postman_collection.json`
 - **Test Script**: `test-auth.ts`
 
 ## 🔑 Key Features
@@ -172,14 +172,14 @@ backend/
 ├── AUTH_SYSTEM.md                      # Full documentation
 ├── AUTH_QUICK_START.md                 # This file
 ├── test-auth.ts                        # Test script
-└── Clementine_Auth_API.postman_collection.json
+└── CaddyComfort_Auth_API.postman_collection.json
 ```
 
 ## 🧪 Testing
 
 ### Using Postman
 
-1. Import `Clementine_Auth_API.postman_collection.json`
+1. Import `CaddyComfort_Auth_API.postman_collection.json`
 2. Set `baseUrl` variable to `http://localhost:5000`
 3. Run requests in order (Register → Login → Get Profile, etc.)
 4. Access and refresh tokens are automatically stored

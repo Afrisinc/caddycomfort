@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "Clementine Shop - Complete API",
+    "name": "CaddyComfort - Complete API",
     "description": "Full E-commerce API with Authentication, Categories, Products, Coupons, Cart, Orders, Inventory, Addresses, Wishlist, Reviews, User Profile, and Dashboard Analytics",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
@@ -99,7 +99,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@clementineshop.com\",\n  \"password\": \"Admin@123\",\n  \"firstName\": \"Admin\",\n  \"lastName\": \"User\",\n  \"role\": \"ADMIN\"\n}",
+              "raw": "{\n  \"email\": \"admin@caddycomfort.com\",\n  \"password\": \"Admin@123\",\n  \"firstName\": \"Admin\",\n  \"lastName\": \"User\",\n  \"role\": \"ADMIN\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -134,7 +134,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@clementineshop.com\",\n  \"password\": \"Admin@123\"\n}",
+              "raw": "{\n  \"email\": \"admin@caddycomfort.com\",\n  \"password\": \"Admin@123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "Clementine Shop - Authentication API",
+    "name": "CaddyComfort - Authentication API",
     "description": "Complete JWT authentication system with access and refresh tokens",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },

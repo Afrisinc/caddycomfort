@@ -1,4 +1,4 @@
-# 🧪 Testing Checklist - Clementine Classic Shop
+# 🧪 Testing Checklist - CaddyComfort
 
 Use this checklist to verify all features are working correctly.
 

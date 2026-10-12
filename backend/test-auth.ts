@@ -13,7 +13,7 @@ let userId = '';
 
 // Test data
 const testUser = {
-  email: 'test@clementine-shop.com',
+  email: 'test@caddycomfort.com',
   password: 'SecurePass123!',
   firstName: 'Test',
   lastName: 'User',
@@ -21,7 +21,7 @@ const testUser = {
 };
 
 const adminUser = {
-  email: 'admin@clementine-shop.com',
+  email: 'admin@caddycomfort.com',
   password: 'AdminPass123!',
   firstName: 'Admin',
   lastName: 'User',

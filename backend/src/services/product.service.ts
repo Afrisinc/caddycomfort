@@ -678,7 +678,7 @@ export class ProductService {
     let uploaded: string[];
     try {
       uploaded = await uploadMultipleBase64Images(pending, {
-        folder: 'clementine-shop/products',
+        folder: 'caddycomfort/products',
         transformation: [
           { width: 2400, height: 2400, crop: 'limit' },
           { quality: 'auto:best' },

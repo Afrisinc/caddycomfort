@@ -59,7 +59,7 @@ export class CategoryService {
       if (isValidBase64Image(data.image)) {
         try {
           imageUrl = await uploadBase64Image(data.image, {
-            folder: 'clementine-shop/categories',
+            folder: 'caddycomfort/categories',
             transformation: [
               { width: 1600, height: 1600, crop: 'limit' },
               { quality: 'auto:best' },
@@ -380,7 +380,7 @@ export class CategoryService {
     if (next && isValidBase64Image(next)) {
       try {
         resolved = await uploadBase64Image(next, {
-          folder: 'clementine-shop/categories',
+          folder: 'caddycomfort/categories',
           transformation: [
             { width: 1600, height: 1600, crop: 'limit' },
             { quality: 'auto:best' },

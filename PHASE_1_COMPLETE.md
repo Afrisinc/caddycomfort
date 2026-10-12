@@ -258,7 +258,7 @@ fetch('http://localhost:5000/api/health')
 
 // Test login (when implemented in UI)
 const result = await authApi.login({
-  email: 'admin@clementineshop.com',
+  email: 'admin@caddycomfort.com',
   password: 'Admin@123',
 });
 console.log(result);

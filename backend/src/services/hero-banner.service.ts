@@ -78,7 +78,7 @@ async function resolveImage(value: unknown): Promise<string | undefined> {
   if (isValidBase64Image(value)) {
     try {
       return await uploadBase64Image(value, {
-        folder: 'clementine-shop/banners',
+        folder: 'caddycomfort/banners',
         transformation: TRANSFORMATION,
       });
     } catch (error: any) {

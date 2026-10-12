@@ -9,6 +9,8 @@ cloudinary.config({
 });
 
 const UPLOAD_TIMEOUT_MS = 300_000;
+const DEFAULT_FOLDER = 'caddycomfort';
+const PUBLIC_ID_PATTERN = /\/upload\/(?:v\d+\/)?(.+?)\.[^./]+$/;
 
 interface UploadOptions {
   folder?: string;
@@ -26,7 +28,7 @@ export const uploadBase64Image = async (
 ): Promise<string> => {
   try {
     const result = await cloudinary.uploader.upload(base64String, {
-      folder: options?.folder || 'clementine-shop',
+      folder: options?.folder || DEFAULT_FOLDER,
       transformation: options?.transformation,
       format: options?.format,
       public_id: options?.public_id,
@@ -67,7 +69,7 @@ export const uploadBufferImage = async (
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
-        folder: options?.folder || 'clementine-shop',
+        folder: options?.folder || DEFAULT_FOLDER,
         transformation: options?.transformation,
         format: options?.format,
         public_id: options?.public_id,
@@ -95,13 +97,13 @@ export const uploadBufferImage = async (
  */
 export const deleteImage = async (imageUrl: string): Promise<void> => {
   try {
-    // Extract public_id from Cloudinary URL
-    const urlParts = imageUrl.split('/');
-    const filename = urlParts[urlParts.length - 1];
-    const publicId = filename.split('.')[0];
-    const folder = urlParts[urlParts.length - 2];
+    // The public_id is the full path after /upload/ (and the optional version), minus the extension
+    const publicId = PUBLIC_ID_PATTERN.exec(imageUrl)?.[1];
+    if (!publicId) {
+      throw new Error(`Not a Cloudinary upload URL: ${imageUrl}`);
+    }
 
-    await cloudinary.uploader.destroy(`${folder}/${publicId}`);
+    await cloudinary.uploader.destroy(publicId);
   } catch (error: any) {
     console.error('Cloudinary delete error:', error);
     throw new Error(`Failed to delete image: ${error.message}`);

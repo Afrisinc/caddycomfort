@@ -75,7 +75,7 @@ backend/src/
 1. Update `.env` with your PostgreSQL connection:
 
    ```
-   DATABASE_URL="postgresql://user:password@localhost:5432/clementine_shop"
+   DATABASE_URL="postgresql://user:password@localhost:5432/caddycomfort"
    ```
 
 2. Run Prisma migrations:

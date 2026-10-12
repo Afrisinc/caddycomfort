@@ -6,7 +6,7 @@ import { deleteImage, uploadBase64Image } from '../utils/cloudinary';
 
 export class ProfileValidationError extends Error {}
 
-const AVATAR_FOLDER = 'clementine-shop/avatars';
+const AVATAR_FOLDER = 'caddycomfort/avatars';
 const AVATAR_DATA_URL = /^data:image\/(png|jpe?g|gif|webp);base64,/;
 const AVATAR_TRANSFORMATION = [
   { width: 400, height: 400, crop: 'fill', gravity: 'face' },

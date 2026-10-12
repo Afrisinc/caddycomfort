@@ -1,4 +1,4 @@
-# Clementine Classic Shop - Frontend Complete ✅
+# CaddyComfort - Frontend Complete ✅
 
 ## 🎉 Project Status: COMPLETE
 
@@ -491,7 +491,7 @@ While all requested features are complete, here are potential future enhancement
 
 ### Contact
 
-- **Email**: support@clementineclassic.com
+- **Email**: caddyumutoniwase@gmail.com
 - **Phone**: +250 788 123 456
 - **Address**: KG 123 St, Kigali, Rwanda
 
