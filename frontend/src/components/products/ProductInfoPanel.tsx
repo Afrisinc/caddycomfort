@@ -92,7 +92,7 @@ export function ProductInfoPanel({
   };
 
   const handleShare = async () => {
-    const url = window.location.href;
+    const url = `${window.location.origin}/shop/${product.id}`;
     if (navigator.share) {
       await navigator.share({ title: product.name, url }).catch(() => {});
       return;

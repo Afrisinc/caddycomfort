@@ -18,6 +18,7 @@ import contactRoutes from './contact.routes';
 import paymentRoutes from './payment.routes';
 import webhookRoutes from './webhook.routes';
 import sitemapRoutes from './sitemap.routes';
+import shareRoutes from './share.routes';
 import settingsRoutes from './settings.routes';
 import securityRoutes from './security.routes';
 
@@ -43,6 +44,7 @@ router.use('/contact', contactRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/webhooks', webhookRoutes);
 router.use('/sitemap.xml', sitemapRoutes);
+router.use('/share', shareRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/security', securityRoutes);
 
