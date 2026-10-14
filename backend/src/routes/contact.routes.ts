@@ -4,11 +4,12 @@ import {
   subscribeNewsletter,
   unsubscribeNewsletter,
 } from '../controllers/contact.controller';
+import { emailLimiter } from '../middleware/rate-limit.middleware';
 
 const router = Router();
 
-router.post('/', submitContactForm);
-router.post('/newsletter/subscribe', subscribeNewsletter);
+router.post('/', emailLimiter, submitContactForm);
+router.post('/newsletter/subscribe', emailLimiter, subscribeNewsletter);
 router.post('/newsletter/unsubscribe', unsubscribeNewsletter);
 
 export default router;

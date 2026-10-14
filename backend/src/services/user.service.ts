@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { sendPasswordChangedEmail } from '../utils/notify/auth.notify';
 import prisma from '../config/database';
 import { logger } from '../config/logger';
+import { PASSWORD_MIN_LENGTH } from '../constants';
 import { deleteImage, uploadBase64Image } from '../utils/cloudinary';
 
 export class ProfileValidationError extends Error {}
@@ -143,8 +144,8 @@ export class UserService {
     }
 
     // Validate new password
-    if (newPassword.length < 6) {
-      throw new Error('New password must be at least 6 characters');
+    if (newPassword.length < PASSWORD_MIN_LENGTH) {
+      throw new Error(`New password must be at least ${PASSWORD_MIN_LENGTH} characters`);
     }
 
     // Hash new password

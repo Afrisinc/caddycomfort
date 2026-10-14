@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { UserController } from '../controllers/user.controller';
 import { authenticateToken, requireAdmin } from '../middleware/auth.middleware';
+import { credentialLimiter } from '../middleware/rate-limit.middleware';
 
 const router = Router();
 
@@ -12,7 +13,7 @@ router.get('/profile', authenticateToken, UserController.getProfile);
 router.put('/profile', authenticateToken, UserController.updateProfile);
 
 // Change password
-router.put('/change-password', authenticateToken, UserController.changePassword);
+router.put('/change-password', authenticateToken, credentialLimiter, UserController.changePassword);
 
 // Get own statistics
 router.get('/stats', authenticateToken, UserController.getStats);

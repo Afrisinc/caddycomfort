@@ -1,3 +1,5 @@
+export const PASSWORD_MIN_LENGTH = 8;
+
 export const HTTP_STATUS = {
   OK: 200,
   CREATED: 201,

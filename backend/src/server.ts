@@ -1,18 +1,16 @@
+import 'dotenv/config';
 import express, { Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import dotenv from 'dotenv';
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { logger } from './config/logger';
 import prisma from './config/database';
 import { closeRedis } from './config/redis';
 import { requestLogger } from './middleware/logger.middleware';
+import { apiLimiter } from './middleware/rate-limit.middleware';
 import { errorHandler, notFound } from './middleware/error.middleware';
 import routes from './routes';
 import { initializePaymentReconciliationJob } from './jobs/payment-reconciliation.job';
 import { initializeLoginAttemptCleanupJob } from './jobs/login-attempt-cleanup.job';
-
-dotenv.config();
 
 const app: Express = express();
 const PORT = process.env.PORT || 5000;
@@ -29,17 +27,7 @@ app.use(
 );
 
 // Rate Limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req) => ipKeyGenerator(req.get('cf-connecting-ip') || req.ip || ''),
-  skip: (req) => req.path === '/health',
-});
-
-app.use('/api', limiter);
+app.use('/api', apiLimiter);
 
 // Body Parsing Middleware
 app.use(['/api/products', '/api/categories', '/api/hero-banners'], express.json({ limit: '24mb' }));

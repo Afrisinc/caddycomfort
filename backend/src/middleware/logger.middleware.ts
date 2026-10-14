@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../config/logger';
+import { getClientIp } from '../utils/client-ip';
 
 export const requestLogger = (req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
@@ -8,7 +9,7 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
   const requestInfo: any = {
     method: req.method,
     url: req.url,
-    ip: req.ip,
+    ip: getClientIp(req),
   };
 
   // Log request body for POST, PUT, PATCH requests (but hide sensitive data)

@@ -135,8 +135,7 @@ apiClient.interceptors.response.use(
   },
   async (error: AxiosError<unknown>) => {
     const originalRequest = error.config as
-      | (InternalAxiosRequestConfig & { _retry?: boolean })
-      | undefined;
+      (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
 
     if (
       error.response?.status === 401 &&

@@ -1,164 +1,168 @@
-import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from '@/router/compat';
-import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useEffect, useMemo, useState } from 'react';
+import { KeyRound, Mail, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import Link from '@/components/common/Link';
-import { ArrowLeft, Mail, ShieldCheck } from 'lucide-react';
+import { AuthLayout, AuthLink } from '@/components/auth/AuthLayout';
+import { Button } from '@/components/ui/button';
+import { FormAlert } from '@/components/ui/form-alert';
+import { TextField } from '@/components/ui/text-field';
+import { Text } from '@/components/ui/typography';
+import { useFormValidation } from '@/hooks/useFormValidation';
+import {
+  RESEND_COOLDOWN_SECONDS,
+  VERIFICATION_CODE_LENGTH,
+  digitsOnly,
+  postAuthPath,
+  validateVerification,
+  withRedirect,
+} from '@/lib/authForm';
+import { errorMessage } from '@/lib/utils';
+import { useRouter, useSearchParams } from '@/router/compat';
+import { useAuthStore } from '@/store/useAuthStore';
 
-const RESEND_COOLDOWN_SECONDS = 60;
-
-function VerifyEmailForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { user, verifyEmail, resendVerification } = useAuthStore();
-
-  const [email, setEmail] = useState(searchParams.get('email') || user?.email || '');
-  const [code, setCode] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [isResending, setIsResending] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
+function useCooldown() {
+  const [seconds, setSeconds] = useState(0);
 
   useEffect(() => {
-    if (cooldown <= 0) return;
-    const timer = setInterval(() => setCooldown((seconds) => seconds - 1), 1000);
-    return () => clearInterval(timer);
-  }, [cooldown]);
+    if (seconds <= 0) return;
+    const timer = setTimeout(() => setSeconds((value) => value - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [seconds]);
 
-  const handleVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsVerifying(true);
-
-    try {
-      await verifyEmail(email, code);
-      toast.success('Email verified successfully!');
-
-      if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
-        router.push('/admin');
-      } else {
-        router.push('/account');
-      }
-    } catch (error: any) {
-      const message = error.message || 'Invalid or expired verification code';
-      toast.error(message);
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  const handleResend = async () => {
-    if (!email) {
-      toast.error('Enter your email first');
-      return;
-    }
-
-    setIsResending(true);
-
-    try {
-      await resendVerification(email);
-      toast.success('Verification code sent');
-      setCooldown(RESEND_COOLDOWN_SECONDS);
-    } catch (error: any) {
-      const message = error.message || 'Failed to resend verification code';
-      toast.error(message);
-    } finally {
-      setIsResending(false);
-    }
-  };
-
-  return (
-    <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <Link
-        href="/login"
-        className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-8"
-      >
-        <ArrowLeft className="h-4 w-4 mr-1" />
-        Back to Sign In
-      </Link>
-
-      <div className="text-center mb-8">
-        <ShieldCheck className="h-12 w-12 text-accent-rose mx-auto mb-4" />
-        <h1 className="text-4xl font-serif mb-2">Verify Your Email</h1>
-        <p className="text-muted-foreground">
-          Enter the 6-digit code we sent to your email address
-        </p>
-      </div>
-
-      <div className="bg-card border rounded-lg p-6">
-        <form onSubmit={handleVerify} className="space-y-4">
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                className="pl-10"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="code">Verification Code</Label>
-            <Input
-              id="code"
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="123456"
-              className="text-center text-lg tracking-[0.5em]"
-              required
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-            />
-          </div>
-
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full bg-accent-rose hover:bg-accent-rose-dark"
-            disabled={isVerifying}
-          >
-            {isVerifying ? 'Verifying...' : 'Verify Email'}
-          </Button>
-
-          <div className="text-center text-sm text-muted-foreground">
-            Didn&apos;t get a code?{' '}
-            <Button
-              type="button"
-              variant="link"
-              className="h-auto p-0 text-accent-rose"
-              disabled={isResending || cooldown > 0}
-              onClick={handleResend}
-            >
-              {cooldown > 0 ? `Resend in ${cooldown}s` : isResending ? 'Sending...' : 'Resend code'}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+  return [seconds, setSeconds] as const;
 }
 
 export default function VerifyEmailPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get('redirect');
+  const user = useAuthStore((state) => state.user);
+  const verifyEmail = useAuthStore((state) => state.verifyEmail);
+  const resendVerification = useAuthStore((state) => state.resendVerification);
+
+  const knownEmail = searchParams.get('email') ?? user?.email ?? '';
+  const initialValues = useMemo(() => ({ email: knownEmail, code: '' }), [knownEmail]);
+  const [editingEmail, setEditingEmail] = useState(!knownEmail);
+  const [resending, setResending] = useState(false);
+  const [cooldown, setCooldown] = useCooldown();
+
+  const form = useFormValidation({
+    initialValues,
+    validate: validateVerification,
+    idPrefix: 'verify',
+  });
+  const email = form.values.email.trim().toLowerCase();
+
+  const onSubmit = form.handleSubmit(async ({ code }) => {
+    await verifyEmail(email, code);
+    toast.success('Email verified');
+    router.replace(
+      user
+        ? postAuthPath({ ...user, isVerified: true }, redirect)
+        : withRedirect('/login', redirect),
+    );
+  }, 'That code is invalid or has expired.');
+
+  const resend = async () => {
+    if (form.errors.email) {
+      setEditingEmail(true);
+      form.touch('email');
+      return;
+    }
+    setResending(true);
+    form.setFormError(null);
+    try {
+      await resendVerification(email);
+      toast.success(`New code sent to ${email}`);
+      setCooldown(RESEND_COOLDOWN_SECONDS);
+    } catch (error) {
+      form.setFormError(errorMessage(error, 'We could not send a new code. Please try again.'));
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const codeField = form.field('code');
+
   return (
-    <>
-      <Navbar />
-      <div className="min-h-screen bg-background pt-20">
-        <Suspense
-          fallback={<div className="min-h-[50vh] flex items-center justify-center">Loading...</div>}
+    <AuthLayout
+      icon={ShieldCheck}
+      title="Verify your email"
+      description={
+        editingEmail ? (
+          `Enter your email and the ${VERIFICATION_CODE_LENGTH}-digit code we sent you.`
+        ) : (
+          <>
+            We sent a {VERIFICATION_CODE_LENGTH}-digit code to{' '}
+            <span className="font-medium text-foreground">{email}</span>.{' '}
+            <button
+              type="button"
+              onClick={() => setEditingEmail(true)}
+              className="rounded-sm font-medium text-accent-rose underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-accent-rose/40 focus-visible:outline-none"
+            >
+              Change
+            </button>
+          </>
+        )
+      }
+      footer={
+        <>
+          Wrong account? <AuthLink href="/login">Back to sign in</AuthLink>
+        </>
+      }
+    >
+      <form onSubmit={onSubmit} noValidate className="space-y-5">
+        <FormAlert>{form.formError}</FormAlert>
+
+        {editingEmail && (
+          <TextField
+            {...form.field('email')}
+            label="Email"
+            type="email"
+            icon={Mail}
+            autoComplete="email"
+            placeholder="you@example.com"
+            required
+          />
+        )}
+
+        <TextField
+          {...codeField}
+          onChange={(event) =>
+            form.setValue('code', digitsOnly(event.target.value).slice(0, VERIFICATION_CODE_LENGTH))
+          }
+          label="Verification code"
+          icon={KeyRound}
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          maxLength={VERIFICATION_CODE_LENGTH}
+          placeholder="123456"
+          inputClassName="text-lg font-medium tracking-[0.4em] tabular-nums"
+          required
+        />
+
+        <Button
+          type="submit"
+          variant="brand"
+          size="xl"
+          className="w-full"
+          loading={form.submitting}
         >
-          <VerifyEmailForm />
-        </Suspense>
-      </div>
-      <Footer />
-    </>
+          {form.submitting ? 'Verifying…' : 'Verify email'}
+        </Button>
+
+        <Text variant="small" className="mx-auto text-center">
+          Didn&apos;t get it? Check your spam folder or{' '}
+          <Button
+            type="button"
+            variant="link"
+            className="h-auto p-0 font-medium text-accent-rose"
+            disabled={resending || cooldown > 0}
+            onClick={resend}
+          >
+            {cooldown > 0 ? `resend in ${cooldown}s` : 'send a new code'}
+          </Button>
+        </Text>
+      </form>
+    </AuthLayout>
   );
 }

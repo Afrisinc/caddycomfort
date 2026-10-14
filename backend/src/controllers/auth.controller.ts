@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
-import { UserRole } from '@prisma/client';
+import { getClientIp } from '../utils/client-ip';
+import { PASSWORD_MIN_LENGTH } from '../constants';
 
 /**
  * Register a new user
@@ -8,7 +9,7 @@ import { UserRole } from '@prisma/client';
  */
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password, firstName, lastName, phone, role } = req.body;
+    const { email, password, firstName, lastName, phone } = req.body;
 
     // Validate required fields
     if (!email || !password) {
@@ -30,10 +31,10 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     }
 
     // Validate password strength
-    if (password.length < 8) {
+    if (password.length < PASSWORD_MIN_LENGTH) {
       res.status(400).json({
         success: false,
-        message: 'Password must be at least 8 characters long',
+        message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters long`,
       });
       return;
     }
@@ -45,7 +46,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       firstName,
       lastName,
       phone,
-      role: role as UserRole,
     });
 
     res.status(201).json({
@@ -96,7 +96,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     // Login user
     const result = await AuthService.login(email.toLowerCase().trim(), password, {
-      ipAddress: req.get('cf-connecting-ip') || req.ip,
+      ipAddress: getClientIp(req),
       userAgent: req.get('user-agent'),
     });
 
@@ -343,10 +343,10 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
     }
 
     // Validate new password strength
-    if (newPassword.length < 8) {
+    if (newPassword.length < PASSWORD_MIN_LENGTH) {
       res.status(400).json({
         success: false,
-        message: 'New password must be at least 8 characters long',
+        message: `New password must be at least ${PASSWORD_MIN_LENGTH} characters long`,
       });
       return;
     }
@@ -529,10 +529,10 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    if (newPassword.length < 8) {
+    if (newPassword.length < PASSWORD_MIN_LENGTH) {
       res.status(400).json({
         success: false,
-        message: 'New password must be at least 8 characters long',
+        message: `New password must be at least ${PASSWORD_MIN_LENGTH} characters long`,
       });
       return;
     }

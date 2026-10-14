@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as authController from '../controllers/auth.controller';
 import { authenticateToken } from '../middleware/auth.middleware';
+import { credentialLimiter, emailLimiter } from '../middleware/rate-limit.middleware';
 
 const router = Router();
 
@@ -9,10 +10,10 @@ const router = Router();
  */
 
 // Register a new user
-router.post('/register', authController.register);
+router.post('/register', emailLimiter, authController.register);
 
 // Login user
-router.post('/login', authController.login);
+router.post('/login', credentialLimiter, authController.login);
 
 // Refresh access token
 router.post('/refresh', authController.refresh);
@@ -21,16 +22,16 @@ router.post('/refresh', authController.refresh);
 router.post('/logout', authController.logout);
 
 // Verify account email using the code sent at registration
-router.post('/verify-email', authController.verifyEmail);
+router.post('/verify-email', credentialLimiter, authController.verifyEmail);
 
 // Resend account verification code
-router.post('/resend-verification', authController.resendVerification);
+router.post('/resend-verification', emailLimiter, authController.resendVerification);
 
 // Request a password reset email
-router.post('/forgot-password', authController.forgotPassword);
+router.post('/forgot-password', emailLimiter, authController.forgotPassword);
 
 // Reset password using the token sent by email
-router.post('/reset-password', authController.resetPassword);
+router.post('/reset-password', credentialLimiter, authController.resetPassword);
 
 /**
  * Protected routes (authentication required)
@@ -43,7 +44,12 @@ router.get('/me', authenticateToken, authController.getProfile);
 router.patch('/profile', authenticateToken, authController.updateProfile);
 
 // Change password
-router.post('/change-password', authenticateToken, authController.changePassword);
+router.post(
+  '/change-password',
+  authenticateToken,
+  credentialLimiter,
+  authController.changePassword,
+);
 
 // Logout from all devices
 router.post('/logout-all', authenticateToken, authController.logoutAll);
